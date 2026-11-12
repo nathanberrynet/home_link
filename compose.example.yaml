@@ -10,9 +10,12 @@ services:
       sh -c "
       apk add --no-cache git &&
       if [ -d '.git' ]; then
-        git pull;
+        git pull origin main;
       else
-        git clone https://github.com/nathanberrynet/home_link.git .;
+        git init &&
+        git remote add origin https://github.com/nathanberrynet/home_link.git &&
+        git fetch origin main &&
+        git reset --hard origin/main;
       fi &&
       npm install &&
       node server.js
