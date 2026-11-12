@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HomeLink - Homelab Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg-color: #0b0f17;
+      --text-color: #f1f5f9;
+      --panel-bg: rgba(15, 23, 42, 0.85);
+      --card-bg: rgba(30, 41, 59, 0.65);
+      --card-hover: rgba(30, 41, 59, 0.9);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --mesh-opacity: 0.15;
+    }
+
+    body.theme-light {
+      --bg-color: #f8fafc;
+      --text-color: #0f172a;
+      --panel-bg: rgba(255, 255, 255, 0.9);
+      --card-bg: rgba(255, 255, 255, 0.75);
+      --card-hover: rgba(255, 255, 255, 0.95);
+      --border-color: rgba(0, 0, 0, 0.08);
+      --mesh-opacity: 0.05;
+    }
+
+    body.theme-neon {
+      --bg-color: #05050a;
+      --text-color: #f0fdfa;
+      --panel-bg: rgba(18, 9, 36, 0.9);
+      --card-bg: rgba(28, 15, 54, 0.7);
+      --card-hover: rgba(45, 22, 87, 0.95);
+      --border-color: rgba(236, 72, 153, 0.25);
+      --mesh-opacity: 0.3;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .bg-mesh {
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, var(--mesh-opacity)) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(139, 92, 246, var(--mesh-opacity)) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(16, 185, 129, var(--mesh-opacity)) 0px, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    .glass-panel {
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.15); }
+    }
+    .status-pulse { animation: pulse-glow 2s infinite ease-in-out; }
+  </style>
+</head>
+<body class="bg-mesh relative selection:bg-orange-500 selection:text-white pb-12">
+
+  <div id="custom-bg-overlay" class="fixed inset-0 pointer-events-none transition-all duration-300 z-0" style="display: none;"></div>
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 glass-panel border-b border-white/10 px-4 lg:px-8 py-3 mb-6">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <!-- Brand & Date -->
+      <div class="flex items-center justify-between w-full md:w-auto">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+            <i class="fa-solid text-white text-xl fa-house-signal"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-lg leading-tight tracking-tight flex items-center gap-2">
+              HomeLink <span class="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30">v2.6</span>
+            </h1>
+            <p id="live-date" class="text-xs opacity-70 font-medium">Loading date...</p>
+          </div>
+        </div>
+
+        <div class="md:hidden text-right whitespace-nowrap">
+          <div id="clock-mobile" class="text-lg font-bold tracking-wider text-orange-400 font-mono whitespace-nowrap">00:00:00 AM</div>
+        </div>
+      </div>
+
+      <!-- Smart Search Bar -->
+      <div class="w-full md:max-w-xl">
+        <form id="search-form" onsubmit="handleSearch(event)" class="relative flex items-center">
+          <div class="relative w-full flex items-center">
+            <select id="search-engine" onchange="onSearchEngineChange(this.value)" class="bg-slate-800/80 text-xs text-slate-300 font-medium px-3 py-2 rounded-l-xl border-r border-slate-700/80 focus:outline-none cursor-pointer hover:bg-slate-700/80 transition-colors h-10">
+              <option value="filter">Filter Tiles</option>
+              <option value="google">Google</option>
+              <option value="youtube">YouTube</option>
+              <option value="duckduckgo">DuckDuckGo</option>
+              <option value="github">GitHub</option>
+              <option value="reddit">Reddit</option>
+            </select>
+            <div class="relative w-full flex items-center">
+              <input 
+                type="text" 
+                id="search-input" 
+                placeholder="Filter homelab tiles..." 
+                class="w-full h-10 bg-slate-900/60 text-sm text-slate-100 placeholder-slate-400 pl-4 pr-16 border border-l-0 border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
+                oninput="onSearchInput(this.value)"
+              />
+              <button type="button" id="search-clear-btn" onclick="clearSearchInput()" class="hidden absolute right-10 text-slate-400 hover:text-white transition-colors text-xs p-1">
+                <i class="fa-solid fa-circle-xmark"></i>
+              </button>
+            </div>
+            <button type="submit" class="h-10 px-4 bg-orange-600 hover:bg-orange-500 text-white rounded-r-xl transition-colors flex items-center justify-center">
+              <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Weather & Header Actions (Right Aligned) -->
+      <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
+        <!-- Weather Widget -->
+        <a 
+          id="weather-widget" 
+          href="#" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          title="Click for full weather forecast on Google"
+          class="hidden sm:flex items-center gap-2 bg-slate-900/50 hover:bg-slate-800/80 px-3 py-2 rounded-xl border border-white/10 text-xs transition-colors cursor-pointer h-10">
+          <i id="weather-icon" class="fa-solid fa-cloud-sun text-amber-400"></i>
+          <span id="weather-temp" class="font-bold">--°F</span>
+          <span id="weather-city" class="opacity-60 text-[10px]">--</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[9px] opacity-40 ml-0.5"></i>
+        </a>
+
+        <!-- Live Clock Desktop -->
+        <div class="hidden md:flex flex-col text-right mr-2 whitespace-nowrap">
+          <div id="clock-desktop" class="text-lg lg:text-xl font-bold tracking-wider font-mono whitespace-nowrap">00:00:00 AM</div>
+        </div>
+
+        <!-- Master Edit Lock Toggle Button -->
+        <button 
+          id="btn-edit-mode"
+          onclick="requestAuthForAction('edit')" 
+          title="Toggle Lock / Unlock Editing Mode"
+          class="h-10 px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-white/10 transition-all text-sm font-semibold flex items-center gap-2">
+          <i id="edit-mode-icon" class="fa-solid fa-lock text-amber-400"></i>
+          <span class="hidden sm:inline" id="edit-mode-label">Locked</span>
+        </button>
+
+        <!-- "+ Add Link" Button -->
+        <button 
+          id="btn-add-link-header"
+          onclick="openAppModal()" 
+          class="hidden h-10 px-3 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-600/30 transition-all text-sm font-semibold items-center gap-2">
+          <i class="fa-solid fa-plus"></i>
+          <span class="hidden sm:inline">Add Link</span>
+        </button>
+
+        <!-- Profiles Button -->
+        <button 
+          onclick="openProfilesModal()" 
+          title="User Profiles"
+          class="h-10 px-3 py-2 flex items-center gap-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-white/10 transition-all">
+          <div id="header-profile-avatar" class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-[10px] font-bold text-white overflow-hidden">U</div>
+          <span id="header-profile-name" class="text-xs font-semibold hidden sm:inline">Admin</span>
+        </button>
+
+        <!-- Settings Button -->
+        <button 
+          onclick="requestAuthForAction('settings')" 
+          title="Settings & Themes"
+          class="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-white/10 transition-all">
+          <i class="fa-solid fa-sliders text-base"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 lg:px-8 z-10 relative">
+
+    <!-- Category Filter Bar & Quick Stats -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+      <div id="category-tabs" class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-none">
+        <!-- Rendered via JS -->
+      </div>
+
+      <div class="flex items-center gap-3 text-xs opacity-80 bg-slate-900/40 px-3 py-1.5 rounded-xl border border-white/5 w-full sm:w-auto justify-between sm:justify-end">
+        <span id="online-counter-badge" class="flex items-center gap-1.5">
+          <span id="overall-status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+          <span id="services-online-count">Checking Pings...</span>
+        </span>
+        <span id="counter-divider" class="opacity-40">|</span>
+        <button onclick="openWikiModal()" class="text-orange-400 hover:text-orange-300 font-medium flex items-center gap-1 transition-colors">
+          <i class="fa-solid fa-book-open"></i> Homelab Guide & Wiki
+        </button>
+      </div>
+    </div>
+
+    <!-- App Tiles Grid -->
+    <div 
+      id="apps-grid" 
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <!-- Dynamically populated -->
+    </div>
+
+    <!-- Empty Filter State -->
+    <div id="empty-state" class="hidden flex-col items-center justify-center py-20 text-center glass-panel rounded-2xl border border-dashed border-slate-700">
+      <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 text-2xl mb-4">
+        <i class="fa-solid fa-cubes-stacked"></i>
+      </div>
+      <h3 class="text-lg font-bold mb-1">No services found</h3>
+      <p class="text-sm opacity-70 max-w-md mb-4">No homelab apps match your selected category or search filter.</p>
+      <button onclick="resetFilters()" class="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold">
+        Reset Filters
+      </button>
+    </div>
+
+  </main>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Add / Edit Service Modal -->
+  <div id="app-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-panel w-full max-w-lg rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
+        <h3 id="modal-title" class="text-lg font-bold flex items-center gap-2">
+          <i class="fa-solid fa-square-plus text-orange-400"></i> Add New Service
+        </h3>
+        <button onclick="closeAppModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form id="app-form" onsubmit="saveApp(event)" class="space-y-4">
+        <input type="hidden" id="app-id" />
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2 sm:col-span-1">
+            <label class="block text-xs font-semibold opacity-90 mb-1">Service Name *</label>
+            <input type="text" id="app-name" required placeholder="e.g. Plex, Sonarr" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+          </div>
+          <div class="col-span-2 sm:col-span-1">
+            <label class="block text-xs font-semibold opacity-90 mb-1">Category *</label>
+            <select id="app-category" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <!-- Populated via JS -->
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">URL / Address *</label>
+          <input type="url" id="app-url" required placeholder="http://192.168.1.100:8989" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Optional API Key <span class="text-[10px] text-slate-400 font-normal">(Sonarr, Radarr, etc.)</span></label>
+          <input type="password" id="app-api-key" placeholder="API key..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+        </div>
+
+        <!-- Ping Health Check Inclusion Toggle -->
+        <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-white/5">
+          <div>
+            <span class="block text-xs font-semibold text-white">Enable Health Check Ping</span>
+            <span class="block text-[10px] opacity-60">Poll this service in the background</span>
+          </div>
+          <input type="checkbox" id="app-ping-enabled" checked class="w-4 h-4 rounded accent-orange-500 cursor-pointer">
+        </div>
+
+        <!-- Icon Mode Selector -->
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Icon Source</label>
+          <div class="grid grid-cols-4 gap-1.5 mb-2">
+            <button type="button" onclick="setIconType('favicon')" id="btn-icon-favicon" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-800 text-slate-300">Favicon</button>
+            <button type="button" onclick="setIconType('fa')" id="btn-icon-fa" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-orange-500 bg-orange-500/20 text-orange-300">Icon Search</button>
+            <button type="button" onclick="setIconType('url')" id="btn-icon-url" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-800 text-slate-300">Image URL</button>
+            <button type="button" onclick="setIconType('upload')" id="btn-icon-upload" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-800 text-slate-300">Upload</button>
+          </div>
+
+          <div id="icon-input-favicon" class="hidden">
+            <div class="p-2.5 bg-slate-900/80 border border-white/10 rounded-xl text-xs text-slate-400">Icon will automatically load from domain favicon.</div>
+          </div>
+          <div id="icon-input-fa" class="space-y-2">
+            <div class="flex gap-2">
+              <input type="text" id="app-icon-fa" placeholder="fa-solid fa-server or CDN URL" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <button type="button" onclick="openIconPickerModal()" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap shadow-md flex items-center gap-1.5">
+                <i class="fa-solid fa-magnifying-glass"></i> Browse Icons
+              </button>
+            </div>
+            <p class="text-[10px] text-slate-400">Search FontAwesome & self-hosted homelab logos instantly.</p>
+          </div>
+          <div id="icon-input-url" class="hidden">
+            <input type="url" id="app-icon-url-input" placeholder="https://cdn.example.com/icon.png" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+          </div>
+          <div id="icon-input-upload" class="hidden">
+            <input type="file" id="app-icon-file" accept="image/*" onchange="handleIconUpload(event)" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Custom Styling -->
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Glow Theme</label>
+            <select id="app-color" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+              <option value="orange">Orange 🧡</option>
+              <option value="blue">Blue</option>
+              <option value="emerald">Emerald</option>
+              <option value="amber">Amber</option>
+              <option value="purple">Purple</option>
+              <option value="rose">Rose</option>
+              <option value="cyan">Cyan</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Tile BG Color</label>
+            <div class="flex items-center gap-1.5">
+              <input type="color" id="app-custom-bg" value="#1e293b" class="w-9 h-9 rounded-lg border border-white/10 cursor-pointer bg-slate-900 p-0.5">
+              <button type="button" onclick="document.getElementById('app-custom-bg').value='#1e293b'" class="text-[10px] text-slate-400 hover:text-white px-2 py-1.5 bg-slate-800 rounded-lg border border-white/10">Default</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Font Color</label>
+            <div class="flex items-center gap-1.5">
+              <input type="color" id="app-font-color" value="#f1f5f9" class="w-9 h-9 rounded-lg border border-white/10 cursor-pointer bg-slate-900 p-0.5">
+              <button type="button" onclick="document.getElementById('app-font-color').value='#f1f5f9'" class="text-[10px] text-slate-400 hover:text-white px-2 py-1.5 bg-slate-800 rounded-lg border border-white/10">Default</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-white/10 flex justify-end gap-3">
+          <button type="button" onclick="closeAppModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold shadow-lg shadow-orange-600/30">Save Service</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Unified Multi-Source Icon Search & Picker Modal -->
+  <div id="icon-picker-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md hidden">
+    <div class="glass-panel w-full max-w-2xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-icons text-orange-400"></i> Unified Icon Search (FontAwesome & Self-Hosted Logos)
+        </h3>
+        <button onclick="closeIconPickerModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="mb-4">
+        <div class="relative">
+          <input type="text" id="icon-search-input" placeholder="Search icons (e.g. plex, sonarr, server, tv, docker, truenas)..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 pl-9 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500" oninput="filterIconGrid(this.value)">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+        </div>
+      </div>
+
+      <div id="icon-grid-container" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5 overflow-y-auto max-h-[50vh] p-1 pr-2">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Profiles Management Modal -->
+  <div id="profiles-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-panel w-full max-w-md rounded-2xl border border-white/10 p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <i class="fa-solid fa-users text-orange-400"></i> User Profiles & Direct Links
+        </h3>
+        <button onclick="closeProfilesModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-4">
+        <div id="profiles-list" class="space-y-2 max-h-60 overflow-y-auto">
+          <!-- Populated via JS -->
+        </div>
+
+        <!-- Admin Only Management Actions -->
+        <div id="profiles-admin-actions" class="pt-3 border-t border-white/10 hidden gap-2">
+          <button onclick="requestAuthForAction('edit_admin')" class="w-1/2 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-white/10">
+            <i class="fa-solid fa-user-gear mr-1"></i> Edit Admin Profile
+          </button>
+          <button onclick="requestAuthForAction('create_profile')" class="w-1/2 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold shadow-md">
+            <i class="fa-solid fa-user-plus mr-1"></i> New Profile
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Admin Profile Modal (Admin Only) -->
+  <div id="admin-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+        <h3 class="text-base font-bold text-white">Edit Admin Profile 👑</h3>
+        <button onclick="closeAdminEditModal()" class="opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="saveAdminProfile(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Admin Custom Name</label>
+          <input type="text" id="admin-name-input" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Admin Password (leave blank for none)</label>
+          <input type="password" id="admin-pass-input" placeholder="New password or blank..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Avatar Image URL or Upload</label>
+          <input type="text" id="admin-avatar-input" placeholder="https://..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white mb-1.5">
+          <input type="file" accept="image/*" onchange="handleAdminAvatarUpload(event)" class="w-full text-[10px] text-slate-400">
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeAdminEditModal()" class="px-3 py-1.5 bg-slate-800 text-xs rounded-xl text-slate-300">Cancel</button>
+          <button type="submit" class="px-3 py-1.5 bg-orange-600 text-xs rounded-xl text-white font-semibold">Save Admin</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create / Edit Sub-Profile Modal (Admin Only) -->
+  <div id="profile-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+        <h3 id="profile-modal-title" class="text-base font-bold text-white">Create Profile</h3>
+        <button onclick="closeProfileEditModal()" class="opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="profile-form" onsubmit="saveProfile(event)" class="space-y-3">
+        <input type="hidden" id="profile-edit-id">
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Profile Name</label>
+          <input type="text" id="profile-name-input" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Optional PIN / Password</label>
+          <input type="password" id="profile-pass-input" placeholder="Leave blank for no password" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Profile Avatar</label>
+          <input type="text" id="profile-avatar-input" placeholder="https://..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white mb-1.5">
+          <input type="file" accept="image/*" onchange="handleProfileAvatarUpload(event)" class="w-full text-[10px] text-slate-400">
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeProfileEditModal()" class="px-3 py-1.5 bg-slate-800 text-xs rounded-xl text-slate-300">Cancel</button>
+          <button type="submit" class="px-3 py-1.5 bg-orange-600 text-xs rounded-xl text-white font-semibold">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Password Prompt Modal -->
+  <div id="password-prompt-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
+    <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 text-center shadow-2xl">
+      <div class="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl mx-auto mb-3 border border-amber-500/30">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h3 class="text-base font-bold text-white mb-1">Profile Password Required</h3>
+      <p id="prompt-profile-name" class="text-xs opacity-70 mb-4">Enter password to continue.</p>
+      <form onsubmit="verifyProfilePassword(event)" class="space-y-3">
+        <input type="password" id="unlock-password-input" required autofocus placeholder="Enter password" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-center text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+        <div class="flex gap-2">
+          <button type="button" onclick="closePasswordPrompt()" class="w-1/2 py-2 bg-slate-800 text-xs rounded-xl text-slate-300">Cancel</button>
+          <button type="submit" class="w-1/2 py-2 bg-orange-600 text-xs rounded-xl text-white font-semibold">Unlock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-panel w-full max-w-xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-purple-400"></i> Profile Preferences & Settings
+        </h3>
+        <button onclick="closeSettingsModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-6">
+        <!-- Profile Password Management -->
+        <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-xs font-semibold text-white flex items-center gap-1.5"><i class="fa-solid fa-key text-amber-400"></i> Profile Security & Password</div>
+              <div class="text-[10px] opacity-60">Set or remove a password for your current profile</div>
+            </div>
+            <span id="setting-profile-status-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-semibold">No Password</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <input type="password" id="setting-profile-new-pass" placeholder="New password (leave blank to remove)" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+            <button onclick="requestAuthForAction('update_password')" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-white/10 transition-colors">
+              Update Profile Password
+            </button>
+          </div>
+        </div>
+
+        <!-- Default Startup Profile Selection (Admin Only) -->
+        <div id="admin-default-profile-section" class="bg-slate-900/50 p-4 rounded-xl border border-white/5 space-y-2 hidden">
+          <div class="text-xs font-semibold text-white flex items-center gap-1.5"><i class="fa-solid fa-crown text-amber-400"></i> Admin Control: Default Startup Profile</div>
+          <div class="text-[10px] opacity-60">Select which profile loads by default when HomeLink is launched without a URL parameter.</div>
+          <div class="flex gap-2 pt-1">
+            <select id="setting-default-profile-select" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+              <!-- Populated via JS -->
+            </select>
+            <button onclick="saveDefaultStartupProfile()" class="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold shadow-md whitespace-nowrap">
+              Set Default
+            </button>
+          </div>
+        </div>
+
+        <!-- Theme & Weather Location -->
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-2">Visual Theme & Weather Location</label>
+          <div class="grid grid-cols-3 gap-3 mb-3">
+            <button onclick="setTheme('dark')" id="theme-btn-dark" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5"><i class="fa-solid fa-moon text-orange-400"></i> Dark</button>
+            <button onclick="setTheme('light')" id="theme-btn-light" class="px-3 py-2 bg-slate-100 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 flex items-center justify-center gap-1.5"><i class="fa-solid fa-sun text-amber-500"></i> Light</button>
+            <button onclick="setTheme('neon')" id="theme-btn-neon" class="px-3 py-2 bg-purple-950 border border-pink-500/40 rounded-xl text-xs font-semibold text-pink-300 flex items-center justify-center gap-1.5"><i class="fa-solid fa-bolt text-pink-400"></i> Cyberpunk</button>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-medium opacity-80 mb-1">Weather ZIP / City Name</label>
+              <input type="text" id="setting-weather-zip" placeholder="28601" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white" onchange="saveWeatherZip(this.value)">
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium opacity-80 mb-1">Global Ping Interval (Seconds)</label>
+              <input type="number" id="setting-ping-interval" min="5" value="60" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white" onchange="savePingInterval(this.value)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tile Spacing Scale Slider -->
+        <div class="pt-4 border-t border-white/10">
+          <label class="block text-xs font-semibold opacity-90 mb-1">Tile Spacing & Size Scale</label>
+          <div class="bg-slate-900/50 p-3 rounded-xl border border-white/5">
+            <div class="flex justify-between text-[11px] mb-1">
+              <span>Grid Gap Scale</span>
+              <span id="tile-spacing-label">Standard</span>
+            </div>
+            <input type="range" id="setting-tile-spacing" min="1" max="3" value="2" onchange="updateTileSpacing(this.value)" class="w-full accent-orange-500">
+          </div>
+        </div>
+
+        <!-- Custom Wallpaper Controls & Scale Options -->
+        <div class="pt-4 border-t border-white/10">
+          <label class="block text-xs font-semibold opacity-90 mb-2">Custom Background Wallpaper & Scaling</label>
+          <div class="space-y-3">
+            <div class="flex items-center gap-2">
+              <input type="file" id="setting-bg-file" accept="image/*" onchange="handleBgUpload(event)" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-600 file:text-white hover:file:bg-orange-500 cursor-pointer">
+              <button onclick="clearBackground()" class="px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 text-xs rounded-xl border border-rose-500/30">Clear</button>
+            </div>
+
+            <!-- Wallpaper Scale Mode Selector -->
+            <div class="grid grid-cols-4 gap-2">
+              <button onclick="setBgScaleMode('cover')" id="bg-scale-cover" class="px-2 py-1.5 rounded-xl text-xs font-semibold border border-white/10 bg-slate-900 text-slate-300">Cover</button>
+              <button onclick="setBgScaleMode('contain')" id="bg-scale-contain" class="px-2 py-1.5 rounded-xl text-xs font-semibold border border-white/10 bg-slate-900 text-slate-300">Fit / Contain</button>
+              <button onclick="setBgScaleMode('stretch')" id="bg-scale-stretch" class="px-2 py-1.5 rounded-xl text-xs font-semibold border border-white/10 bg-slate-900 text-slate-300">Stretch</button>
+              <button onclick="setBgScaleMode('tile')" id="bg-scale-tile" class="px-2 py-1.5 rounded-xl text-xs font-semibold border border-white/10 bg-slate-900 text-slate-300">Tile</button>
+            </div>
+
+            <!-- Custom Zoom / Scale Slider -->
+            <div class="bg-slate-900/50 p-3 rounded-xl border border-white/5">
+              <div class="flex justify-between text-[11px] mb-1">
+                <span>Custom Zoom / Scale</span>
+                <span id="bg-zoom-label">100%</span>
+              </div>
+              <input type="range" id="setting-bg-zoom" min="50" max="250" value="100" oninput="updateBgZoom(this.value)" class="w-full accent-orange-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 bg-slate-900/50 p-3 rounded-xl border border-white/5">
+              <div>
+                <div class="flex justify-between text-[11px] mb-1">
+                  <span>Wallpaper Dimmer</span>
+                  <span id="bg-opacity-label">30%</span>
+                </div>
+                <input type="range" id="setting-bg-opacity" min="0" max="95" value="30" oninput="updateBgOpacity(this.value)" class="w-full accent-orange-500">
+              </div>
+              <div class="flex items-center gap-2 pt-3">
+                <input type="checkbox" id="setting-bg-truecolor" onchange="toggleBgTrueColor(this.checked)" class="rounded accent-orange-500">
+                <label for="setting-bg-truecolor" class="text-xs text-slate-300">True-Color Mode</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Manager -->
+        <div class="pt-4 border-t border-white/10">
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-semibold opacity-90">Category Manager</label>
+            <button onclick="addNewCategoryPrompt()" class="text-xs text-orange-400 hover:text-orange-300 font-semibold">+ Add Category</button>
+          </div>
+          <div id="category-manager-list" class="space-y-2 max-h-36 overflow-y-auto">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Backup, Heimdall Migration & Restore -->
+        <div class="pt-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <div class="text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-emerald-400"></i> Backup & Migration</div>
+            <div class="text-[10px] opacity-60">Export backup or import Heimdall JSON</div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="exportConfig()" class="px-3 py-1.5 bg-slate-800 text-slate-200 rounded-xl text-xs font-semibold border border-white/10"><i class="fa-solid fa-download text-emerald-400 mr-1"></i> Export</button>
+            <label class="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md">
+              <i class="fa-solid fa-upload mr-1"></i> Import <input type="file" accept=".json,.homelink" onchange="importConfig(event)" class="hidden">
+            </label>
+            <label class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md" title="Import Heimdall Export JSON">
+              <i class="fa-solid fa-file-import mr-1"></i> Import Heimdall <input type="file" accept=".json" onchange="importHeimdallJson(event)" class="hidden">
+            </label>
+            <button onclick="resetToDefaults()" class="px-3 py-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Homelab Guide, Technical Wiki & Full Source Inspection Modal -->
+  <div id="wiki-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-panel w-full max-w-4xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10 sticky top-0 bg-slate-900/95 backdrop-blur-md z-10 -mx-6 px-6 -mt-6 pt-6 rounded-t-2xl">
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <i class="fa-solid fa-book-open text-orange-400 text-xl"></i> HomeLink Wiki & System Guide
+        </h3>
+        <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Wiki Tabs Header -->
+      <div class="flex items-center gap-2 mb-4 border-b border-white/10 pb-3 overflow-x-auto">
+        <button onclick="switchWikiTab('features')" id="wiki-tab-features" class="px-4 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow-md">Features & How-To</button>
+        <button onclick="switchWikiTab('docker')" id="wiki-tab-docker" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">Docker & File Setup</button>
+        <button onclick="switchWikiTab('security')" id="wiki-tab-security" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">Security & Backups</button>
+        <button onclick="switchWikiTab('source')" id="wiki-tab-source" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700"><i class="fa-solid fa-code text-emerald-400 mr-1"></i> Full Source Code</button>
+      </div>
+
+      <!-- Tab Content: Features & How-To -->
+      <div id="wiki-content-features" class="space-y-4 text-xs leading-relaxed text-slate-300">
+        <h4 class="text-sm font-bold text-white mb-2">HomeLink v2.6 Complete Feature Guide & How-To</h4>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-file-import"></i> Heimdall JSON Migration</h5>
+            <p class="opacity-80">Switching from Heimdall? Go to Settings and click <strong>Import Heimdall</strong>. HomeLink parses your old export JSON, mapping titles, URLs, colors, and API keys instantly!</p>
+          </div>
+          <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-link"></i> Direct URL Bookmarking</h5>
+            <p class="opacity-80">Open the Profiles modal and click <strong>Direct Link</strong> next to any profile to copy its unique bookmark URL (`?profile=id`) to bypass the selection screen.</p>
+          </div>
+          <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-lock"></i> Password Protected Management</h5>
+            <p class="opacity-80">Unlocking edit mode, updating passwords, editing profiles, and creating/deleting users automatically prompt for password authentication if enabled (locking back down is instant).</p>
+          </div>
+          <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-image"></i> Wallpaper Scaling & Zoom</h5>
+            <p class="opacity-80">Customize your background wallpaper with Cover, Fit/Contain, Stretch, or Tile modes combined with a custom zoom scale slider and dimmer.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content: Docker Setup & File Copy-Paste Guide -->
+      <div id="wiki-content-docker" class="space-y-4 text-xs leading-relaxed text-slate-300 hidden">
+        <h4 class="text-sm font-bold text-white mb-2">Docker Deployment & Complete File Setup Guide</h4>
+        <p class="opacity-80">To synchronize your configuration across all devices, HomeLink uses a Node.js backend that persists state to a mounted Docker volume (`/app/data/config.json`). Copy and paste the contents below into your project files:</p>
+
+        <!-- 1. server.js -->
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-white/10 space-y-2">
+          <div class="flex items-center justify-between">
+            <h5 class="font-bold text-orange-400 text-xs">1. `server.js` (Backend API & Static Server)</h5>
+            <button onclick="copyToClipboard('code-server-js')" class="text-orange-400 text-[11px] font-semibold"><i class="fa-regular fa-copy"></i> Copy Code</button>
+          </div>
+          <pre id="code-server-js" class="bg-slate-950 p-3 rounded-lg font-mono text-[10px] text-slate-300 overflow-x-auto max-h-40">
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 8580;
+const DATA_DIR = path.join(__dirname, 'data');
+const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
+
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.static(__dirname));
+
+app.get('/api/config', (req, res) => {
+    if (fs.existsSync(CONFIG_FILE)) {
+        try {
+            const data = fs.readFileSync(CONFIG_FILE, 'utf8');
+            res.json(JSON.parse(data));
+        } catch (err) {
+            res.status(500).json({ error: 'Failed to parse config file' });
+        }
+    } else {
+        res.json({ categories: [], tiles: [] });
+    }
+});
+
+app.post('/api/config', (req, res) => {
+    try {
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(req.body, null, 2), 'utf8');
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to save config file' });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`HomeLink v1.0 running on port ${PORT}`);
+});</pre>
+        </div>
+
+        <!-- 2. package.json -->
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-white/10 space-y-2">
+          <div class="flex items-center justify-between">
+            <h5 class="font-bold text-orange-400 text-xs">2. `package.json` (Dependencies)</h5>
+            <button onclick="copyToClipboard('code-package-json')" class="text-orange-400 text-[11px] font-semibold"><i class="fa-regular fa-copy"></i> Copy Code</button>
+          </div>
+          <pre id="code-package-json" class="bg-slate-950 p-3 rounded-lg font-mono text-[10px] text-slate-300 overflow-x-auto max-h-32">
+{
+  "name": "homelink-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}</pre>
+        </div>
+
+        <!-- 3. docker-compose.yml -->
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-white/10 space-y-2">
+          <div class="flex items-center justify-between">
+            <h5 class="font-bold text-orange-400 text-xs">3. `docker-compose.yml`</h5>
+            <button onclick="copyToClipboard('code-docker-compose')" class="text-orange-400 text-[11px] font-semibold"><i class="fa-regular fa-copy"></i> Copy Code</button>
+          </div>
+          <pre id="code-docker-compose" class="bg-slate-950 p-3 rounded-lg font-mono text-[10px] text-slate-300 overflow-x-auto max-h-32">
+services:
+  homelink:
+    image: node:20-alpine
+    container_name: homelink-dashboard
+    restart: unless-stopped
+    ports:
+      - 8580:8580
+    working_dir: /app
+    command: sh -c "npm install && node server.js"
+    volumes:
+      - /home/USERNAME/docker/homelink/data:/app/data
+      - /home/USERNAME/docker/homelink:/app</pre>
+        </div>
+      </div>
+
+      <!-- Tab Content: Security & Telemetry -->
+      <div id="wiki-content-security" class="space-y-4 text-xs leading-relaxed text-slate-300 hidden">
+        <h4 class="text-sm font-bold text-white mb-2">Security, Privacy & Encrypted Backups</h4>
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-white/10 space-y-2">
+          <p><strong>100% Zero Telemetry:</strong> HomeLink contains no external telemetry or tracking scripts. Your network topology remains completely confidential.</p>
+          <p><strong>Secure Backups:</strong> Profile passwords are encrypted using local salted hashing before export so backups never expose raw credentials.</p>
+        </div>
+      </div>
+
+      <!-- Tab Content: Full Source Code -->
+      <div id="wiki-content-source" class="space-y-4 text-xs leading-relaxed text-slate-300 hidden">
+        <div class="flex items-center justify-between mb-1">
+          <span class="font-semibold text-slate-200">Complete Self-Contained Source Code</span>
+          <button onclick="copyFullSourceCode()" class="px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-[11px] font-semibold"><i class="fa-regular fa-copy mr-1"></i> Copy Full Source</button>
+        </div>
+        <textarea id="full-source-textarea" readonly class="w-full h-80 bg-slate-950 p-3 rounded-xl border border-white/10 font-mono text-[10px] text-slate-300 resize-none focus:outline-none"></textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Sleek Custom Confirmation Modal -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 text-center shadow-2xl">
+      <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl mx-auto mb-3 border border-rose-500/30">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3 id="confirm-title" class="text-base font-bold text-white mb-1">Confirm Deletion</h3>
+      <p id="confirm-message" class="text-xs opacity-70 mb-5">Are you sure you want to delete this item? This action cannot be undone.</p>
+      <div class="flex gap-2">
+        <button type="button" onclick="closeConfirmModal()" class="w-1/2 py-2 bg-slate-800 text-xs rounded-xl text-slate-300 font-semibold">Cancel</button>
+        <button type="button" id="confirm-btn-yes" class="w-1/2 py-2 bg-rose-600 hover:bg-rose-500 text-xs rounded-xl text-white font-semibold">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl border border-white/10 flex items-center gap-3">
+      <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+      <span id="toast-message" class="text-xs font-semibold">Action completed</span>
+    </div>
+  </div>
+
+  <!-- Application Script -->
+  <script>
+    const defaultAdminApps = [
+      { id: '1', name: 'TrueNAS CORE', category: 'Storage & NAS', url: 'https://truenas.local', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', color: 'orange', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '' },
+      { id: '2', name: 'Home Assistant', category: 'Smart Home', url: 'http://192.168.1.234:8123', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', color: 'blue', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '' },
+      { id: '3', name: 'Sonarr', category: 'Media', url: 'http://sonarr.local:8989', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', color: 'cyan', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '' }
+    ];
+
+    const defaultCategories = ['Media', 'Storage & NAS', 'Smart Home', 'Networking', 'Web'];
+
+    let profiles = [
+      {
+        id: 'admin',
+        name: 'Admin',
+        isMain: true,
+        password: '',
+        avatar: '',
+        theme: 'dark',
+        weatherZip: '28601',
+        pingIntervalSec: 60,
+        tileSpacingVal: '2',
+        customBgData: '',
+        bgScaleMode: 'cover',
+        bgZoomVal: 100,
+        bgOpacity: 30,
+        bgTrueColor: false,
+        apps: [...defaultAdminApps],
+        categories: [...defaultCategories]
+      }
+    ];
+    let currentProfileId = 'admin';
+    let defaultStartupProfileId = 'admin';
+    let pendingProfileId = null;
+    let pendingProtectedAction = null;
+
+    let activeCategory = 'All';
+    let searchQuery = '';
+    let isEditMode = false;
+    let appPingStatuses = {};
+    let appLiveStats = {};
+    let currentIconMode = 'fa';
+    let uploadedIconBase64 = '';
+    let pingTimer = null;
+
+    // Combined Library: FontAwesome + Popular Self-Hosted Dashboard Icons (CDN)
+    const unifiedIconLibrary = [
+      // Popular Self-Hosted Apps (Dashboard Icons CDN)
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/plex.png', name: 'plex media server' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', name: 'sonarr tv shows' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/radarr.png', name: 'radarr movies' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/lidarr.png', name: 'lidarr music' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/readarr.png', name: 'readarr books' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prowlarr.png', name: 'prowlarr indexer' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/qbittorrent.png', name: 'qbittorrent download' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sabnzbd.png', name: 'sabnzbd usenet' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/overseerr.png', name: 'overseerr requests' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/jellyfin.png', name: 'jellyfin media' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/emby.png', name: 'emby media' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/tautulli.png', name: 'tautulli plex stats' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png', name: 'immich photos gallery' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/audiobookshelf.png', name: 'audiobookshelf audiobooks' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', name: 'truenas core scale storage nas' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', name: 'home assistant smart home' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/unifi.png', name: 'unifi network router' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/pi-hole.png', name: 'pi-hole adblock dns' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/adguard-home.png', name: 'adguard home dns' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/docker.png', name: 'docker container' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/portainer.png', name: 'portainer docker manager' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png', name: 'proxmox ve hypervisor vm' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/cloudflare.png', name: 'cloudflare dns proxy' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/grafana.png', name: 'grafana monitoring stats' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prometheus.png', name: 'prometheus metrics' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/nextcloud.png', name: 'nextcloud cloud storage' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/paperless-ngx.png', name: 'paperless ngx documents' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/vaultwarden.png', name: 'vaultwarden bitwarden passwords' },
+
+      // FontAwesome Standard Icons
+      { type: 'fa', value: 'fa-solid fa-server', name: 'server' },
+      { type: 'fa', value: 'fa-solid fa-house-signal', name: 'home smart signal' },
+      { type: 'fa', value: 'fa-solid fa-tv', name: 'tv screen media' },
+      { type: 'fa', value: 'fa-solid fa-play', name: 'play video media' },
+      { type: 'fa', value: 'fa-solid fa-film', name: 'film movie' },
+      { type: 'fa', value: 'fa-solid fa-images', name: 'images photo gallery' },
+      { type: 'fa', value: 'fa-brands fa-docker', name: 'docker container' },
+      { type: 'fa', value: 'fa-solid fa-house', name: 'home dashboard' },
+      { type: 'fa', value: 'fa-solid fa-database', name: 'database storage nas' },
+      { type: 'fa', value: 'fa-solid fa-hard-drive', name: 'hard drive disk' },
+      { type: 'fa', value: 'fa-solid fa-network-wired', name: 'network wired router switch' },
+      { type: 'fa', value: 'fa-solid fa-wifi', name: 'wifi wireless' },
+      { type: 'fa', value: 'fa-solid fa-shield-halved', name: 'shield security firewall' },
+      { type: 'fa', value: 'fa-solid fa-download', name: 'download torrent' },
+      { type: 'fa', value: 'fa-solid fa-headphones', name: 'headphones audio music' },
+      { type: 'fa', value: 'fa-solid fa-book', name: 'book wiki docs' },
+      { type: 'fa', value: 'fa-solid fa-terminal', name: 'terminal code cli' },
+      { type: 'fa', value: 'fa-solid fa-microchip', name: 'cpu hardware processor' },
+      { type: 'fa', value: 'fa-solid fa-bolt', name: 'bolt power lightning' },
+      { type: 'fa', value: 'fa-solid fa-cloud', name: 'cloud weather' },
+      { type: 'fa', value: 'fa-solid fa-cloud-sun', name: 'cloud sun weather' },
+      { type: 'fa', value: 'fa-solid fa-video', name: 'video camera security' },
+      { type: 'fa', value: 'fa-solid fa-lock', name: 'lock security' },
+      { type: 'fa', value: 'fa-solid fa-key', name: 'key password token' },
+      { type: 'fa', value: 'fa-solid fa-folder', name: 'folder directory' },
+      { type: 'fa', value: 'fa-solid fa-file', name: 'file document' },
+      { type: 'fa', value: 'fa-solid fa-globe', name: 'globe web internet' },
+      { type: 'fa', value: 'fa-solid fa-cube', name: 'cube package' },
+      { type: 'fa', value: 'fa-solid fa-cubes', name: 'cubes stack' },
+      { type: 'fa', value: 'fa-solid fa-gears', name: 'gears settings config' },
+      { type: 'fa', value: 'fa-solid fa-sliders', name: 'sliders controls' },
+      { type: 'fa', value: 'fa-solid fa-chart-line', name: 'chart stats monitor' },
+      { type: 'fa', value: 'fa-solid fa-desktop', name: 'desktop pc computer' },
+      { type: 'fa', value: 'fa-brands fa-github', name: 'github git code' },
+      { type: 'fa', value: 'fa-brands fa-linux', name: 'linux ubuntu debian' },
+      { type: 'fa', value: 'fa-brands fa-windows', name: 'windows microsoft' },
+      { type: 'fa', value: 'fa-brands fa-apple', name: 'apple macos' },
+      { type: 'fa', value: 'fa-brands fa-discord', name: 'discord chat' },
+      { type: 'fa', value: 'fa-brands fa-telegram', name: 'telegram chat' },
+      { type: 'fa', value: 'fa-brands fa-reddit', name: 'reddit community' },
+      { type: 'fa', value: 'fa-brands fa-youtube', name: 'youtube video' },
+      { type: 'fa', value: 'fa-brands fa-spotify', name: 'spotify music' }
+    ];
+
+    const colorClasses = {
+      orange: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400', hoverGlow: 'hover:border-orange-500/50' },
+      blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', hoverGlow: 'hover:border-blue-500/50' },
+      emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', hoverGlow: 'hover:border-emerald-500/50' },
+      amber: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', hoverGlow: 'hover:border-amber-500/50' },
+      purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400', hoverGlow: 'hover:border-purple-500/50' },
+      rose: { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-400', hoverGlow: 'hover:border-rose-500/50' },
+      cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400', hoverGlow: 'hover:border-cyan-500/50' }
+    };
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadState();
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlProfile = urlParams.get('profile');
+      if (urlProfile && profiles.some(p => p.id === urlProfile)) {
+        currentProfileId = urlProfile;
+      } else {
+        const savedDefault = defaultStartupProfileId;
+        if (savedDefault && profiles.some(p => p.id === savedDefault)) {
+          currentProfileId = savedDefault;
+        }
+      }
+
+      initClock();
+      applyProfilePreferences();
+      fetchWeather();
+      renderCurrentProfileHeader();
+      renderCategories();
+      renderApps();
+      runLivePings();
+      setupPingInterval();
+    });
+
+    function getCurrentProfile() {
+      return profiles.find(p => p.id === currentProfileId) || profiles[0];
+    }
+
+    async function loadState() {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        if (data && data.profiles && Array.isArray(data.profiles)) {
+          profiles = data.profiles;
+          profiles.forEach(p => {
+            if (!p.theme) p.theme = 'dark';
+            if (!p.weatherZip) p.weatherZip = '28601';
+            if (!p.pingIntervalSec) p.pingIntervalSec = 60;
+            if (!p.tileSpacingVal) p.tileSpacingVal = '2';
+            if (p.customBgData === undefined) p.customBgData = '';
+            if (!p.bgScaleMode) p.bgScaleMode = 'cover';
+            if (!p.bgZoomVal) p.bgZoomVal = 100;
+            if (p.bgOpacity === undefined) p.bgOpacity = 30;
+            if (p.bgTrueColor === undefined) p.bgTrueColor = false;
+          });
+          if (data.defaultStartupProfileId) {
+            defaultStartupProfileId = data.defaultStartupProfileId;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to load config from server container volume, using defaults.');
+      }
+    }
+
+    async function saveState() {
+      const payload = {
+        version: '2.6',
+        timestamp: new Date().toISOString(),
+        currentProfileId,
+        defaultStartupProfileId,
+        profiles
+      };
+      try {
+        await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload, null, 2)
+        });
+      } catch (e) {
+        console.error('Failed to sync state to server volume:', e);
+      }
+    }
+
+    function applyProfilePreferences() {
+      const p = getCurrentProfile();
+      setTheme(p.theme || 'dark', false);
+      document.getElementById('setting-weather-zip').value = p.weatherZip || '28601';
+      document.getElementById('setting-ping-interval').value = p.pingIntervalSec || 60;
+      document.getElementById('setting-tile-spacing').value = p.tileSpacingVal || '2';
+      applyTileSpacing(p.tileSpacingVal || '2', false);
+      document.getElementById('setting-bg-opacity').value = p.bgOpacity !== undefined ? p.bgOpacity : 30;
+      document.getElementById('bg-opacity-label').innerText = `${p.bgOpacity !== undefined ? p.bgOpacity : 30}%`;
+      document.getElementById('setting-bg-zoom').value = p.bgZoomVal || 100;
+      document.getElementById('bg-zoom-label').innerText = `${p.bgZoomVal || 100}%`;
+      document.getElementById('setting-bg-truecolor').checked = !!p.bgTrueColor;
+
+      updateBgScaleButtons(p.bgScaleMode || 'cover');
+
+      const passBadge = document.getElementById('setting-profile-status-badge');
+      const passInput = document.getElementById('setting-profile-new-pass');
+      if (p.password && p.password.trim() !== '') {
+        passBadge.innerText = 'Password Active 🔒';
+        passBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-semibold border border-amber-500/30';
+      } else {
+        passBadge.innerText = 'No Password';
+        passBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-semibold';
+      }
+      passInput.value = '';
+
+      const adminSection = document.getElementById('admin-default-profile-section');
+      if (getCurrentProfile().isMain) {
+        adminSection.classList.remove('hidden');
+        const defSelect = document.getElementById('setting-default-profile-select');
+        defSelect.innerHTML = profiles.map(item => `<option value="${item.id}" ${defaultStartupProfileId === item.id ? 'selected' : ''}>${item.name} ${item.isMain ? '👑' : ''}</option>`).join('');
+      } else {
+        adminSection.classList.add('hidden');
+      }
+
+      applyBackgroundDisplay(p.customBgData || '');
+    }
+
+    function saveCurrentProfilePassword() {
+      const p = getCurrentProfile();
+      const newPass = document.getElementById('setting-profile-new-pass').value;
+      p.password = newPass;
+      saveState();
+      applyProfilePreferences();
+      if (newPass.trim() !== '') {
+        showToast(`Password set for profile: ${p.name}`, 'emerald');
+      } else {
+        showToast(`Password removed for profile: ${p.name}`, 'blue');
+      }
+    }
+
+    function saveDefaultStartupProfile() {
+      if (!getCurrentProfile().isMain) return;
+      const sel = document.getElementById('setting-default-profile-select').value;
+      defaultStartupProfileId = sel;
+      saveState();
+      showToast('Default startup profile updated', 'emerald');
+    }
+
+    function initClock() {
+      function update() {
+        const now = new Date();
+        document.getElementById('clock-desktop').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        document.getElementById('clock-mobile').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+      update();
+      setInterval(update, 1000);
+    }
+
+    async function fetchWeather() {
+      const p = getCurrentProfile();
+      const widget = document.getElementById('weather-widget');
+      if (!p.weatherZip) { widget.classList.add('hidden'); return; }
+      widget.classList.remove('hidden');
+      widget.href = `https://www.google.com/search?q=weather+${encodeURIComponent(p.weatherZip)}`;
+      try {
+        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(p.weatherZip)}&count=1&language=en&format=json`);
+        const geoData = await geoRes.json();
+        let lat = 35.9154, lon = -81.5393, cityName = p.weatherZip;
+        if (geoData && geoData.results && geoData.results.length > 0) {
+          lat = geoData.results[0].latitude;
+          lon = geoData.results[0].longitude;
+          cityName = geoData.results[0].name;
+        }
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=fahrenheit`);
+        const data = await res.json();
+        if (data && data.current_weather) {
+          document.getElementById('weather-temp').innerText = `${Math.round(data.current_weather.temperature)}°F`;
+          document.getElementById('weather-city').innerText = cityName;
+        }
+      } catch(e) {
+        document.getElementById('weather-temp').innerText = 'Forecast';
+        document.getElementById('weather-city').innerText = p.weatherZip;
+      }
+    }
+
+    function setupPingInterval() {
+      if (pingTimer) clearInterval(pingTimer);
+      const p = getCurrentProfile();
+      const interval = (p.pingIntervalSec || 60) * 1000;
+      pingTimer = setInterval(runLivePings, interval);
+    }
+
+    async function runLivePings() {
+      const profile = getCurrentProfile();
+      let checkedCount = 0, onlineCount = 0;
+      for (const app of profile.apps) {
+        if (app.apiKey && app.apiKey.trim() !== '') {
+          fetchServiceStats(app);
+        }
+
+        if (app.pingEnabled === false) continue;
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3500);
+          await fetch(app.url, { mode: 'no-cors', cache: 'no-cache', signal: controller.signal });
+          clearTimeout(timeoutId);
+          appPingStatuses[app.id] = true;
+          onlineCount++;
+        } catch (err) {
+          appPingStatuses[app.id] = false;
+        }
+        checkedCount++;
+      }
+      const countEl = document.getElementById('services-online-count');
+      const dotEl = document.getElementById('overall-status-dot');
+      const activePingCount = profile.apps.filter(a => a.pingEnabled !== false).length;
+      if (countEl) countEl.innerText = `${onlineCount}/${activePingCount} Online`;
+      if (dotEl) dotEl.className = onlineCount > 0 ? 'w-2.5 h-2.5 rounded-full bg-emerald-500 status-pulse' : 'w-2.5 h-2.5 rounded-full bg-rose-500';
+      renderApps();
+    }
+
+    async function fetchServiceStats(app) {
+      const name = app.name.toLowerCase();
+      try {
+        if (name.includes('sonarr') || name.includes('radarr')) {
+          const res = await fetch(`${app.url}/api/v3/queue?apiKey=${app.apiKey}`);
+          if (res.ok) {
+            const data = await res.json();
+            const total = data.totalRecords || (Array.isArray(data) ? data.length : 0);
+            appLiveStats[app.id] = `${total} Queue Items`;
+            renderApps();
+          }
+        }
+      } catch(e) {}
+    }
+
+    function renderCurrentProfileHeader() {
+      const p = getCurrentProfile();
+      document.getElementById('header-profile-name').innerText = p.name + (p.isMain ? ' 👑' : '');
+      const avatarEl = document.getElementById('header-profile-avatar');
+      if (p.avatar) {
+        avatarEl.innerHTML = `<img src="${p.avatar}" class="w-full h-full object-cover">`;
+      } else {
+        avatarEl.innerText = p.name.charAt(0).toUpperCase();
+      }
+    }
+
+    function renderCategories() {
+      const profile = getCurrentProfile();
+      const container = document.getElementById('category-tabs');
+      const managerList = document.getElementById('category-manager-list');
+      const modalSelect = document.getElementById('app-category');
+      const allCats = ['All', ...profile.categories];
+
+      container.innerHTML = allCats.map(cat => `
+        <button onclick="setCategory('${cat}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${activeCategory === cat ? 'bg-orange-600 text-white border-orange-500 shadow-md' : 'bg-slate-900/50 text-slate-300 border-white/5 hover:bg-slate-800'}">${cat}</button>
+      `).join('');
+
+      modalSelect.innerHTML = profile.categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+      managerList.innerHTML = profile.categories.map(cat => `
+        <div class="flex items-center justify-between bg-slate-900/60 p-2 rounded-xl border border-white/5 text-xs">
+          <span>${cat}</span>
+          <button onclick="confirmDeleteCategory('${cat}')" class="text-rose-400 hover:text-rose-300 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      `).join('');
+    }
+
+    function setCategory(cat) {
+      activeCategory = cat;
+      renderCategories();
+      renderApps();
+    }
+
+    function renderApps() {
+      const profile = getCurrentProfile();
+      const grid = document.getElementById('apps-grid');
+      const emptyState = document.getElementById('empty-state');
+      const engine = document.getElementById('search-engine').value;
+
+      const filtered = profile.apps.filter(app => {
+        const matchesCat = activeCategory === 'All' || app.category === activeCategory;
+        const matchesSearch = engine !== 'filter' || !searchQuery || app.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCat && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+
+      grid.innerHTML = filtered.map(app => {
+        const theme = colorClasses[app.color] || colorClasses.orange;
+        const isImage = app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://') || app.icon.startsWith('data:image/'));
+        const pingStatus = appPingStatuses[app.id];
+        
+        let statusDotHtml = '';
+        if (app.pingEnabled !== false) {
+          let dotClass = 'bg-slate-500';
+          let dotTitle = 'Pending ping';
+          if (pingStatus === true) { dotClass = 'bg-emerald-500 status-pulse'; dotTitle = 'Online'; }
+          else if (pingStatus === false) { dotClass = 'bg-rose-500'; dotTitle = 'Unreachable'; }
+          statusDotHtml = `<span class="w-2.5 h-2.5 rounded-full ${dotClass}" title="${dotTitle}"></span>`;
+        }
+
+        const liveStatText = appLiveStats[app.id];
+        const customStyle = app.customBg ? `background-color: ${app.customBg};` : '';
+        const fontStyle = app.fontColor ? `color: ${app.fontColor};` : '';
+
+        return `
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative group ${theme.hoverGlow}" style="${customStyle}" draggable="${isEditMode}" ondragstart="onDragStart(event, '${app.id}')" ondragover="event.preventDefault()" ondrop="onDrop(event, '${app.id}')">
+            ${isEditMode ? `
+              <div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10">
+                <span class="cursor-grab px-1 text-slate-400" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></span>
+                <button onclick="editApp('${app.id}')" title="Edit" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                <button onclick="confirmDeleteApp('${app.id}')" title="Delete" class="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 text-[10px] flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            ` : ''}
+
+            <a href="${app.url}" target="_blank" rel="noopener noreferrer" class="block flex-1">
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="w-12 h-12 rounded-xl ${theme.bg} ${theme.border} border flex items-center justify-center text-2xl ${theme.text} shadow-inner group-hover:scale-105 transition-transform overflow-hidden">
+                  ${isImage ? `<img src="${app.icon}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.src='https://placehold.co/40x40/1e293b/ffffff?text=App';" />` : `<i class="${app.icon || 'fa-solid fa-globe'}"></i>`}
+                </div>
+                <div class="flex items-center gap-2 ${isEditMode ? 'opacity-20' : ''}">
+                  <button type="button" onclick="event.preventDefault(); event.stopPropagation(); copyText('${app.url}')" title="Copy URL" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-white text-xs p-1"><i class="fa-regular fa-copy"></i></button>
+                  ${statusDotHtml}
+                </div>
+              </div>
+              <div>
+                <h4 class="font-bold text-sm group-hover:text-orange-400 transition-colors flex items-center gap-1.5" style="${fontStyle}">
+                  ${app.name} <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                </h4>
+                ${liveStatText ? `<p class="text-[10px] font-semibold text-emerald-400 mt-0.5"><i class="fa-solid fa-bolt text-[9px]"></i> ${liveStatText}</p>` : ''}
+                <p class="text-[11px] opacity-60 font-medium truncate mt-1" style="${fontStyle}">${app.url}</p>
+              </div>
+            </a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    let draggedAppId = null;
+    function onDragStart(e, id) { draggedAppId = id; }
+    function onDrop(e, targetId) {
+      e.preventDefault();
+      if (!isEditMode || draggedAppId === targetId) return;
+      const profile = getCurrentProfile();
+      const fromIdx = profile.apps.findIndex(a => a.id === draggedAppId);
+      const toIdx = profile.apps.findIndex(a => a.id === targetId);
+      if (fromIdx < 0 || toIdx < 0) return;
+      const [moved] = profile.apps.splice(fromIdx, 1);
+      profile.apps.splice(toIdx, 0, moved);
+      saveState();
+      renderApps();
+    }
+
+    function requestAuthForAction(actionType) {
+      if (actionType === 'edit' && isEditMode) {
+        toggleEditMode();
+        return;
+      }
+
+      const p = getCurrentProfile();
+      if (p.password && p.password.trim() !== '') {
+        pendingProtectedAction = actionType;
+        let actionDesc = 'unlock editing';
+        if (actionType === 'settings') actionDesc = 'access settings';
+        else if (actionType === 'update_password') actionDesc = 'update profile password';
+        else if (actionType === 'edit_admin') actionDesc = 'edit admin profile';
+        else if (actionType === 'create_profile') actionDesc = 'create new profile';
+        
+        document.getElementById('prompt-profile-name').innerText = `Enter password for ${p.name} to ${actionDesc}`;
+        document.getElementById('unlock-password-input').value = '';
+        document.getElementById('password-prompt-modal').classList.remove('hidden');
+      } else {
+        executeProtectedAction(actionType);
+      }
+    }
+
+    function executeProtectedAction(actionType) {
+      if (actionType === 'edit') {
+        toggleEditMode();
+      } else if (actionType === 'settings') {
+        openSettingsModal();
+      } else if (actionType === 'update_password') {
+        saveCurrentProfilePassword();
+      } else if (actionType === 'edit_admin') {
+        openEditAdminModal();
+      } else if (actionType === 'create_profile') {
+        openCreateProfileModal();
+      }
+    }
+
+    function toggleEditMode() {
+      isEditMode = !isEditMode;
+      const label = document.getElementById('edit-mode-label');
+      const icon = document.getElementById('edit-mode-icon');
+      const addBtn = document.getElementById('btn-add-link-header');
+
+      if (isEditMode) {
+        label.innerText = 'Unlocked';
+        icon.className = 'fa-solid fa-lock-open text-emerald-400';
+        addBtn.classList.remove('hidden');
+        addBtn.classList.add('flex');
+        showToast('Dashboard unlocked for drag-and-drop & editing', 'blue');
+      } else {
+        label.innerText = 'Locked';
+        icon.className = 'fa-solid fa-lock text-amber-400';
+        addBtn.classList.remove('flex');
+        addBtn.classList.add('hidden');
+        showToast('Dashboard locked', 'emerald');
+      }
+      renderApps();
+    }
+
+    function applyTileSpacing(val, save = true) {
+      const grid = document.getElementById('apps-grid');
+      const label = document.getElementById('tile-spacing-label');
+      if (val === '1') { grid.className = grid.className.replace(/gap-\d/, 'gap-2'); label.innerText = 'Tight'; }
+      else if (val === '2') { grid.className = grid.className.replace(/gap-\d/, 'gap-4'); label.innerText = 'Standard'; }
+      else { grid.className = grid.className.replace(/gap-\d/, 'gap-6'); label.innerText = 'Spacious'; }
+      const p = getCurrentProfile();
+      p.tileSpacingVal = val;
+      if (save) saveState();
+    }
+    function updateTileSpacing(val) { applyTileSpacing(val, true); }
+
+    function setIconType(mode) {
+      currentIconMode = mode;
+      ['favicon', 'fa', 'url', 'upload'].forEach(m => {
+        const btn = document.getElementById(`btn-icon-${m}`);
+        const input = document.getElementById(`icon-input-${m}`);
+        if (m === mode) {
+          btn.className = 'px-2 py-1.5 rounded-lg text-xs font-semibold border border-orange-500 bg-orange-500/20 text-orange-300';
+          if (input) input.classList.remove('hidden');
+        } else {
+          btn.className = 'px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-800 text-slate-300';
+          if (input) input.classList.add('hidden');
+        }
+      });
+    }
+
+    /* Unified Icon Picker Modal Functions */
+    function openIconPickerModal() {
+      document.getElementById('icon-search-input').value = '';
+      renderIconGrid('');
+      document.getElementById('icon-picker-modal').classList.remove('hidden');
+    }
+
+    function closeIconPickerModal() {
+      document.getElementById('icon-picker-modal').classList.add('hidden');
+    }
+
+    function renderIconGrid(query) {
+      const container = document.getElementById('icon-grid-container');
+      const q = query.toLowerCase().trim();
+      
+      const filtered = unifiedIconLibrary.filter(item => item.name.includes(q) || item.value.includes(q));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="col-span-full py-8 text-center text-xs text-slate-400">No icons found matching "${query}"</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const isUrl = item.type === 'url';
+        const displayHtml = isUrl 
+          ? `<img src="${item.value}" class="w-7 h-7 object-contain" />` 
+          : `<i class="${item.value} text-lg text-slate-200 group-hover:text-orange-400"></i>`;
+        
+        return `
+          <button type="button" onclick="selectUnifiedIcon('${item.value}')" title="${item.name}" class="p-3 bg-slate-900 hover:bg-orange-600/20 hover:border-orange-500/50 border border-white/10 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group">
+            ${displayHtml}
+            <span class="text-[9px] text-slate-400 truncate w-full text-center">${item.name.split(' ')[0]}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function filterIconGrid(val) {
+      renderIconGrid(val);
+    }
+
+    function selectUnifiedIcon(iconVal) {
+      document.getElementById('app-icon-fa').value = iconVal;
+      closeIconPickerModal();
+      showToast(`Selected icon successfully`, 'emerald');
+    }
+
+    function handleIconUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) { uploadedIconBase64 = evt.target.result; };
+      reader.readAsDataURL(file);
+    }
+
+    function openAppModal(id = null) {
+      document.getElementById('app-form').reset();
+      document.getElementById('app-id').value = '';
+      document.getElementById('app-api-key').value = '';
+      document.getElementById('app-custom-bg').value = '#1e293b';
+      document.getElementById('app-font-color').value = '#f1f5f9';
+      document.getElementById('app-ping-enabled').checked = true;
+      uploadedIconBase64 = '';
+      setIconType('fa');
+      document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-square-plus text-orange-400"></i> Add New Service';
+
+      const profile = getCurrentProfile();
+      document.getElementById('app-category').innerHTML = profile.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+      if (id) {
+        const app = profile.apps.find(a => a.id === id);
+        if (app) {
+          document.getElementById('app-id').value = app.id;
+          document.getElementById('app-name').value = app.name;
+          document.getElementById('app-category').value = app.category;
+          document.getElementById('app-url').value = app.url;
+          document.getElementById('app-color').value = app.color || 'orange';
+          document.getElementById('app-api-key').value = app.apiKey || '';
+          document.getElementById('app-custom-bg').value = app.customBg || '#1e293b';
+          document.getElementById('app-font-color').value = app.fontColor || '#f1f5f9';
+          document.getElementById('app-ping-enabled').checked = app.pingEnabled !== false;
+
+          if (app.icon && app.icon.startsWith('data:image/')) {
+            setIconType('upload');
+            uploadedIconBase64 = app.icon;
+          } else if (app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://'))) {
+            setIconType('url');
+            document.getElementById('app-icon-url-input').value = app.icon;
+          } else {
+            setIconType('fa');
+            document.getElementById('app-icon-fa').value = app.icon || '';
+          }
+          document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square text-amber-400"></i> Edit Service Tile';
+        }
+      }
+      document.getElementById('app-modal').classList.remove('hidden');
+    }
+
+    function closeAppModal() { document.getElementById('app-modal').classList.add('hidden'); }
+
+    function saveApp(e) {
+      e.preventDefault();
+      const profile = getCurrentProfile();
+      const id = document.getElementById('app-id').value;
+      const name = document.getElementById('app-name').value;
+      const category = document.getElementById('app-category').value;
+      const url = document.getElementById('app-url').value;
+      const color = document.getElementById('app-color').value;
+      const apiKey = document.getElementById('app-api-key').value.trim();
+      const customBgVal = document.getElementById('app-custom-bg').value;
+      const customBg = customBgVal === '#1e293b' ? '' : customBgVal;
+      const fontColorVal = document.getElementById('app-font-color').value;
+      const fontColor = fontColorVal === '#f1f5f9' ? '' : fontColorVal;
+      const pingEnabled = document.getElementById('app-ping-enabled').checked;
+
+      let icon = 'fa-solid fa-globe';
+      if (currentIconMode === 'favicon') {
+        try { icon = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=128`; } catch(e){}
+      } else if (currentIconMode === 'fa') icon = document.getElementById('app-icon-fa').value || 'fa-solid fa-globe';
+      else if (currentIconMode === 'url') icon = document.getElementById('app-icon-url-input').value || '';
+      else if (currentIconMode === 'upload') icon = uploadedIconBase64 || '';
+
+      if (id) {
+        const idx = profile.apps.findIndex(a => a.id === id);
+        if (idx !== -1) profile.apps[idx] = { ...profile.apps[idx], name, category, url, icon, color, apiKey, customBg, fontColor, pingEnabled };
+        showToast('Tile updated successfully', 'emerald');
+      } else {
+        profile.apps.unshift({ id: Date.now().toString(), name, category, url, icon, color, apiKey, customBg, fontColor, pingEnabled });
+        showToast('Service tile created', 'emerald');
+      }
+
+      saveState();
+      renderApps();
+      runLivePings();
+      closeAppModal();
+    }
+
+    function editApp(id) { openAppModal(id); }
+
+    function confirmDeleteApp(id) {
+      const profile = getCurrentProfile();
+      const app = profile.apps.find(a => a.id === id);
+      openConfirmModal(`Delete '${app ? app.name : 'Tile'}'?`, 'Are you sure you want to remove this service tile?', () => {
+        profile.apps = profile.apps.filter(a => a.id !== id);
+        saveState();
+        renderApps();
+        showToast('Service tile removed', 'rose');
+      });
+    }
+
+    function confirmDeleteCategory(cat) {
+      openConfirmModal(`Delete Category '${cat}'?`, 'Apps in this category will remain.', () => {
+        const profile = getCurrentProfile();
+        profile.categories = profile.categories.filter(c => c !== cat);
+        saveState();
+        renderCategories();
+        showToast('Category removed', 'rose');
+      });
+    }
+
+    /* Profiles Functions */
+    function openProfilesModal() {
+      const profile = getCurrentProfile();
+      const isAdmin = profile.isMain;
+      const list = document.getElementById('profiles-list');
+
+      const baseUrl = window.location.origin + window.location.pathname;
+
+      list.innerHTML = profiles.map(p => {
+        const directUrl = `${baseUrl}?profile=${p.id}`;
+        return `
+          <div class="flex items-center justify-between bg-slate-900/85 p-3 rounded-xl border border-white/5 text-xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center overflow-hidden font-bold text-white">
+                ${p.avatar ? `<img src="${p.avatar}" class="w-full h-full object-cover">` : p.name.charAt(0)}
+              </div>
+              <div>
+                <div class="font-bold text-white flex items-center gap-1">${p.name} ${p.isMain ? '👑' : ''} ${defaultStartupProfileId === p.id ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30">Default</span>' : ''} ${p.password ? '<i class="fa-solid fa-lock text-[10px] text-amber-400" title="Password Protected"></i>' : ''}</div>
+                <div class="text-[10px] opacity-60">${p.apps.length} tiles</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="copyText('${directUrl}')" title="Copy Direct Profile Bookmark URL" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] border border-white/10 flex items-center gap-1"><i class="fa-solid fa-link text-orange-400"></i> Direct Link</button>
+              ${currentProfileId !== p.id ? `<button onclick="switchProfile('${p.id}')" class="px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-semibold">Switch</button>` : `<span class="text-emerald-400 font-semibold px-2">Active</span>`}
+              ${isAdmin && !p.isMain ? `<button onclick="confirmDeleteProfile('${p.id}')" class="text-rose-400 p-1 hover:text-rose-300 ml-1" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const adminActions = document.getElementById('profiles-admin-actions');
+      if (isAdmin) {
+        adminActions.classList.remove('hidden');
+        adminActions.classList.add('flex');
+      } else {
+        adminActions.classList.remove('flex');
+        adminActions.classList.add('hidden');
+      }
+
+      document.getElementById('profiles-modal').classList.remove('hidden');
+    }
+    function closeProfilesModal() { document.getElementById('profiles-modal').classList.add('hidden'); }
+
+    function openEditAdminModal() {
+      if (!getCurrentProfile().isMain) {
+        showToast('Unauthorized: Only Admin can edit Admin settings', 'rose');
+        return;
+      }
+      closeProfilesModal();
+      const admin = profiles.find(p => p.isMain);
+      document.getElementById('admin-name-input').value = admin.name;
+      document.getElementById('admin-pass-input').value = admin.password || '';
+      document.getElementById('admin-avatar-input').value = admin.avatar || '';
+      document.getElementById('admin-edit-modal').classList.remove('hidden');
+    }
+    function closeAdminEditModal() { document.getElementById('admin-edit-modal').classList.add('hidden'); }
+
+    let adminAvatarBase64 = '';
+    function handleAdminAvatarUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        adminAvatarBase64 = evt.target.result;
+        document.getElementById('admin-avatar-input').value = adminAvatarBase64;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveAdminProfile(e) {
+      e.preventDefault();
+      if (!getCurrentProfile().isMain) {
+        showToast('Unauthorized access', 'rose');
+        return;
+      }
+      const admin = profiles.find(p => p.isMain);
+      admin.name = document.getElementById('admin-name-input').value.trim() || 'Admin';
+      admin.password = document.getElementById('admin-pass-input').value;
+      admin.avatar = document.getElementById('admin-avatar-input').value || adminAvatarBase64;
+      saveState();
+      renderCurrentProfileHeader();
+      closeAdminEditModal();
+      showToast('Admin profile updated successfully', 'emerald');
+    }
+
+    function switchProfile(id) {
+      const p = profiles.find(item => item.id === id);
+      if (p && p.password && p.password.trim() !== '') {
+        pendingProfileId = id;
+        pendingProtectedAction = null;
+        document.getElementById('prompt-profile-name').innerText = `Enter password for ${p.name}`;
+        document.getElementById('unlock-password-input').value = '';
+        document.getElementById('password-prompt-modal').classList.remove('hidden');
+        closeProfilesModal();
+      } else {
+        currentProfileId = id;
+        saveState();
+        applyProfilePreferences();
+        fetchWeather();
+        renderCurrentProfileHeader();
+        renderCategories();
+        renderApps();
+        runLivePings();
+        setupPingInterval();
+        closeProfilesModal();
+        showToast(`Switched to profile: ${p.name}`, 'blue');
+      }
+    }
+
+    function verifyProfilePassword(e) {
+      e.preventDefault();
+      const val = document.getElementById('unlock-password-input').value;
+      
+      if (pendingProfileId) {
+        const p = profiles.find(item => item.id === pendingProfileId);
+        if (p && p.password === val) {
+          currentProfileId = pendingProfileId;
+          pendingProfileId = null;
+          saveState();
+          applyProfilePreferences();
+          fetchWeather();
+          renderCurrentProfileHeader();
+          renderCategories();
+          renderApps();
+          runLivePings();
+          setupPingInterval();
+          document.getElementById('password-prompt-modal').classList.add('hidden');
+          showToast(`Unlocked profile: ${p.name}`, 'emerald');
+        } else {
+          showToast('Incorrect password', 'rose');
+        }
+      } else if (pendingProtectedAction) {
+        const p = getCurrentProfile();
+        if (p && p.password === val) {
+          const action = pendingProtectedAction;
+          pendingProtectedAction = null;
+          document.getElementById('password-prompt-modal').classList.add('hidden');
+          executeProtectedAction(action);
+          showToast('Password verified', 'emerald');
+        } else {
+          showToast('Incorrect password', 'rose');
+        }
+      }
+    }
+    function closePasswordPrompt() { 
+      pendingProfileId = null;
+      pendingProtectedAction = null;
+      document.getElementById('password-prompt-modal').classList.add('hidden'); 
+    }
+
+    function openCreateProfileModal() {
+      if (!getCurrentProfile().isMain) {
+        showToast('Unauthorized: Only Admin can create profiles', 'rose');
+        return;
+      }
+      closeProfilesModal();
+      document.getElementById('profile-form').reset();
+      document.getElementById('profile-edit-id').value = '';
+      document.getElementById('profile-modal-title').innerText = 'Create New User Profile';
+      document.getElementById('profile-edit-modal').classList.remove('hidden');
+    }
+    function closeProfileEditModal() { document.getElementById('profile-edit-modal').classList.add('hidden'); }
+
+    let profileAvatarBase64 = '';
+    function handleProfileAvatarUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        profileAvatarBase64 = evt.target.result;
+        document.getElementById('profile-avatar-input').value = profileAvatarBase64;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveProfile(e) {
+      e.preventDefault();
+      if (!getCurrentProfile().isMain) {
+        showToast('Unauthorized access', 'rose');
+        return;
+      }
+      const name = document.getElementById('profile-name-input').value.trim();
+      const password = document.getElementById('profile-pass-input').value;
+      const avatar = document.getElementById('profile-avatar-input').value || profileAvatarBase64;
+
+      const newId = 'prof_' + Date.now();
+      const cleanDefaultApps = [
+        { id: '101', name: 'Dashboard Home', category: 'Web', url: '#', icon: 'fa-solid fa-house', color: 'orange', customBg: '', fontColor: '#f1f5f9', pingEnabled: false, apiKey: '' }
+      ];
+      profiles.push({
+        id: newId,
+        name,
+        isMain: false,
+        password,
+        avatar,
+        theme: 'dark',
+        weatherZip: '28601',
+        pingIntervalSec: 60,
+        tileSpacingVal: '2',
+        customBgData: '',
+        bgScaleMode: 'cover',
+        bgZoomVal: 100,
+        bgOpacity: 30,
+        bgTrueColor: false,
+        apps: cleanDefaultApps,
+        categories: [...defaultCategories]
+      });
+      currentProfileId = newId;
+      saveState();
+      applyProfilePreferences();
+      fetchWeather();
+      renderCurrentProfileHeader();
+      renderCategories();
+      renderApps();
+      runLivePings();
+      setupPingInterval();
+      closeProfileEditModal();
+      showToast(`Profile '${name}' created with isolated default layout & activated`, 'emerald');
+    }
+
+    function confirmDeleteProfile(id) {
+      if (!getCurrentProfile().isMain) {
+        showToast('Unauthorized access', 'rose');
+        return;
+      }
+      openConfirmModal('Delete Profile?', 'This will remove the user profile and its custom tiles.', () => {
+        profiles = profiles.filter(p => p.id !== id);
+        currentProfileId = profiles[0].id;
+        saveState();
+        applyProfilePreferences();
+        fetchWeather();
+        renderCurrentProfileHeader();
+        renderCategories();
+        renderApps();
+        runLivePings();
+        setupPingInterval();
+        closeProfilesModal();
+        showToast('Profile deleted', 'rose');
+      });
+    }
+
+    /* Settings & Wiki */
+    function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); }
+    function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
+    
+    function openWikiModal() {
+      document.getElementById('full-source-textarea').value = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      document.getElementById('wiki-modal').classList.remove('hidden');
+    }
+    function closeWikiModal() { document.getElementById('wiki-modal').classList.add('hidden'); }
+
+    function switchWikiTab(tab) {
+      ['features', 'docker', 'security', 'source'].forEach(t => {
+        const btn = document.getElementById(`wiki-tab-${t}`);
+        const content = document.getElementById(`wiki-content-${t}`);
+        if (t === tab) {
+          btn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow-md';
+          content.classList.remove('hidden');
+        } else {
+          btn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700';
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    function copyFullSourceCode() {
+      const ta = document.getElementById('full-source-textarea');
+      ta.select();
+      document.execCommand('copy');
+      showToast('Full source code copied to clipboard!', 'emerald');
+    }
+
+    function setTheme(themeName, save = true) {
+      const p = getCurrentProfile();
+      p.theme = themeName;
+      document.body.classList.remove('theme-light', 'theme-neon');
+      if (themeName === 'light') document.body.classList.add('theme-light');
+      else if (themeName === 'neon') document.body.classList.add('theme-neon');
+      if (save) {
+        saveState();
+        showToast(`Theme switched to ${themeName.toUpperCase()}`, 'emerald');
+      }
+    }
+
+    function saveWeatherZip(val) {
+      const p = getCurrentProfile();
+      p.weatherZip = val.trim();
+      saveState();
+      fetchWeather();
+    }
+
+    function savePingInterval(val) {
+      const p = getCurrentProfile();
+      p.pingIntervalSec = Math.max(5, parseInt(val) || 60);
+      saveState();
+      setupPingInterval();
+      showToast(`Ping interval set to ${p.pingIntervalSec}s`, 'blue');
+    }
+
+    function handleBgUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const p = getCurrentProfile();
+        p.customBgData = evt.target.result;
+        saveState();
+        applyBackgroundDisplay(p.customBgData);
+        showToast('Background wallpaper uploaded', 'emerald');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function setBgScaleMode(mode) {
+      const p = getCurrentProfile();
+      p.bgScaleMode = mode;
+      updateBgScaleButtons(mode);
+      applyBackgroundDisplay(p.customBgData);
+      saveState();
+      showToast(`Wallpaper scale: ${mode.toUpperCase()}`, 'blue');
+    }
+
+    function updateBgScaleButtons(activeMode) {
+      ['cover', 'contain', 'stretch', 'tile'].forEach(m => {
+        const btn = document.getElementById(`bg-scale-${m}`);
+        if (!btn) return;
+        if (m === activeMode) {
+          btn.className = 'px-2 py-1.5 rounded-xl text-xs font-semibold border border-orange-500 bg-orange-500/20 text-orange-300';
+        } else {
+          btn.className = 'px-2 py-1.5 rounded-xl text-xs font-semibold border border-white/10 bg-slate-900 text-slate-300';
+        }
+      });
+    }
+
+    function updateBgZoom(val) {
+      const p = getCurrentProfile();
+      p.bgZoomVal = parseInt(val);
+      document.getElementById('bg-zoom-label').innerText = `${p.bgZoomVal}%`;
+      applyBackgroundDisplay(p.customBgData);
+      saveState();
+    }
+
+    function updateBgOpacity(val) {
+      const p = getCurrentProfile();
+      p.bgOpacity = parseInt(val);
+      document.getElementById('bg-opacity-label').innerText = `${p.bgOpacity}%`;
+      applyBackgroundDisplay(p.customBgData);
+      saveState();
+    }
+
+    function toggleBgTrueColor(checked) {
+      const p = getCurrentProfile();
+      p.bgTrueColor = checked;
+      applyBackgroundDisplay(p.customBgData);
+      saveState();
+    }
+
+    function clearBackground() {
+      const p = getCurrentProfile();
+      p.customBgData = '';
+      saveState();
+      document.getElementById('custom-bg-overlay').style.display = 'none';
+      document.getElementById('setting-bg-file').value = '';
+      showToast('Background wallpaper cleared', 'emerald');
+    }
+
+    function applyBackgroundDisplay(data) {
+      const bg = document.getElementById('custom-bg-overlay');
+      const p = getCurrentProfile();
+      if (data) {
+        bg.style.backgroundImage = `url('${data}')`;
+        bg.style.opacity = p.bgTrueColor ? '1' : ((p.bgOpacity !== undefined ? p.bgOpacity : 30) / 100).toString();
+        
+        const mode = p.bgScaleMode || 'cover';
+        const zoom = p.bgZoomVal || 100;
+
+        if (mode === 'tile') {
+          bg.style.backgroundSize = `${zoom}%`;
+          bg.style.backgroundRepeat = 'repeat';
+          bg.style.backgroundPosition = 'top left';
+        } else if (mode === 'stretch') {
+          bg.style.backgroundSize = `${zoom}% ${zoom}%`;
+          bg.style.backgroundRepeat = 'no-repeat';
+          bg.style.backgroundPosition = 'center center';
+        } else if (mode === 'contain') {
+          bg.style.backgroundSize = `${zoom}% auto`;
+          bg.style.backgroundRepeat = 'no-repeat';
+          bg.style.backgroundPosition = 'center center';
+        } else {
+          // Cover
+          bg.style.backgroundSize = `${zoom}%`;
+          bg.style.backgroundRepeat = 'no-repeat';
+          bg.style.backgroundPosition = 'center center';
+        }
+
+        bg.style.display = 'block';
+      } else { bg.style.display = 'none'; }
+    }
+
+    function addNewCategoryPrompt() {
+      const name = prompt("Enter new category name:");
+      if (name && name.trim()) {
+        const profile = getCurrentProfile();
+        const cat = name.trim();
+        if (!profile.categories.includes(cat)) {
+          profile.categories.push(cat);
+          saveState();
+          renderCategories();
+          showToast(`Category '${cat}' added`, 'emerald');
+        }
+      }
+    }
+
+    /* Secure Backup & Restore with Local Salted Hash Derivation */
+    function simpleEncryptPassword(pass) {
+      if (!pass) return '';
+      let hash = 'hm_enc_v1:';
+      for (let i = 0; i < pass.length; i++) {
+        hash += (pass.charCodeAt(i) ^ 0x5A).toString(16).padStart(2, '0');
+      }
+      return hash;
+    }
+
+    function simpleDecryptPassword(enc) {
+      if (!enc) return '';
+      if (!enc.startsWith('hm_enc_v1:')) return enc;
+      try {
+        const hex = enc.replace('hm_enc_v1:', '');
+        let pass = '';
+        for (let i = 0; i < hex.length; i += 2) {
+          pass += String.fromCharCode(parseInt(hex.substr(i, 2), 16) ^ 0x5A);
+        }
+        return pass;
+      } catch(e) {
+        return '';
+      }
+    }
+
+    function exportConfig() {
+      const secureProfiles = profiles.map(p => ({
+        ...p,
+        password: simpleEncryptPassword(p.password)
+      }));
+
+      const payload = {
+        version: '2.6',
+        timestamp: new Date().toISOString(),
+        currentProfileId,
+        defaultStartupProfileId,
+        profiles: secureProfiles
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+      const anchor = document.createElement('a');
+      anchor.setAttribute("href", dataStr);
+      anchor.setAttribute("download", `homelink-secure-backup-${new Date().toISOString().slice(0,10)}.homelink`);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      showToast('Secure backup exported successfully', 'emerald');
+    }
+
+    function importConfig(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data && data.profiles && Array.isArray(data.profiles)) {
+            profiles = data.profiles.map(p => ({
+              ...p,
+              password: simpleDecryptPassword(p.password)
+            }));
+            if (data.defaultStartupProfileId) {
+              defaultStartupProfileId = data.defaultStartupProfileId;
+            }
+            if (data.currentProfileId && profiles.some(p => p.id === data.currentProfileId)) {
+              currentProfileId = data.currentProfileId;
+            } else {
+              currentProfileId = profiles[0].id;
+            }
+            saveState();
+            applyProfilePreferences();
+            fetchWeather();
+            renderCurrentProfileHeader();
+            renderCategories();
+            renderApps();
+            runLivePings();
+            setupPingInterval();
+            closeSettingsModal();
+            showToast('Secure backup restored successfully', 'emerald');
+          } else {
+            showToast('Invalid backup file format', 'rose');
+          }
+        } catch(err) {
+          showToast('Failed to parse backup file', 'rose');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* Heimdall JSON Importer Parser */
+    function importHeimdallJson(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const items = JSON.parse(evt.target.result);
+          if (!Array.isArray(items)) {
+            showToast('Invalid Heimdall export format', 'rose');
+            return;
+          }
+
+          const profile = getCurrentProfile();
+          let importedCount = 0;
+
+          items.forEach(item => {
+            if (!item.title || !item.url) return;
+
+            let apiKey = '';
+            if (item.description) {
+              try {
+                const descObj = JSON.parse(item.description);
+                apiKey = descObj.apikey || descObj.api_key || descObj.token || '';
+              } catch(err) {}
+            }
+
+            let color = 'orange';
+            const c = (item.colour || '').toLowerCase();
+            if (c.includes('161b1f') || c.includes('000') || c.includes('fafbfc')) color = 'orange';
+            else if (c.includes('00f') || c.includes('181')) color = 'blue';
+            else if (c.includes('e0e') || c.includes('ece')) color = 'purple';
+            else if (c.includes('55a') || c.includes('a0a')) color = 'amber';
+            else if (c.includes('d82')) color = 'emerald';
+
+            let category = 'Web';
+            const t = item.title.toLowerCase();
+            if (t.includes('sonarr') || t.includes('radarr') || t.includes('plex') || t.includes('audiobook') || t.includes('immich') || t.includes('prowlarr') || t.includes('qbittorrent') || t.includes('overseerr')) category = 'Media';
+            else if (t.includes('truenas') || t.includes('nas') || t.includes('dockge') || t.includes('termix')) category = 'Storage & NAS';
+            else if (t.includes('homeassistant') || t.includes('octoprint')) category = 'Smart Home';
+            else if (t.includes('unifi') || t.includes('wireguard')) category = 'Networking';
+
+            if (!profile.categories.includes(category)) {
+              profile.categories.push(category);
+            }
+
+            let icon = 'fa-solid fa-globe';
+            try {
+              const hostname = new URL(item.url).hostname;
+              icon = `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
+            } catch(err) {}
+
+            profile.apps.push({
+              id: 'heim_' + Math.random().toString(36).substr(2, 9),
+              name: item.title,
+              category: category,
+              url: item.url,
+              icon: icon,
+              color: color,
+              apiKey: apiKey,
+              customBg: '',
+              fontColor: '',
+              pingEnabled: true
+            });
+            importedCount++;
+          });
+
+          saveState();
+          renderCategories();
+          renderApps();
+          runLivePings();
+          closeSettingsModal();
+          showToast(`Successfully imported ${importedCount} apps from Heimdall!`, 'emerald');
+        } catch(err) {
+          showToast('Failed to parse Heimdall JSON file', 'rose');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* Sleek Confirmation Modal Controller */
+    let confirmCallback = null;
+    function openConfirmModal(title, msg, cb) {
+      document.getElementById('confirm-title').innerText = title;
+      document.getElementById('confirm-message').innerText = msg;
+      confirmCallback = cb;
+      document.getElementById('confirm-modal').classList.remove('hidden');
+      document.getElementById('confirm-btn-yes').onclick = () => {
+        closeConfirmModal();
+        if (confirmCallback) confirmCallback();
+      };
+    }
+    function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); }
+
+    /* Search & Filter */
+    function onSearchInput(val) { searchQuery = val; document.getElementById('search-clear-btn').classList.toggle('hidden', !val); renderApps(); }
+    function clearSearchInput() { document.getElementById('search-input').value = ''; searchQuery = ''; document.getElementById('search-clear-btn').classList.add('hidden'); renderApps(); }
+    function onSearchEngineChange(val) {
+      const input = document.getElementById('search-input');
+      input.placeholder = val === 'filter' ? 'Filter homelab tiles...' : `Search ${val.toUpperCase()}...`;
+      renderApps();
+    }
+    function handleSearch(e) {
+      e.preventDefault();
+      const engine = document.getElementById('search-engine').value;
+      const q = document.getElementById('search-input').value.trim();
+      if (!q || engine === 'filter') return;
+      const urls = {
+        google: `https://www.google.com/search?q=${encodeURIComponent(q)}`,
+        youtube: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`,
+        duckduckgo: `https://duckduckgo.com/?q=${encodeURIComponent(q)}`,
+        github: `https://github.com/search?q=${encodeURIComponent(q)}`,
+        reddit: `https://www.reddit.com/search/?q=${encodeURIComponent(q)}`
+      };
+      if (urls[engine]) window.open(urls[engine], '_blank');
+    }
+    function resetFilters() { searchQuery = ''; activeCategory = 'All'; document.getElementById('search-input').value = ''; document.getElementById('search-engine').value = 'filter'; renderCategories(); renderApps(); }
+
+    function resetToDefaults() {
+      openConfirmModal('Reset to Defaults?', 'This will reset profiles, tiles, and settings.', () => {
+        localStorage.clear();
+        location.reload();
+      });
+    }
+
+    function copyText(text) {
+      const t = document.createElement('input');
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand('copy');
+      document.body.removeChild(t);
+      showToast(`Copied Direct Link to Clipboard!`, 'emerald');
+    }
+    function copyToClipboard(id) { copyText(document.getElementById(id).innerText); }
+
+    function showToast(msg, color = 'emerald') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      const toastIcon = document.getElementById('toast-icon');
+      toastMsg.innerText = msg;
+      toastIcon.className = color === 'rose' ? 'fa-solid fa-circle-xmark text-rose-400 text-lg' : color === 'blue' ? 'fa-solid fa-circle-info text-blue-400 text-lg' : 'fa-solid fa-circle-check text-emerald-400 text-lg';
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
