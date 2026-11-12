@@ -1,0 +1,12 @@
+services:
+  homelink:
+    image: node:20-alpine
+    container_name: homelink-dashboard
+    restart: unless-stopped
+    ports:
+      - 8580:8580
+    working_dir: /app
+    command: sh -c "npm install && node server.js"
+    volumes:
+      - /home/YOUR_USERNAME/docker/homelink/data:/app/data
+      - /home/YOUR_USERNAME/docker/homelink:/app
