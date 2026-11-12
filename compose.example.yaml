@@ -6,7 +6,15 @@ services:
     ports:
       - 8580:8580
     working_dir: /app
-    command: sh -c "npm install && node server.js"
+    command: >
+      sh -c "
+      if [ -d '.git' ]; then
+        git pull;
+      else
+        git clone https://github.com/nathanberrynet/home_link.git .;
+      fi &&
+      npm install &&
+      node server.js
+      "
     volumes:
-      - /home/YOUR_USERNAME/docker/homelink/data:/app/data
-      - /home/YOUR_USERNAME/docker/homelink:/app
+      - ./data:/app/data
