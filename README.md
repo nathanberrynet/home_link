@@ -8,8 +8,9 @@ A lightweight, self-hosted homelab dashboard with custom themes, health-check pi
    ```bash
    mkdir -p ~/docker/homelink/data && cd ~/docker/homelink
 
-1) Create your compose.yaml file:
+2) Create your compose.yaml file:
 
+YAML
 services:
   homelink:
     image: node:20-alpine
@@ -22,10 +23,10 @@ services:
     volumes:
       - ./data:/app/data
       - .:/app
-
+      
 (Note: Using relative paths ./data and . automatically maps correctly to whichever user directory you place it in, removing the need for hardcoded usernames!)
 
-2) Start the container:
+3) Start the container:
 
 Bash
 docker compose up -d
