@@ -32,3 +32,4 @@ docker compose up -d
 
 (Your dashboard will be available at http://<your-server-ip>:8580.)
 
+*Note that this project was vibe coded using Gemini and Nathan's brain. The full code can be found here and in the project itself*
