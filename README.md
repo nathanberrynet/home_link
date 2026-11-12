@@ -4,25 +4,10 @@ A lightweight, self-hosted homelab dashboard with custom themes, health-check pi
 
 Quick Start (Docker Compose)
 
-Create a project directory on your server:
+Create a project directory on your server and navigate into it:
 mkdir -p ~/docker/homelink/data && cd ~/docker/homelink
 
-Create your compose.yaml file:
-services:
-homelink:
-image: node:20-alpine
-container_name: homelink-dashboard
-restart: unless-stopped
-ports:
-
-8580:8580
-working_dir: /app
-command: sh -c "npm install && node server.js"
-volumes:
-
-./data:/app/data
-
-.:/app
+Download or copy the compose.example.yaml file from this repository and save it locally as compose.yaml.
 
 (Note: Using relative paths ./data and . automatically maps correctly to whichever user directory you place it in, removing the need for hardcoded usernames!)
 
