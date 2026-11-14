@@ -666,7 +666,12 @@
         <h3 class="text-lg font-bold flex items-center gap-2">
           <i class="fa-solid fa-book-open text-orange-400 text-xl"></i> HomeLink Wiki & System Guide
         </h3>
-        <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
+        <div class="flex items-center gap-3">
+          <a href="https://github.com/nathanberrynet/home_link" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-orange-400 text-xs font-semibold border border-white/10 flex items-center gap-1.5 transition-colors">
+            <i class="fa-brands fa-github text-sm"></i> GitHub Repo
+          </a>
+          <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
+        </div>
       </div>
 
       <!-- Wiki Tabs Header -->
@@ -683,6 +688,10 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-down"></i> Offline Icon Caching & Sync</h5>
+            <p class="opacity-80">Browse online icon lookups or favicons normally. When you save a service tile, the server automatically downloads and caches the asset to persistent storage (`/data/icons/`), making it available offline and synced instantly across all your devices.</p>
+          </div>
+          <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
             <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-file-import"></i> Heimdall JSON Migration</h5>
             <p class="opacity-80">Switching from Heimdall? Go to Settings and click <strong>Import Heimdall</strong>. HomeLink parses your old export JSON, mapping titles, URLs, colors, and API keys instantly!</p>
           </div>
@@ -694,40 +703,43 @@
             <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-lock"></i> Password Protected Management</h5>
             <p class="opacity-80">Unlocking edit mode, updating passwords, editing profiles, and creating/deleting users automatically prompt for password authentication if enabled (locking back down is instant).</p>
           </div>
-          <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
-            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-image"></i> Wallpaper Scaling & Zoom</h5>
-            <p class="opacity-80">Customize your background wallpaper with Cover, Fit/Contain, Stretch, or Tile modes combined with a custom zoom scale slider and dimmer.</p>
-          </div>
         </div>
       </div>
 
       <!-- Tab Content: Docker Setup & File Copy-Paste Guide -->
       <div id="wiki-content-docker" class="space-y-4 text-xs leading-relaxed text-slate-300 hidden">
         <h4 class="text-sm font-bold text-white mb-2">Docker Deployment & Complete File Setup Guide</h4>
-        <p class="opacity-80">To synchronize your configuration across all devices, HomeLink uses a Node.js backend that persists state to a mounted Docker volume (`/app/data/config.json`). Copy and paste the contents below into your project files:</p>
+        <p class="opacity-80">To synchronize your configuration and cached icons across all devices, HomeLink uses a Node.js backend that persists state to a mounted Docker volume (`/app/data/`). Copy and paste the contents below into your project files:</p>
 
         <!-- 1. server.js -->
         <div class="bg-slate-900/80 p-4 rounded-xl border border-white/10 space-y-2">
           <div class="flex items-center justify-between">
-            <h5 class="font-bold text-orange-400 text-xs">1. `server.js` (Backend API & Static Server)</h5>
+            <h5 class="font-bold text-orange-400 text-xs">1. `server.js` (Backend API, Static Server & Icon Caching Proxy)</h5>
             <button onclick="copyToClipboard('code-server-js')" class="text-orange-400 text-[11px] font-semibold"><i class="fa-regular fa-copy"></i> Copy Code</button>
           </div>
           <pre id="code-server-js" class="bg-slate-950 p-3 rounded-lg font-mono text-[10px] text-slate-300 overflow-x-auto max-h-40">
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 8580;
 const DATA_DIR = path.join(__dirname, 'data');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
+const ICONS_DIR = path.join(DATA_DIR, 'icons');
 
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
 }
+if (!fs.existsSync(ICONS_DIR)) {
+    fs.mkdirSync(ICONS_DIR, { recursive: true });
+}
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
+app.use('/data', express.static(DATA_DIR));
 
 app.get('/api/config', (req, res) => {
     if (fs.existsSync(CONFIG_FILE)) {
@@ -751,8 +763,41 @@ app.post('/api/config', (req, res) => {
     }
 });
 
+app.post('/api/cache-icon', async (req, res) => {
+    const { url } = req.body;
+    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+        return res.status(400).json({ error: 'Invalid URL' });
+    }
+    try {
+        const filename = Buffer.from(url).toString('base64').replace(/[/+=]/g, '_') + '.png';
+        const localPath = path.join(ICONS_DIR, filename);
+        const relativePath = `/data/icons/${filename}`;
+
+        if (fs.existsSync(localPath)) {
+            return res.json({ url: relativePath });
+        }
+
+        const client = url.startsWith('https') ? https : http;
+        client.get(url, (response) => {
+            if (response.statusCode !== 200) {
+                return res.status(500).json({ error: 'Failed to fetch icon' });
+            }
+            const fileStream = fs.createWriteStream(localPath);
+            response.pipe(fileStream);
+            fileStream.on('finish', () => {
+                fileStream.close();
+                res.json({ url: relativePath });
+            });
+        }).on('error', (err) => {
+            res.status(500).json({ error: err.message });
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.listen(PORT, () => {
-    console.log(`HomeLink v1.0 running on port ${PORT}`);
+    console.log(`HomeLink running on port ${PORT}`);
 });</pre>
         </div>
 
@@ -765,7 +810,7 @@ app.listen(PORT, () => {
           <pre id="code-package-json" class="bg-slate-950 p-3 rounded-lg font-mono text-[10px] text-slate-300 overflow-x-auto max-h-32">
 {
   "name": "homelink-dashboard",
-  "version": "1.0.0",
+  "version": "2.6.0",
   "private": true,
   "main": "server.js",
   "scripts": {
@@ -794,8 +839,8 @@ services:
     working_dir: /app
     command: sh -c "npm install && node server.js"
     volumes:
-      - /home/USERNAME/docker/homelink/data:/app/data
-      - /home/USERNAME/docker/homelink:/app</pre>
+      - /home/enbboy/docker/homelink/data:/app/data
+      - /home/enbboy/docker/homelink:/app</pre>
         </div>
       </div>
 
@@ -1256,7 +1301,7 @@ services:
 
       grid.innerHTML = filtered.map(app => {
         const theme = colorClasses[app.color] || colorClasses.orange;
-        const isImage = app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://') || app.icon.startsWith('data:image/'));
+        const isImage = app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://') || app.icon.startsWith('data:image/') || app.icon.startsWith('/data/'));
         const pingStatus = appPingStatuses[app.id];
         
         let statusDotHtml = '';
@@ -1491,7 +1536,7 @@ services:
           if (app.icon && app.icon.startsWith('data:image/')) {
             setIconType('upload');
             uploadedIconBase64 = app.icon;
-          } else if (app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://'))) {
+          } else if (app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://') || app.icon.startsWith('/data/'))) {
             setIconType('url');
             document.getElementById('app-icon-url-input').value = app.icon;
           } else {
@@ -1506,7 +1551,7 @@ services:
 
     function closeAppModal() { document.getElementById('app-modal').classList.add('hidden'); }
 
-    function saveApp(e) {
+    async function saveApp(e) {
       e.preventDefault();
       const profile = getCurrentProfile();
       const id = document.getElementById('app-id').value;
@@ -1523,10 +1568,23 @@ services:
 
       let icon = 'fa-solid fa-globe';
       if (currentIconMode === 'favicon') {
-        try { icon = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=128`; } catch(e){}
-      } else if (currentIconMode === 'fa') icon = document.getElementById('app-icon-fa').value || 'fa-solid fa-globe';
-      else if (currentIconMode === 'url') icon = document.getElementById('app-icon-url-input').value || '';
-      else if (currentIconMode === 'upload') icon = uploadedIconBase64 || '';
+        try { 
+          const faviconUrl = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=128`;
+          icon = await cacheIconLocally(faviconUrl);
+        } catch(e){}
+      } else if (currentIconMode === 'fa') {
+        icon = document.getElementById('app-icon-fa').value || 'fa-solid fa-globe';
+        if (icon.startsWith('http://') || icon.startsWith('https://')) {
+          icon = await cacheIconLocally(icon);
+        }
+      } else if (currentIconMode === 'url') {
+        const rawUrl = document.getElementById('app-icon-url-input').value || '';
+        if (rawUrl) {
+          icon = await cacheIconLocally(rawUrl);
+        }
+      } else if (currentIconMode === 'upload') {
+        icon = uploadedIconBase64 || '';
+      }
 
       if (id) {
         const idx = profile.apps.findIndex(a => a.id === id);
@@ -1541,6 +1599,24 @@ services:
       renderApps();
       runLivePings();
       closeAppModal();
+    }
+
+    async function cacheIconLocally(externalUrl) {
+      if (!externalUrl.startsWith('http://') && !externalUrl.startsWith('https://')) return externalUrl;
+      try {
+        const res = await fetch('/api/cache-icon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: externalUrl })
+        });
+        const data = await res.json();
+        if (data && data.url) {
+          return data.url; // Returns server path (/data/icons/...) for multi-device & offline use
+        }
+      } catch (err) {
+        console.warn('Failed to cache icon on server, falling back to URL', err);
+      }
+      return externalUrl;
     }
 
     function editApp(id) { openAppModal(id); }
