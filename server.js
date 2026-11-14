@@ -19,7 +19,92 @@ if (!fs.existsSync(ICONS_DIR)) {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
-app.use('/data', express.static(DATA_DIR)); // Serve cached icons & config locally to all devices
+app.use('/data', express.static(DATA_DIR));
+
+// Helper to download and cache a remote image URL to /app/data/icons/
+function downloadAndCacheIcon(url) {
+    return new Promise((resolve) => {
+        if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+            return resolve(url);
+        }
+
+        const filename = Buffer.from(url).toString('base64').replace(/[/+=]/g, '_') + '.png';
+        const localPath = path.join(ICONS_DIR, filename);
+        const relativePath = `/data/icons/${filename}`;
+
+        if (fs.existsSync(localPath)) {
+            return resolve(relativePath);
+        }
+
+        const client = url.startsWith('https') ? https : http;
+        const request = client.get(url, (response) => {
+            // Follow redirects (e.g., Google Favicon service)
+            if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+                return downloadAndCacheIcon(response.headers.location).then(resolve);
+            }
+
+            if (response.statusCode !== 200) {
+                console.warn(`[Icon Cache] Failed to fetch (${response.statusCode}): ${url}`);
+                return resolve(url);
+            }
+
+            const fileStream = fs.createWriteStream(localPath);
+            response.pipe(fileStream);
+            fileStream.on('finish', () => {
+                fileStream.close();
+                console.log(`[Icon Cache] Saved locally: ${relativePath}`);
+                resolve(relativePath);
+            });
+            fileStream.on('error', () => {
+                resolve(url);
+            });
+        });
+
+        request.on('error', (err) => {
+            console.warn(`[Icon Cache] Error fetching ${url}: ${err.message}`);
+            resolve(url);
+        });
+
+        request.setTimeout(5000, () => {
+            request.destroy();
+            resolve(url);
+        });
+    });
+}
+
+// Automatically sweeps config.json on startup and caches all existing remote icons
+async function cacheAllExistingIconsOnStartup() {
+    if (!fs.existsSync(CONFIG_FILE)) return;
+
+    try {
+        const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
+        const config = JSON.parse(raw);
+        let updated = false;
+
+        if (config && Array.isArray(config.profiles)) {
+            for (const profile of config.profiles) {
+                if (Array.isArray(profile.apps)) {
+                    for (const appItem of profile.apps) {
+                        if (appItem.icon && (appItem.icon.startsWith('http://') || appItem.icon.startsWith('https://'))) {
+                            const cachedPath = await downloadAndCacheIcon(appItem.icon);
+                            if (cachedPath !== appItem.icon) {
+                                appItem.icon = cachedPath;
+                                updated = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (updated) {
+            fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
+            console.log('[Icon Cache] Startup migration complete: All existing external icons cached to server.');
+        }
+    } catch (err) {
+        console.error('[Icon Cache] Startup scan failed:', err.message);
+    }
+}
 
 app.get('/api/config', (req, res) => {
     if (fs.existsSync(CONFIG_FILE)) {
@@ -43,40 +128,18 @@ app.post('/api/config', (req, res) => {
     }
 });
 
-// Automatically downloads and caches selected online icons server-side for all devices & offline use
 app.post('/api/cache-icon', async (req, res) => {
     const { url } = req.body;
     if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
         return res.status(400).json({ error: 'Invalid URL' });
     }
-    try {
-        const filename = Buffer.from(url).toString('base64').replace(/[/+=]/g, '_') + '.png';
-        const localPath = path.join(ICONS_DIR, filename);
-        const relativePath = `/data/icons/${filename}`;
-
-        if (fs.existsSync(localPath)) {
-            return res.json({ url: relativePath });
-        }
-
-        const client = url.startsWith('https') ? https : http;
-        client.get(url, (response) => {
-            if (response.statusCode !== 200) {
-                return res.status(500).json({ error: 'Failed to fetch icon' });
-            }
-            const fileStream = fs.createWriteStream(localPath);
-            response.pipe(fileStream);
-            fileStream.on('finish', () => {
-                fileStream.close();
-                res.json({ url: relativePath });
-            });
-        }).on('error', (err) => {
-            res.status(500).json({ error: err.message });
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    const cachedUrl = await downloadAndCacheIcon(url);
+    res.json({ url: cachedUrl });
 });
 
-app.listen(PORT, () => {
-    console.log(`HomeLink running on port ${PORT}`);
+// Run bulk icon migration before accepting connections
+cacheAllExistingIconsOnStartup().then(() => {
+    app.listen(PORT, () => {
+        console.log(`HomeLink running on port ${PORT}`);
+    });
 });
