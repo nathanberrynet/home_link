@@ -769,17 +769,86 @@
     </div>
   </div>
 
-  <!-- Wiki & Guide Modal -->
+  <!-- Wiki & Guide Modal (Restored Multi-Tab System) -->
   <div id="wiki-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
-    <div class="glass-panel w-full max-w-4xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10 sticky top-0 bg-slate-900/95 backdrop-blur-md z-10 -mx-6 px-6 -mt-6 pt-6 rounded-t-2xl">
+    <div class="glass-panel w-full max-w-4xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
         <h3 class="text-lg font-bold flex items-center gap-2">
           <i class="fa-solid fa-book-open text-orange-400 text-xl"></i> HomeLink Wiki & System Guide
         </h3>
         <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="space-y-4 text-xs text-slate-300">
-        <p>HomeLink v2.6 features live icon previews, role-scoped asset galleries, and an interactive drag-to-move & aspect-ratio locked background studio.</p>
+
+      <!-- Wiki Tabs Navigation -->
+      <div class="flex items-center gap-2 border-b border-white/10 pb-3 mb-4 overflow-x-auto">
+        <button onclick="switchWikiTab('arch')" id="wiki-tab-arch" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow-md transition-all whitespace-nowrap">
+          <i class="fa-solid fa-server mr-1"></i> Architecture & Infra
+        </button>
+        <button onclick="switchWikiTab('profiles')" id="wiki-tab-profiles" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">
+          <i class="fa-solid fa-users mr-1"></i> Profiles & Roles
+        </button>
+        <button onclick="switchWikiTab('apis')" id="wiki-tab-apis" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">
+          <i class="fa-solid fa-bolt mr-1"></i> Pings & APIs
+        </button>
+        <button onclick="switchWikiTab('backup')" id="wiki-tab-backup" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">
+          <i class="fa-solid fa-shield-halved mr-1"></i> Backup & Migration
+        </button>
+      </div>
+
+      <!-- Wiki Tab Contents -->
+      <div class="overflow-y-auto space-y-4 text-xs text-slate-300 pr-2 max-h-[60vh]">
+        
+        <!-- Tab 1: Architecture -->
+        <div id="wiki-content-arch" class="space-y-3">
+          <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-network-wired text-orange-400"></i> Homelab Architecture Overview</h4>
+          <p>HomeLink v2.6 is designed for high-performance self-hosted environments. It runs inside lightweight container environments (such as Ubuntu VMs on TrueNAS SCALE/CORE), providing instant status checks, customizable dashboards, and zero external telemetry.</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-2">
+            <div class="font-bold text-white">Key Components</div>
+            <ul class="list-disc list-inside space-y-1 text-slate-400">
+              <li><strong>Frontend:</strong> Responsive Tailwind CSS glassmorphism UI with theme support (Dark, Light, Cyberpunk).</li>
+              <li><strong>Storage:</strong> Local scoped asset manager supporting direct base64 & server-synced image uploads.</li>
+              <li><strong>Network Pings:</strong> Asynchronous background fetch ping checks to verify container uptime across local subnets.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 2: Profiles -->
+        <div id="wiki-content-profiles" class="space-y-3 hidden">
+          <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-user-shield text-orange-400"></i> Role-Scoped Profiles & Wallpapers</h4>
+          <p>HomeLink supports multiple user profiles alongside the Master Admin account. Each profile maintains its own isolated tile layout, custom category tabs, and wallpaper settings.</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-2">
+            <div class="font-bold text-white">Security & Permissions</div>
+            <ul class="list-disc list-inside space-y-1 text-slate-400">
+              <li><strong>Admin Profile (👑):</strong> Full control over default startup profiles, global settings, and user management.</li>
+              <li><strong>Standard Users:</strong> Can customize their own dashboards and upload personal wallpapers and icons without affecting other users.</li>
+              <li><strong>Guaranteed Gallery Visibility:</strong> Active custom backgrounds are automatically indexed into user wallpaper galleries for seamless selection.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 3: APIs -->
+        <div id="wiki-content-apis" class="space-y-3 hidden">
+          <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-chart-line text-orange-400"></i> Live Health Pings & API Stats</h4>
+          <p>HomeLink performs background health checks on your homelab services based on your configured ping interval (default: 60 seconds).</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-2">
+            <div class="font-bold text-white">API Integration Notes</div>
+            <p class="text-slate-400">Services like Sonarr and Radarr support API key integration in tile settings. When provided, HomeLink pulls active queue counts and displays live telemetry badges directly on the service cards.</p>
+          </div>
+        </div>
+
+        <!-- Tab 4: Backup -->
+        <div id="wiki-content-backup" class="space-y-3 hidden">
+          <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-file-export text-orange-400"></i> Backup, Migration & Heimdall Import</h4>
+          <p>Your complete configuration (including profiles, tile layouts, custom backgrounds, and passwords) can be exported or imported at any time via Settings.</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-2">
+            <div class="font-bold text-white">Migration Options</div>
+            <ul class="list-disc list-inside space-y-1 text-slate-400">
+              <li><strong>JSON Backup:</strong> Full snapshot export for disaster recovery or moving to a new server.</li>
+              <li><strong>Heimdall Import:</strong> Directly import existing Heimdall dashboard JSON exports into HomeLink tiles.</li>
+            </ul>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1053,7 +1122,6 @@
       }
     }
 
-    // Role-Scoped Asset Manager & Wallpaper Gallery (Admin sees all, Users see their own)
     async function loadLocalAssetsManager() {
       const p = getCurrentProfile();
       const listEl = document.getElementById('local-icons-manager-list');
@@ -1061,12 +1129,29 @@
       if (!listEl) return;
 
       try {
-        const res = await fetch(`/api/assets?profileId=${p.id}&isAdmin=${p.isMain}`);
-        let assets = await res.json();
+        let assets = [];
+        try {
+          const res = await fetch(`/api/assets?profileId=${p.id}&isAdmin=${p.isMain}`);
+          assets = await res.json();
+        } catch(e) {
+          assets = [];
+        }
 
-        // If regular user, restrict view to their own uploaded assets / wallpapers
         if (!p.isMain) {
           assets = assets.filter(a => a.owner === p.id || a.profileId === p.id || !a.owner);
+        }
+
+        if (p.customBgData) {
+          const exists = assets.some(a => a.url === p.customBgData || a.filename === p.customBgData);
+          if (!exists) {
+            assets.push({
+              type: 'wallpaper',
+              url: p.customBgData,
+              filename: 'Active Background',
+              size: 0,
+              owner: p.id
+            });
+          }
         }
 
         const wallpapers = assets.filter(a => a.type === 'wallpaper');
@@ -1147,9 +1232,22 @@
       showToast('Wallpaper applied from gallery', 'emerald');
     }
 
-    // =========================================================================
-    // INTERACTIVE BACKGROUND STUDIO (Aspect Ratio Locked)
-    // =========================================================================
+    // Wiki Tab Switcher
+    function switchWikiTab(tab) {
+      ['arch', 'profiles', 'apis', 'backup'].forEach(t => {
+        const btn = document.getElementById(`wiki-tab-${t}`);
+        const content = document.getElementById(`wiki-content-${t}`);
+        if (t === tab) {
+          btn.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow-md transition-all whitespace-nowrap';
+          content.classList.remove('hidden');
+        } else {
+          btn.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap';
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    // Interactive Studio
     function enterBackgroundStudio() {
       const p = getCurrentProfile();
       if (!p.customBgData) {
@@ -1629,7 +1727,6 @@
 
     function markIconModified() { iconWasModified = true; }
 
-    // Live Icon Preview updater inside Add/Edit Service Modal
     function updateModalIconPreview() {
       const previewBox = document.getElementById('modal-icon-preview-box');
       if (!previewBox) return;
@@ -1828,7 +1925,6 @@
     }
     function closeProfilesModal() { document.getElementById('profiles-modal').classList.add('hidden'); }
 
-    // Admin Profile Edit & Live Avatar Preview
     function openEditAdminModal() {
       closeProfilesModal();
       const p = getCurrentProfile();
@@ -1883,7 +1979,6 @@
       showToast('Admin profile updated', 'emerald');
     }
 
-    // Standard Profile Create/Edit & Live Avatar Preview
     function openCreateProfileModal() {
       closeProfilesModal();
       document.getElementById('profile-edit-id').value = '';
