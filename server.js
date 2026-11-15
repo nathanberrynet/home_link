@@ -21,7 +21,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(__dirname));
 
-// Config Endpoints with robust error logging
+// Config Endpoints
 app.get('/api/config', (req, res) => {
     if (fs.existsSync(CONFIG_FILE)) {
         try { 
@@ -31,7 +31,6 @@ app.get('/api/config', (req, res) => {
             res.status(500).json({ error: 'Failed to parse config' }); 
         }
     } else { 
-        console.warn('[HomeLink Warning] config.json not found on request.');
         res.json({ categories: [], profiles: [] }); 
     }
 });
@@ -53,11 +52,11 @@ app.get('/api/assets', (req, res) => {
         if (fs.existsSync(DATA_DIR)) {
             const files = fs.readdirSync(DATA_DIR);
             files.forEach(file => {
-                if (file === 'config.json' || file.startsWith('.') || file.endsWith('.swp') || file.endsWith('~')) return;
+                if (file === 'config.json' || file.startsWith('.') || file.endsWith('.swp') || file.endsWith('~') || file.includes('.swp.')) return;
                 const filePath = path.join(DATA_DIR, file);
                 const stats = fs.statSync(filePath);
                 if (stats.isFile()) {
-                    const isWallpaper = file.startsWith('bg_') || file.includes('wallpaper');
+                    const isWallpaper = file.startsWith('bg_') || file.toLowerCase().includes('wallpaper');
                     assets.push({
                         type: isWallpaper ? 'wallpaper' : 'icon',
                         url: `/data/${file}`,

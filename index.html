@@ -277,15 +277,7 @@
       </div>
       <div class="flex-1">
         <h4 class="font-bold text-sm text-rose-300">HomeLink Backend Connection or Storage Error</h4>
-        <p id="connection-error-message" class="text-xs text-rose-200/80 mt-0.5">Unable to communicate with the backend server or load <code class="bg-slate-900 px-1.5 py-0.5 rounded text-orange-300 font-mono">config.json</code>.</p>
-        <div class="mt-2 text-[11px] text-slate-300 space-y-1 bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
-          <div class="font-semibold text-white">How to fix:</div>
-          <ul class="list-disc list-inside space-y-0.5 text-slate-400">
-            <li>Verify your Docker volume mount is correct in <code class="text-orange-300 font-mono">compose.yaml</code> (e.g., <code class="text-orange-300 font-mono">- ./data:/app/data</code> or absolute path).</li>
-            <li>Check container logs: <code class="text-orange-300 font-mono">docker logs homelink-dashboard</code></li>
-            <li>Fix host permissions if needed: <code class="text-orange-300 font-mono">sudo chown -R $USER:$USER data</code></li>
-          </ul>
-        </div>
+        <p id="connection-error-message" class="text-xs text-rose-200/80 mt-0.5">Unable to communicate with backend or load config.</p>
       </div>
       <button onclick="location.reload()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow whitespace-nowrap self-center">
         <i class="fa-solid fa-rotate mr-1"></i> Retry
@@ -523,7 +515,6 @@
 
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Icon Source</label>
-          
           <div class="flex items-center gap-3 bg-slate-900/90 p-3 rounded-xl border border-orange-500/30 mb-3 shadow-inner">
             <div id="sysmon-icon-preview-box" class="w-11 h-11 rounded-xl bg-orange-500/10 border border-orange-500/40 flex items-center justify-center text-2xl text-orange-400 overflow-hidden flex-shrink-0 shadow">
               <i class="fa-solid fa-server"></i>
@@ -533,31 +524,17 @@
               <div class="text-[10px] text-slate-400">Updates live as you select, type, or upload</div>
             </div>
           </div>
-
           <div class="grid grid-cols-4 gap-1.5 mb-2">
             <button type="button" onclick="setSysMonIconType('favicon')" id="sysmon-btn-icon-favicon" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-800 text-slate-300">Favicon</button>
             <button type="button" onclick="setSysMonIconType('fa')" id="sysmon-btn-icon-fa" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-orange-500 bg-orange-500/20 text-orange-300">Icon Search</button>
             <button type="button" onclick="setSysMonIconType('url')" id="sysmon-btn-icon-url" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-800 text-slate-300">Image URL</button>
             <button type="button" onclick="setSysMonIconType('upload')" id="sysmon-btn-icon-upload" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-800 text-slate-300">Upload</button>
           </div>
-
-          <div id="sysmon-icon-input-favicon" class="hidden">
-            <div class="p-2.5 bg-slate-900/80 border border-white/10 rounded-xl text-xs text-slate-400">Icon will automatically load from domain favicon.</div>
-          </div>
           <div id="sysmon-icon-input-fa" class="space-y-2">
             <div class="flex gap-2">
-              <input type="text" id="sysmon-icon-fa" oninput="markSysMonIconModified(); updateSysMonModalIconPreview();" placeholder="fa-solid fa-server or CDN URL" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
-              <button type="button" onclick="openIconPickerModal('sysmon')" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap shadow-md flex items-center gap-1.5">
-                <i class="fa-solid fa-magnifying-glass"></i> Browse Icons
-              </button>
+              <input type="text" id="sysmon-icon-fa" oninput="markSysMonIconModified(); updateSysMonModalIconPreview();" placeholder="fa-solid fa-server" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
+              <button type="button" onclick="openIconPickerModal('sysmon')" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap shadow-md">Browse</button>
             </div>
-            <p class="text-[10px] text-slate-400">Search FontAwesome & self-hosted homelab logos instantly.</p>
-          </div>
-          <div id="sysmon-icon-input-url" class="hidden">
-            <input type="text" id="sysmon-icon-url-input" oninput="markSysMonIconModified(); updateSysMonModalIconPreview();" placeholder="/data/icons/... or https://..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
-          </div>
-          <div id="sysmon-icon-input-upload" class="hidden">
-            <input type="file" accept="image/*" onchange="handleSysMonIconUpload(event)" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
           </div>
         </div>
 
@@ -580,13 +557,11 @@
       </div>
       <div class="mb-4">
         <div class="relative">
-          <input type="text" id="icon-search-input" placeholder="Search icons (e.g. plex, sonarr, server, truenas)..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 pl-9 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500" oninput="filterIconGrid(this.value)">
+          <input type="text" id="icon-search-input" placeholder="Search icons (plex, sonarr, server, truenas)..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 pl-9 text-xs text-white focus:outline-none" oninput="filterIconGrid(this.value)">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
         </div>
       </div>
-      <div id="icon-grid-container" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5 overflow-y-auto max-h-[50vh] p-1 pr-2">
-        <!-- Populated via JS -->
-      </div>
+      <div id="icon-grid-container" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5 overflow-y-auto max-h-[50vh] p-1 pr-2"></div>
     </div>
   </div>
 
@@ -622,15 +597,12 @@
       </div>
       <form onsubmit="saveAdminProfile(event)" class="space-y-3">
         <div class="flex items-center gap-3 bg-slate-900/60 p-3 rounded-xl border border-white/5">
-          <div id="admin-edit-avatar-preview" class="w-12 h-12 rounded-full bg-orange-600 flex items-center justify-center text-lg font-bold text-white overflow-hidden border-2 border-orange-500/50 flex-shrink-0 shadow-md">
-            A
-          </div>
+          <div id="admin-edit-avatar-preview" class="w-12 h-12 rounded-full bg-orange-600 flex items-center justify-center text-lg font-bold text-white overflow-hidden border-2 border-orange-500/50 flex-shrink-0 shadow-md">A</div>
           <div class="overflow-hidden">
             <div id="admin-edit-name-preview" class="text-sm font-bold text-white truncate">Admin 👑</div>
             <div class="text-[10px] text-slate-400">Profile Icon Preview</div>
           </div>
         </div>
-
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Admin Custom Name</label>
           <input type="text" id="admin-name-input" oninput="updateAdminAvatarPreview()" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
@@ -640,7 +612,7 @@
           <input type="password" id="admin-pass-input" placeholder="New password or blank..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
         </div>
         <div>
-          <label class="block text-xs font-semibold opacity-90 mb-1">Avatar Image URL or Upload</label>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Avatar Image URL</label>
           <input type="text" id="admin-avatar-input" oninput="updateAdminAvatarPreview()" placeholder="https://..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white mb-1.5">
           <input type="file" accept="image/*" onchange="handleAdminAvatarUpload(event)" class="w-full text-[10px] text-slate-400">
         </div>
@@ -661,7 +633,6 @@
       </div>
       <form id="profile-form" onsubmit="saveProfile(event)" class="space-y-3">
         <input type="hidden" id="profile-edit-id">
-        
         <div class="flex items-center gap-3 bg-slate-900/60 p-3 rounded-xl border border-white/5">
           <div id="profile-edit-avatar-preview" class="w-12 h-12 rounded-full bg-orange-600 flex items-center justify-center text-lg font-bold text-white overflow-hidden border-2 border-orange-500/50 flex-shrink-0 shadow-md">
             <i class="fa-solid fa-user text-sm"></i>
@@ -671,7 +642,6 @@
             <div class="text-[10px] text-slate-400">Profile Icon Preview</div>
           </div>
         </div>
-
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Profile Name</label>
           <input type="text" id="profile-name-input" oninput="updateProfileAvatarPreview()" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
@@ -742,12 +712,8 @@
           <div class="text-xs font-semibold text-white flex items-center gap-1.5"><i class="fa-solid fa-crown text-amber-400"></i> Admin Control: Default Startup Profile</div>
           <div class="text-[10px] opacity-60">Select which profile loads by default when HomeLink is launched without a URL parameter.</div>
           <div class="flex gap-2 pt-1">
-            <select id="setting-default-profile-select" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-              <!-- Populated via JS -->
-            </select>
-            <button onclick="saveDefaultStartupProfile()" class="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold shadow-md whitespace-nowrap">
-              Set Default
-            </button>
+            <select id="setting-default-profile-select" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"></select>
+            <button onclick="saveDefaultStartupProfile()" class="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold shadow-md whitespace-nowrap">Set Default</button>
           </div>
         </div>
 
@@ -793,6 +759,7 @@
           </div>
         </div>
 
+        <!-- Custom Background & Wallpaper Gallery Section -->
         <div class="pt-4 border-t border-white/10">
           <div class="flex items-center justify-between mb-2">
             <label class="block text-xs font-semibold opacity-90">Custom Background Wallpaper & Live Studio</label>
@@ -807,6 +774,7 @@
               <button onclick="clearBackground()" class="w-full sm:w-auto px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 text-xs rounded-xl border border-rose-500/30 whitespace-nowrap">Clear Active</button>
             </div>
 
+            <!-- Wallpaper Gallery Grid -->
             <div class="bg-slate-900/50 p-3 rounded-xl border border-white/5 space-y-2">
               <label class="block text-[11px] font-semibold text-slate-300">Your Wallpaper Gallery <span class="text-[10px] opacity-65">(Click to select & preview)</span></label>
               <div id="wallpaper-gallery-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1">
@@ -845,12 +813,13 @@
           </div>
         </div>
 
+        <!-- Local Scoped Assets Manager Section -->
         <div class="pt-4 border-t border-white/10">
           <div class="flex items-center justify-between mb-2">
             <label class="block text-xs font-semibold opacity-90 flex items-center gap-1.5"><i class="fa-solid fa-server text-orange-400"></i> Local Scoped Assets Manager</label>
             <button onclick="loadLocalAssetsManager()" class="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
-          <div class="text-[10px] opacity-60 mb-2">Click any thumbnail to preview full size. Admin views all assets; users see their own. Swap files are automatically ignored.</div>
+          <div class="text-[10px] opacity-60 mb-2">Click any thumbnail to preview full size. Swap files are automatically ignored.</div>
           <div id="local-icons-manager-list" class="space-y-1.5 max-h-44 overflow-y-auto p-2 bg-slate-900/50 rounded-xl border border-white/5">
             <!-- Populated via JS -->
           </div>
@@ -867,15 +836,12 @@
         <div class="pt-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
             <div class="text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-emerald-400"></i> Backup & Migration</div>
-            <div class="text-[10px] opacity-60">Export backup or import Heimdall JSON</div>
+            <div class="text-[10px] opacity-60">Export backup or import JSON</div>
           </div>
           <div class="flex flex-wrap gap-2">
             <button onclick="exportConfig()" class="px-3 py-1.5 bg-slate-800 text-slate-200 rounded-xl text-xs font-semibold border border-white/10"><i class="fa-solid fa-download text-emerald-400 mr-1"></i> Export</button>
             <label class="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md">
               <i class="fa-solid fa-upload mr-1"></i> Import <input type="file" accept=".json,.homelink" onchange="importConfig(event)" class="hidden">
-            </label>
-            <label class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md" title="Import Heimdall Export JSON">
-              <i class="fa-solid fa-file-import mr-1"></i> Import Heimdall <input type="file" accept=".json" onchange="importHeimdallJson(event)" class="hidden">
             </label>
             <button onclick="resetToDefaults()" class="px-3 py-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold">Reset</button>
           </div>
@@ -902,39 +868,9 @@
         </h3>
         <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
-      <div class="flex items-center gap-2 border-b border-white/10 pb-3 mb-4 overflow-x-auto">
-        <button onclick="switchWikiTab('arch')" id="wiki-tab-arch" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow-md transition-all whitespace-nowrap">
-          <i class="fa-solid fa-server mr-1"></i> Architecture & Infra
-        </button>
-        <button onclick="switchWikiTab('profiles')" id="wiki-tab-profiles" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">
-          <i class="fa-solid fa-users mr-1"></i> Profiles & Roles
-        </button>
-        <button onclick="switchWikiTab('apis')" id="wiki-tab-apis" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">
-          <i class="fa-solid fa-bolt mr-1"></i> Pings & APIs
-        </button>
-        <button onclick="switchWikiTab('backup')" id="wiki-tab-backup" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">
-          <i class="fa-solid fa-shield-halved mr-1"></i> Backup & Migration
-        </button>
-      </div>
-
       <div class="overflow-y-auto space-y-4 text-xs text-slate-300 pr-2 max-h-[60vh]">
-        <div id="wiki-content-arch" class="space-y-3">
-          <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-network-wired text-orange-400"></i> Homelab Architecture Overview</h4>
-          <p>HomeLink v2.6 is designed for high-performance self-hosted environments. It runs inside lightweight container environments (such as Ubuntu VMs on TrueNAS SCALE/CORE), providing instant status checks, customizable dashboards, and zero external telemetry.</p>
-        </div>
-        <div id="wiki-content-profiles" class="space-y-3 hidden">
-          <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-user-shield text-orange-400"></i> Role-Scoped Profiles & Wallpapers</h4>
-          <p>HomeLink supports multiple user profiles alongside the Master Admin account. Each profile maintains its own isolated tile layout, custom category tabs, and wallpaper settings.</p>
-        </div>
-        <div id="wiki-content-apis" class="space-y-3 hidden">
-          <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-chart-line text-orange-400"></i> Live Health Pings & API Stats</h4>
-          <p>HomeLink performs background health checks on your homelab services based on your configured ping interval (default: 60 seconds).</p>
-        </div>
-        <div id="wiki-content-backup" class="space-y-3 hidden">
-          <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-file-export text-orange-400"></i> Backup, Migration & Heimdall Import</h4>
-          <p>Your complete configuration (including profiles, tile layouts, custom backgrounds, and passwords) can be exported or imported at any time via Settings.</p>
-        </div>
+        <h4 class="font-bold text-sm text-white">Homelab Architecture & Local Assets</h4>
+        <p>HomeLink v2.6 stores all custom icons and wallpaper uploads in your local <code class="text-orange-300 font-mono">data/</code> directory. All assets are fully cached and work offline with zero external cloud telemetry.</p>
       </div>
     </div>
   </div>
@@ -998,7 +934,6 @@
     ];
     let currentProfileId = 'admin';
     let defaultStartupProfileId = 'admin';
-    let pendingProfileId = null;
     let pendingProtectedAction = null;
     let pendingSwitchProfileId = null;
 
@@ -1105,21 +1040,13 @@
             if (p.bgPosY === undefined) p.bgPosY = 50;
             if (p.showSystemMonitor === undefined) p.showSystemMonitor = false;
             if (!p.sysMonConfig) p.sysMonConfig = { name: '', osOverride: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 };
-            if (!p.sysMonConfig.icon) p.sysMonConfig.icon = 'fa-solid fa-server';
-            if (!p.sysMonConfig.color) p.sysMonConfig.color = 'orange';
-            if (!p.sysMonConfig.refreshInterval) p.sysMonConfig.refreshInterval = 3;
           });
-          if (data.defaultStartupProfileId) {
-            defaultStartupProfileId = data.defaultStartupProfileId;
-          }
+          if (data.defaultStartupProfileId) defaultStartupProfileId = data.defaultStartupProfileId;
           if (banner) banner.classList.add('hidden');
-        } else {
-          throw new Error('Invalid configuration payload received');
         }
       } catch (e) {
-        console.warn('Config load failed:', e);
         if (banner) banner.classList.remove('hidden');
-        if (msgEl) msgEl.innerText = `Failed to fetch configuration from server: ${e.message}.`;
+        if (msgEl) msgEl.innerText = `Failed to fetch configuration: ${e.message}`;
       }
     }
 
@@ -1187,11 +1114,10 @@
 
     function saveCurrentProfilePassword() {
       const p = getCurrentProfile();
-      const newPass = document.getElementById('setting-profile-new-pass').value;
-      p.password = newPass;
+      p.password = document.getElementById('setting-profile-new-pass').value;
       saveState();
       applyProfilePreferences();
-      showToast(newPass.trim() !== '' ? 'Password set' : 'Password removed', 'emerald');
+      showToast(p.password.trim() !== '' ? 'Password set' : 'Password removed', 'emerald');
     }
 
     function saveDefaultStartupProfile() {
@@ -1248,27 +1174,14 @@
       try {
         let assets = [];
         try {
-          const res = await fetch(`/api/assets?profileId=${p.id}&isAdmin=${p.isMain}`);
+          const res = await fetch('/api/assets');
           assets = await res.json();
         } catch(e) {
           assets = [];
         }
 
-        if (!p.isMain) {
-          assets = assets.filter(a => a.owner === p.id || a.profileId === p.id || !a.owner);
-        }
-
-        if (p.customBgData) {
-          const exists = assets.some(a => a.url === p.customBgData || a.filename === p.customBgData);
-          if (!exists) {
-            assets.push({
-              type: 'wallpaper',
-              url: p.customBgData,
-              filename: 'Active Background',
-              size: 0,
-              owner: p.id
-            });
-          }
+        if (p.customBgData && !assets.some(a => a.url === p.customBgData)) {
+          assets.push({ type: 'wallpaper', url: p.customBgData, filename: 'Active Background', size: 0, owner: p.id });
         }
 
         const wallpapers = assets.filter(a => a.type === 'wallpaper');
@@ -1288,7 +1201,7 @@
         }
 
         if (!assets || assets.length === 0) {
-          listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs opacity-50">No scoped local assets found.</div>`;
+          listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs opacity-50">No local scoped assets found in data/ folder.</div>`;
           return;
         }
 
@@ -1297,21 +1210,20 @@
             <div class="flex items-center gap-2.5 overflow-hidden cursor-pointer" onclick="openLightbox('${img.url}', '${img.filename}')" title="Click to enlarge preview">
               <img src="${img.url}" class="w-9 h-9 object-cover rounded-lg bg-slate-800 p-0.5 flex-shrink-0 border border-white/10 hover:scale-110 transition-transform" />
               <div class="truncate">
-                <div class="font-bold text-white truncate max-w-[120px] hover:text-orange-400">${img.filename}</div>
+                <div class="font-bold text-white truncate max-w-[140px] hover:text-orange-400">${img.filename}</div>
                 <div class="text-[9px] opacity-60 flex items-center gap-1.5">
                   <span class="px-1 py-0.2 rounded bg-slate-800 text-${img.type === 'wallpaper' ? 'orange' : 'blue'}-400 font-semibold">${img.type}</span>
-                  ${p.isMain ? `<span class="text-amber-400">user: ${img.owner || 'admin'}</span>` : ''}
-                  <span>${Math.round(img.size / 1024)} KB</span>
+                  <span>${img.size > 0 ? Math.round(img.size / 1024) + ' KB' : 'Cached'}</span>
                 </div>
               </div>
             </div>
-            <button onclick="confirmDeleteLocalAsset('${img.type}', '${img.filename}')" class="text-rose-400 hover:text-rose-300 p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition-colors" title="Delete from server">
+            <button onclick="confirmDeleteLocalAsset('${img.type}', '${img.filename}')" class="text-rose-400 hover:text-rose-300 p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 transition-colors" title="Delete from server">
               <i class="fa-solid fa-trash text-xs"></i>
             </button>
           </div>
         `).join('');
       } catch(e) {
-        listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs text-rose-400">Failed to load scoped assets.</div>`;
+        listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs text-rose-400">Failed to load local assets.</div>`;
       }
     }
 
@@ -1320,11 +1232,10 @@
       document.getElementById('lightbox-caption').innerText = title;
       document.getElementById('image-lightbox-modal').classList.remove('hidden');
     }
-    function closeLightboxModal() {
-      document.getElementById('image-lightbox-modal').classList.add('hidden');
-    }
+    function closeLightboxModal() { document.getElementById('image-lightbox-modal').classList.add('hidden'); }
 
     function confirmDeleteLocalAsset(type, filename) {
+      if (filename === 'Active Background') return;
       openConfirmModal('Delete Asset?', `Remove '${filename}' from server storage completely?`, async () => {
         try {
           const res = await fetch(`/api/assets/${type}/${filename}`, { method: 'DELETE' });
@@ -1347,20 +1258,6 @@
       applyBackgroundDisplay(url);
       loadLocalAssetsManager();
       showToast('Wallpaper applied from gallery', 'emerald');
-    }
-
-    function switchWikiTab(tab) {
-      ['arch', 'profiles', 'apis', 'backup'].forEach(t => {
-        const btn = document.getElementById(`wiki-tab-${t}`);
-        const content = document.getElementById(`wiki-content-${t}`);
-        if (t === tab) {
-          btn.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow-md transition-all whitespace-nowrap';
-          content.classList.remove('hidden');
-        } else {
-          btn.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap';
-          content.classList.add('hidden');
-        }
-      });
     }
 
     function enterBackgroundStudio() {
@@ -1404,16 +1301,11 @@
         box.style.height = `${boxH}px`;
         box.style.left = `${boxLeft}px`;
         box.style.top = `${boxTop}px`;
-
         updateStudioReadout();
       };
 
-      if (imgObj.complete) {
-        setupBoxDimensions();
-      } else {
-        imgObj.onload = setupBoxDimensions;
-        imgObj.onerror = setupBoxDimensions;
-      }
+      if (imgObj.complete) setupBoxDimensions();
+      else { imgObj.onload = setupBoxDimensions; imgObj.onerror = setupBoxDimensions; }
     }
 
     function resetStudioTransform() {
@@ -1421,15 +1313,9 @@
       p.bgZoomVal = 100;
       p.bgPosX = 50;
       p.bgPosY = 50;
-
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
       const box = document.getElementById('bg-studio-box');
-      const boxW = vw;
-      const boxH = boxW / studioNaturalAspect;
-
-      box.style.width = `${boxW}px`;
-      box.style.height = `${boxH}px`;
+      box.style.width = `${window.innerWidth}px`;
+      box.style.height = `${window.innerWidth / studioNaturalAspect}px`;
       box.style.left = `0px`;
       box.style.top = `0px`;
       updateStudioReadout();
@@ -1437,7 +1323,19 @@
 
     function exitBackgroundStudio() {
       const p = getCurrentProfile();
-      syncBoxToProfile(p);
+      const box = document.getElementById('bg-studio-box');
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const boxW = box.offsetWidth;
+      const boxH = box.offsetHeight;
+      const boxLeft = parseFloat(box.style.left) || 0;
+      const boxTop = parseFloat(box.style.top) || 0;
+
+      p.bgZoomVal = Math.max(25, Math.min(300, Math.round((boxW / vw) * 100)));
+      const denomX = vw - boxW;
+      const denomY = vh - boxH;
+      p.bgPosX = Math.abs(denomX) < 1 ? 50 : Math.round((boxLeft / denomX) * 100);
+      p.bgPosY = Math.abs(denomY) < 1 ? 50 : Math.round((boxTop / denomY) * 100);
 
       studioActive = false;
       document.getElementById('bg-studio-stage').classList.add('hidden');
@@ -1451,51 +1349,22 @@
       showToast('Background position & scale saved', 'emerald');
     }
 
-    function syncBoxToProfile(p) {
-      const box = document.getElementById('bg-studio-box');
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-
-      const boxW = box.offsetWidth;
-      const boxH = box.offsetHeight;
-      const boxLeft = parseFloat(box.style.left) || 0;
-      const boxTop = parseFloat(box.style.top) || 0;
-
-      const zoomPct = Math.round((boxW / vw) * 100);
-      p.bgZoomVal = Math.max(25, Math.min(300, zoomPct));
-
-      const denomX = vw - boxW;
-      const denomY = vh - boxH;
-      p.bgPosX = Math.abs(denomX) < 1 ? 50 : Math.round((boxLeft / denomX) * 100);
-      p.bgPosY = Math.abs(denomY) < 1 ? 50 : Math.round((boxTop / denomY) * 100);
-    }
-
     function updateStudioReadout() {
       const box = document.getElementById('bg-studio-box');
       const vw = window.innerWidth;
       const zoomPct = Math.round((box.offsetWidth / vw) * 100);
-      const left = Math.round(parseFloat(box.style.left) || 0);
-      const top = Math.round(parseFloat(box.style.top) || 0);
-      document.getElementById('studio-dimensions-readout').innerText = `Scale: ${zoomPct}% | Offset: ${left}px, ${top}px`;
+      document.getElementById('studio-dimensions-readout').innerText = `Scale: ${zoomPct}% | Offset: ${Math.round(parseFloat(box.style.left) || 0)}px, ${Math.round(parseFloat(box.style.top) || 0)}px`;
     }
 
     function initInteractiveStudioListeners() {
       const box = document.getElementById('bg-studio-box');
-
       box.addEventListener('mousedown', (e) => {
         if (!studioActive) return;
         e.preventDefault();
         e.stopPropagation();
-
         const handle = e.target.closest('.studio-handle');
         studioStartMouse = { x: e.clientX, y: e.clientY };
-        studioStartRect = {
-          left: box.offsetLeft,
-          top: box.offsetTop,
-          width: box.offsetWidth,
-          height: box.offsetHeight
-        };
-
+        studioStartRect = { left: box.offsetLeft, top: box.offsetTop, width: box.offsetWidth, height: box.offsetHeight };
         if (handle) {
           studioInteractionType = 'resize';
           studioResizeDir = handle.getAttribute('data-dir');
@@ -1508,16 +1377,11 @@
         if (!studioActive || !studioInteractionType) return;
         const dx = e.clientX - studioStartMouse.x;
         const dy = e.clientY - studioStartMouse.y;
-
         if (studioInteractionType === 'move') {
           box.style.left = `${studioStartRect.left + dx}px`;
           box.style.top = `${studioStartRect.top + dy}px`;
         } else if (studioInteractionType === 'resize') {
-          let newLeft = studioStartRect.left;
-          let newTop = studioStartRect.top;
-          let newWidth = studioStartRect.width;
-          let newHeight = studioStartRect.height;
-
+          let newLeft = studioStartRect.left, newTop = studioStartRect.top, newWidth = studioStartRect.width, newHeight = studioStartRect.height;
           if (studioResizeDir.includes('e')) {
             newWidth = Math.max(120, studioStartRect.width + dx);
             newHeight = newWidth / studioNaturalAspect;
@@ -1539,50 +1403,32 @@
               newTop = studioStartRect.top + (studioStartRect.height - newHeight);
             }
           }
-
-          box.style.left = `${newLeft}px`;
-          box.style.top = `${newTop}px`;
-          box.style.width = `${newWidth}px`;
-          box.style.height = `${newHeight}px`;
+          box.style.left = `${newLeft}px`; box.style.top = `${newTop}px`; box.style.width = `${newWidth}px`; box.style.height = `${newHeight}px`;
         }
-
         updateStudioReadout();
       });
 
-      window.addEventListener('mouseup', () => {
-        if (studioInteractionType) {
-          studioInteractionType = null;
-          studioResizeDir = '';
-        }
-      });
+      window.addEventListener('mouseup', () => { if (studioInteractionType) { studioInteractionType = null; studioResizeDir = ''; } });
     }
 
     function setupPingInterval() {
       if (pingTimer) clearInterval(pingTimer);
       const p = getCurrentProfile();
-      const interval = (p.pingIntervalSec || 60) * 1000;
-      pingTimer = setInterval(runLivePings, interval);
+      pingTimer = setInterval(runLivePings, (p.pingIntervalSec || 60) * 1000);
     }
 
     function setupSysMonPolling() {
       if (sysMonPollTimer) clearInterval(sysMonPollTimer);
       const p = getCurrentProfile();
-      const intervalSec = p.sysMonConfig?.refreshInterval || 3;
       sysMonPollTimer = setInterval(() => {
-        const curProfile = getCurrentProfile();
-        if (curProfile.showSystemMonitor) {
-          fetchHostSystemStats();
-        }
-      }, intervalSec * 1000);
+        if (getCurrentProfile().showSystemMonitor) fetchHostSystemStats();
+      }, (p.sysMonConfig?.refreshInterval || 3) * 1000);
     }
 
     async function runLivePings() {
       const profile = getCurrentProfile();
       let checkedCount = 0, onlineCount = 0;
-      
-      if (profile.showSystemMonitor) {
-        fetchHostSystemStats();
-      }
+      if (profile.showSystemMonitor) fetchHostSystemStats();
 
       for (const app of profile.apps) {
         if (app.apiKey && app.apiKey.trim() !== '') fetchServiceStats(app);
@@ -1626,10 +1472,7 @@
       if (!p.showSystemMonitor) return;
       try {
         const res = await fetch('/api/system-stats');
-        if (res.ok) {
-          hostSysStats = await res.json();
-          renderApps();
-        }
+        if (res.ok) { hostSysStats = await res.json(); renderApps(); }
       } catch (e) {}
     }
 
@@ -1637,12 +1480,7 @@
       const p = getCurrentProfile();
       p.showSystemMonitor = checked;
       saveState();
-      if (checked) {
-        fetchHostSystemStats();
-        setupSysMonPolling();
-      } else {
-        renderApps();
-      }
+      if (checked) { fetchHostSystemStats(); setupSysMonPolling(); } else { renderApps(); }
       showToast(checked ? 'System Monitor tile enabled' : 'System Monitor tile hidden', 'emerald');
     }
 
@@ -1668,46 +1506,10 @@
     function updateSysMonModalIconPreview() {
       const previewBox = document.getElementById('sysmon-icon-preview-box');
       if (!previewBox) return;
-
-      let iconVal = 'fa-solid fa-server';
-      if (currentSysMonIconMode === 'fa') {
-        iconVal = document.getElementById('sysmon-icon-fa').value.trim() || 'fa-solid fa-server';
-      } else if (currentSysMonIconMode === 'url') {
-        iconVal = document.getElementById('sysmon-icon-url-input').value.trim();
-      } else if (currentSysMonIconMode === 'upload') {
-        iconVal = uploadedSysMonIconBase64;
-      } else if (currentSysMonIconMode === 'favicon') {
-        iconVal = 'fa-solid fa-globe';
-      }
-
-      const isImg = iconVal && (iconVal.startsWith('http://') || iconVal.startsWith('https://') || iconVal.startsWith('data:image/') || iconVal.startsWith('/data/'));
-      if (isImg) {
-        previewBox.innerHTML = `<img src="${iconVal}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-server\\'></i>';" />`;
-      } else {
-        previewBox.innerHTML = `<i class="${iconVal}"></i>`;
-      }
-    }
-
-    async function handleSysMonIconUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async function(evt) {
-        const p = getCurrentProfile();
-        const res = await fetch('/api/upload-icon', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: evt.target.result, filename: file.name, profileId: p.id })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          uploadedSysMonIconBase64 = data.url;
-          sysMonIconWasModified = true;
-          updateSysMonModalIconPreview();
-          showToast('Icon uploaded successfully', 'emerald');
-        }
-      };
-      reader.readAsDataURL(file);
+      let iconVal = document.getElementById('sysmon-icon-fa').value.trim() || 'fa-solid fa-server';
+      const isImg = iconVal.startsWith('http://') || iconVal.startsWith('https://') || iconVal.startsWith('data:image/') || iconVal.startsWith('/data/');
+      if (isImg) previewBox.innerHTML = `<img src="${iconVal}" class="w-full h-full object-contain p-1 rounded-xl" />`;
+      else previewBox.innerHTML = `<i class="${iconVal}"></i>`;
     }
 
     function openSysMonModal() {
@@ -1719,26 +1521,11 @@
       document.getElementById('sysmon-color-input').value = cfg.color || 'orange';
       document.getElementById('sysmon-custom-bg-input').value = cfg.customBg || '#1e293b';
       document.getElementById('sysmon-font-color-input').value = cfg.fontColor || '#f1f5f9';
-
-      const iconVal = cfg.icon || 'fa-solid fa-server';
-      uploadedSysMonIconBase64 = '';
-      sysMonIconWasModified = false;
-
-      if (iconVal.startsWith('http://') || iconVal.startsWith('https://') || iconVal.startsWith('/data/') || iconVal.startsWith('data:image/')) {
-        setSysMonIconType('url');
-        document.getElementById('sysmon-icon-url-input').value = iconVal;
-      } else {
-        setSysMonIconType('fa');
-        document.getElementById('sysmon-icon-fa').value = iconVal;
-      }
-
+      document.getElementById('sysmon-icon-fa').value = cfg.icon || 'fa-solid fa-server';
       updateSysMonModalIconPreview();
       document.getElementById('sysmon-modal').classList.remove('hidden');
     }
-
-    function closeSysMonModal() {
-      document.getElementById('sysmon-modal').classList.add('hidden');
-    }
+    function closeSysMonModal() { document.getElementById('sysmon-modal').classList.add('hidden'); }
 
     function saveSysMonConfig(e) {
       e.preventDefault();
@@ -1750,21 +1537,7 @@
       p.sysMonConfig.color = document.getElementById('sysmon-color-input').value;
       p.sysMonConfig.customBg = document.getElementById('sysmon-custom-bg-input').value === '#1e293b' ? '' : document.getElementById('sysmon-custom-bg-input').value;
       p.sysMonConfig.fontColor = document.getElementById('sysmon-font-color-input').value === '#f1f5f9' ? '' : document.getElementById('sysmon-font-color-input').value;
-
-      let icon = p.sysMonConfig.icon || 'fa-solid fa-server';
-      if (sysMonIconWasModified) {
-        if (currentSysMonIconMode === 'fa') {
-          icon = document.getElementById('sysmon-icon-fa').value.trim() || 'fa-solid fa-server';
-        } else if (currentSysMonIconMode === 'url') {
-          icon = document.getElementById('sysmon-icon-url-input').value.trim();
-        } else if (currentSysMonIconMode === 'upload') {
-          icon = uploadedSysMonIconBase64 || 'fa-solid fa-server';
-        } else if (currentSysMonIconMode === 'favicon') {
-          icon = 'fa-solid fa-globe';
-        }
-      }
-      p.sysMonConfig.icon = icon;
-
+      p.sysMonConfig.icon = document.getElementById('sysmon-icon-fa').value.trim() || 'fa-solid fa-server';
       saveState();
       setupSysMonPolling();
       renderApps();
@@ -1776,11 +1549,8 @@
       const p = getCurrentProfile();
       document.getElementById('header-profile-name').innerText = p.name + (p.isMain ? ' 👑' : '');
       const avatarEl = document.getElementById('header-profile-avatar');
-      if (p.avatar) {
-        avatarEl.innerHTML = `<img src="${p.avatar}" class="w-full h-full object-cover">`;
-      } else {
-        avatarEl.innerText = p.name.charAt(0).toUpperCase();
-      }
+      if (p.avatar) avatarEl.innerHTML = `<img src="${p.avatar}" class="w-full h-full object-cover">`;
+      else avatarEl.innerText = p.name.charAt(0).toUpperCase();
     }
 
     function renderCategories() {
@@ -1803,11 +1573,7 @@
       `).join('');
     }
 
-    function setCategory(cat) {
-      activeCategory = cat;
-      renderCategories();
-      renderApps();
-    }
+    function setCategory(cat) { activeCategory = cat; renderCategories(); renderApps(); }
 
     function renderApps() {
       const profile = getCurrentProfile();
@@ -1822,16 +1588,13 @@
       });
 
       const showSysTile = !!profile.showSystemMonitor && (activeCategory === 'All' || !searchQuery);
-
       if (filtered.length === 0 && !showSysTile) {
         grid.innerHTML = '';
         emptyState.classList.remove('hidden');
         emptyState.classList.add('flex');
         return;
       }
-
-      emptyState.classList.add('hidden');
-      emptyState.classList.remove('flex');
+      emptyState.classList.add('hidden'); emptyState.classList.remove('flex');
 
       let sysTileHtml = '';
       if (showSysTile) {
@@ -1840,63 +1603,41 @@
         const ramPct = s ? s.ramPercent : 0;
         const cpuColor = cpuPct > 85 ? 'bg-rose-500' : cpuPct > 65 ? 'bg-amber-500' : 'bg-emerald-500';
         const ramColor = ramPct > 85 ? 'bg-rose-500' : ramPct > 65 ? 'bg-amber-500' : 'bg-orange-500';
-
         const customName = profile.sysMonConfig?.name || (s ? s.hostname : 'Docker Host');
         const customOs = profile.sysMonConfig?.osOverride || (s ? s.osVersion : 'Loading OS...');
         const sysIcon = profile.sysMonConfig?.icon || 'fa-solid fa-server';
         const sysTheme = colorClasses[profile.sysMonConfig?.color || 'orange'] || colorClasses.orange;
-        const sysCustomBg = profile.sysMonConfig?.customBg ? `background-color: ${profile.sysMonConfig.customBg};` : '';
-        const sysFontColor = profile.sysMonConfig?.fontColor ? `color: ${profile.sysMonConfig.fontColor};` : '';
-        const isImgIcon = sysIcon.startsWith('http://') || sysIcon.startsWith('https://') || sysIcon.startsWith('data:image/') || sysIcon.startsWith('/data/');
 
         sysTileHtml = `
-          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative ${sysTheme.hoverGlow}" style="${sysCustomBg}">
-            ${isEditMode ? `
-              <div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10">
-                <button onclick="openSysMonModal()" title="Edit Server Stats" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
-              </div>
-            ` : ''}
-
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative ${sysTheme.hoverGlow}">
+            ${isEditMode ? `<div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10"><button onclick="openSysMonModal()" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button></div>` : ''}
             <div>
               <div class="flex items-start justify-between gap-2 mb-2.5">
                 <div class="flex items-center gap-2.5 overflow-hidden">
-                  <div class="w-10 h-10 rounded-xl ${sysTheme.bg} ${sysTheme.border} border flex items-center justify-center text-lg ${sysTheme.text} flex-shrink-0 overflow-hidden shadow-inner">
-                    ${isImgIcon ? `<img src="${sysIcon}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.src='https://placehold.co/40x40/1e293b/ffffff?text=Host';" />` : `<i class="${sysIcon}"></i>`}
+                  <div class="w-10 h-10 rounded-xl ${sysTheme.bg} ${sysTheme.border} border flex items-center justify-center text-lg ${sysTheme.text}">
+                    <i class="${sysIcon}"></i>
                   </div>
                   <div class="overflow-hidden">
-                    <h4 class="font-bold text-sm truncate" style="${sysFontColor}">${customName}</h4>
-                    <p class="text-[10px] text-slate-400 truncate" title="${customOs}" style="${sysFontColor}">${customOs}</p>
+                    <h4 class="font-bold text-sm truncate">${customName}</h4>
+                    <p class="text-[10px] text-slate-400 truncate">${customOs}</p>
                   </div>
                 </div>
-                <span class="w-2.5 h-2.5 rounded-full ${s ? 'bg-emerald-500 status-pulse' : 'bg-slate-500'} flex-shrink-0 mt-1" title="${s ? 'Online • Up ' + s.uptime : 'Polling...'}"></span>
+                <span class="w-2.5 h-2.5 rounded-full ${s ? 'bg-emerald-500 status-pulse' : 'bg-slate-500'} mt-1"></span>
               </div>
-
               <div class="space-y-2 mt-3">
                 <div>
                   <div class="flex justify-between text-[10px] font-semibold mb-1">
-                    <span class="text-slate-300" style="${sysFontColor}">CPU (${s ? s.cpuCores + ' Cores' : '--'})</span>
-                    <span class="text-white font-mono" style="${sysFontColor}">${s ? cpuPct + '%' : '--%'}</span>
+                    <span class="text-slate-300">CPU</span><span class="text-white font-mono">${s ? cpuPct + '%' : '--%'}</span>
                   </div>
-                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div class="${cpuColor} h-full transition-all duration-300" style="width: ${cpuPct}%"></div>
-                  </div>
+                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div class="${cpuColor} h-full" style="width: ${cpuPct}%"></div></div>
                 </div>
-
                 <div>
                   <div class="flex justify-between text-[10px] font-semibold mb-1">
-                    <span class="text-slate-300" style="${sysFontColor}">RAM (${s ? s.ramUsedGB + '/' + s.ramTotalGB + ' GB' : '--'})</span>
-                    <span class="text-white font-mono" style="${sysFontColor}">${s ? ramPct + '%' : '--%'}</span>
+                    <span class="text-slate-300">RAM</span><span class="text-white font-mono">${s ? ramPct + '%' : '--%'}</span>
                   </div>
-                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div class="${ramColor} h-full transition-all duration-300" style="width: ${ramPct}%"></div>
-                  </div>
+                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div class="${ramColor} h-full" style="width: ${ramPct}%"></div></div>
                 </div>
               </div>
-            </div>
-
-            <div class="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-400 font-mono" style="${sysFontColor}">
-              <span><i class="fa-solid fa-clock text-orange-400 mr-1"></i>${s ? s.uptime : '--'}</span>
-              <span>${s ? s.arch : ''}</span>
             </div>
           </div>
         `;
@@ -1906,46 +1647,33 @@
         const theme = colorClasses[app.color] || colorClasses.orange;
         const isImage = app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://') || app.icon.startsWith('data:image/') || app.icon.startsWith('/data/'));
         const pingStatus = appPingStatuses[app.id];
-        
         let statusDotHtml = '';
         if (app.pingEnabled !== false) {
-          let dotClass = 'bg-slate-500';
-          let dotTitle = 'Pending ping';
-          if (pingStatus === true) { dotClass = 'bg-emerald-500 status-pulse'; dotTitle = 'Online'; }
-          else if (pingStatus === false) { dotClass = 'bg-rose-500'; dotTitle = 'Unreachable'; }
-          statusDotHtml = `<span class="w-2.5 h-2.5 rounded-full ${dotClass}" title="${dotTitle}"></span>`;
+          let dotClass = pingStatus === true ? 'bg-emerald-500 status-pulse' : pingStatus === false ? 'bg-rose-500' : 'bg-slate-500';
+          statusDotHtml = `<span class="w-2.5 h-2.5 rounded-full ${dotClass}"></span>`;
         }
 
-        const liveStatText = appLiveStats[app.id];
-        const customStyle = app.customBg ? `background-color: ${app.customBg};` : '';
-        const fontStyle = app.fontColor ? `color: ${app.fontColor};` : '';
-
         return `
-          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative group ${theme.hoverGlow}" style="${customStyle}" draggable="${isEditMode}" ondragstart="onDragStart(event, '${app.id}')" ondragover="event.preventDefault()" ondrop="onDrop(event, '${app.id}')">
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative group ${theme.hoverGlow}" draggable="${isEditMode}" ondragstart="onDragStart(event, '${app.id}')" ondragover="event.preventDefault()" ondrop="onDrop(event, '${app.id}')">
             ${isEditMode ? `
               <div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10">
-                <span class="cursor-grab px-1 text-slate-400" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></span>
-                <button onclick="openAppModal('${app.id}')" title="Edit" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
-                <button onclick="confirmDeleteApp('${app.id}')" title="Delete" class="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 text-[10px] flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
+                <span class="cursor-grab px-1 text-slate-400"><i class="fa-solid fa-grip-vertical"></i></span>
+                <button onclick="openAppModal('${app.id}')" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                <button onclick="confirmDeleteApp('${app.id}')" class="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
               </div>
             ` : ''}
-
             <a href="${app.url}" target="_blank" rel="noopener noreferrer" class="block flex-1">
               <div class="flex items-start justify-between gap-3 mb-3">
-                <div class="w-12 h-12 rounded-xl ${theme.bg} ${theme.border} border flex items-center justify-center text-2xl ${theme.text} shadow-inner group-hover:scale-105 transition-transform overflow-hidden">
+                <div class="w-12 h-12 rounded-xl ${theme.bg} ${theme.border} border flex items-center justify-center text-2xl ${theme.text} overflow-hidden shadow-inner">
                   ${isImage ? `<img src="${app.icon}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.src='https://placehold.co/40x40/1e293b/ffffff?text=App';" />` : `<i class="${app.icon || 'fa-solid fa-globe'}"></i>`}
                 </div>
                 <div class="flex items-center gap-2 ${isEditMode ? 'opacity-20' : ''}">
-                  <button type="button" onclick="event.preventDefault(); event.stopPropagation(); copyText('${app.url}')" title="Copy URL" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-white text-xs p-1"><i class="fa-regular fa-copy"></i></button>
                   ${statusDotHtml}
                 </div>
               </div>
               <div>
-                <h4 class="font-bold text-sm group-hover:text-orange-400 transition-colors flex items-center gap-1.5" style="${fontStyle}">
-                  ${app.name} <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                </h4>
-                ${liveStatText ? `<p class="text-[10px] font-semibold text-emerald-400 mt-0.5"><i class="fa-solid fa-bolt text-[9px]"></i> ${liveStatText}</p>` : ''}
-                <p class="text-[11px] opacity-60 font-medium truncate mt-1" style="${fontStyle}">${app.url}</p>
+                <h4 class="font-bold text-sm group-hover:text-orange-400 transition-colors flex items-center gap-1.5">${app.name}</h4>
+                <p class="text-[11px] opacity-60 font-medium truncate mt-1">${app.url}</p>
               </div>
             </a>
           </div>
@@ -1969,14 +1697,10 @@
     }
 
     function requestAuthForAction(actionType) {
-      if (actionType === 'edit' && isEditMode) {
-        toggleEditMode();
-        return;
-      }
+      if (actionType === 'edit' && isEditMode) { toggleEditMode(); return; }
       const p = getCurrentProfile();
       if (p.password && p.password.trim() !== '') {
         pendingProtectedAction = actionType;
-        pendingSwitchProfileId = null;
         document.getElementById('prompt-profile-name').innerText = `Enter password for ${p.name}`;
         document.getElementById('unlock-password-input').value = '';
         document.getElementById('password-prompt-modal').classList.remove('hidden');
@@ -1988,39 +1712,18 @@
     function verifyProfilePassword(e) {
       e.preventDefault();
       const inputVal = document.getElementById('unlock-password-input').value;
-      
-      if (pendingSwitchProfileId) {
-        const target = profiles.find(p => p.id === pendingSwitchProfileId);
-        if (target && inputVal === target.password) {
-          const idToSwitch = pendingSwitchProfileId;
-          pendingSwitchProfileId = null;
-          document.getElementById('password-prompt-modal').classList.add('hidden');
-          executeSwitchProfile(idToSwitch);
-        } else {
-          showToast('Incorrect password', 'rose');
-          document.getElementById('unlock-password-input').value = '';
-          document.getElementById('unlock-password-input').focus();
-        }
+      if (inputVal === getCurrentProfile().password) {
+        const action = pendingProtectedAction;
+        document.getElementById('password-prompt-modal').classList.add('hidden');
+        pendingProtectedAction = null;
+        if (action) executeProtectedAction(action);
       } else {
-        const p = getCurrentProfile();
-        if (inputVal === p.password) {
-          const action = pendingProtectedAction;
-          document.getElementById('password-prompt-modal').classList.add('hidden');
-          pendingProtectedAction = null;
-          if (action) executeProtectedAction(action);
-        } else {
-          showToast('Incorrect password', 'rose');
-          document.getElementById('unlock-password-input').value = '';
-          document.getElementById('unlock-password-input').focus();
-        }
+        showToast('Incorrect password', 'rose');
+        document.getElementById('unlock-password-input').value = '';
+        document.getElementById('unlock-password-input').focus();
       }
     }
-
-    function closePasswordPrompt() {
-      document.getElementById('password-prompt-modal').classList.add('hidden');
-      pendingProtectedAction = null;
-      pendingSwitchProfileId = null;
-    }
+    function closePasswordPrompt() { document.getElementById('password-prompt-modal').classList.add('hidden'); pendingProtectedAction = null; }
 
     function executeProtectedAction(actionType) {
       if (actionType === 'edit') toggleEditMode();
@@ -2032,21 +1735,11 @@
 
     function toggleEditMode() {
       isEditMode = !isEditMode;
-      const label = document.getElementById('edit-mode-label');
-      const icon = document.getElementById('edit-mode-icon');
+      document.getElementById('edit-mode-label').innerText = isEditMode ? 'Unlocked' : 'Locked';
+      document.getElementById('edit-mode-icon').className = isEditMode ? 'fa-solid fa-lock-open text-emerald-400' : 'fa-solid fa-lock text-amber-400';
       const addBtn = document.getElementById('btn-add-link-header');
-
-      if (isEditMode) {
-        label.innerText = 'Unlocked';
-        icon.className = 'fa-solid fa-lock-open text-emerald-400';
-        addBtn.classList.remove('hidden'); addBtn.classList.add('flex');
-        showToast('Dashboard unlocked for editing', 'blue');
-      } else {
-        label.innerText = 'Locked';
-        icon.className = 'fa-solid fa-lock text-amber-400';
-        addBtn.classList.remove('flex'); addBtn.classList.add('hidden');
-        showToast('Dashboard locked', 'emerald');
-      }
+      addBtn.classList.toggle('hidden', !isEditMode);
+      addBtn.classList.toggle('flex', isEditMode);
       renderApps();
     }
 
@@ -2056,8 +1749,7 @@
       if (val === '1') { grid.className = grid.className.replace(/gap-\d/, 'gap-2'); label.innerText = 'Tight'; }
       else if (val === '2') { grid.className = grid.className.replace(/gap-\d/, 'gap-4'); label.innerText = 'Standard'; }
       else { grid.className = grid.className.replace(/gap-\d/, 'gap-6'); label.innerText = 'Spacious'; }
-      const p = getCurrentProfile();
-      p.tileSpacingVal = val;
+      getCurrentProfile().tileSpacingVal = val;
       if (save) saveState();
     }
     function updateTileSpacing(val) { applyTileSpacing(val, true); }
@@ -2078,30 +1770,18 @@
       });
       updateModalIconPreview();
     }
-
     function markIconModified() { iconWasModified = true; }
 
     function updateModalIconPreview() {
       const previewBox = document.getElementById('modal-icon-preview-box');
       if (!previewBox) return;
+      let iconVal = document.getElementById('app-icon-fa').value.trim() || 'fa-solid fa-globe';
+      if (currentIconMode === 'url') iconVal = document.getElementById('app-icon-url-input').value.trim();
+      if (currentIconMode === 'upload') iconVal = uploadedIconBase64;
 
-      let iconVal = 'fa-solid fa-globe';
-      if (currentIconMode === 'fa') {
-        iconVal = document.getElementById('app-icon-fa').value.trim() || 'fa-solid fa-globe';
-      } else if (currentIconMode === 'url') {
-        iconVal = document.getElementById('app-icon-url-input').value.trim();
-      } else if (currentIconMode === 'upload') {
-        iconVal = uploadedIconBase64;
-      } else if (currentIconMode === 'favicon') {
-        iconVal = 'fa-solid fa-globe';
-      }
-
-      const isImg = iconVal && (iconVal.startsWith('http://') || iconVal.startsWith('https://') || iconVal.startsWith('data:image/') || iconVal.startsWith('/data/'));
-      if (isImg) {
-        previewBox.innerHTML = `<img src="${iconVal}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-globe\\'></i>';" />`;
-      } else {
-        previewBox.innerHTML = `<i class="${iconVal}"></i>`;
-      }
+      const isImg = iconVal.startsWith('http://') || iconVal.startsWith('https://') || iconVal.startsWith('data:image/') || iconVal.startsWith('/data/');
+      if (isImg) previewBox.innerHTML = `<img src="${iconVal}" class="w-full h-full object-contain p-1 rounded-xl" />`;
+      else previewBox.innerHTML = `<i class="${iconVal}"></i>`;
     }
 
     function openIconPickerModal(target = 'app') {
@@ -2143,11 +1823,10 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async function(evt) {
-        const p = getCurrentProfile();
         const res = await fetch('/api/upload-icon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: evt.target.result, filename: file.name, profileId: p.id })
+          body: JSON.stringify({ image: evt.target.result, filename: file.name })
         });
         if (res.ok) {
           const data = await res.json();
@@ -2163,8 +1842,6 @@
     function openAppModal(id = null) {
       document.getElementById('app-form').reset();
       document.getElementById('app-id').value = '';
-      document.getElementById('app-api-key').value = '';
-      document.getElementById('app-service-type').value = 'sonarr';
       uploadedIconBase64 = '';
       iconWasModified = false;
       setIconType('fa');
@@ -2209,13 +1886,9 @@
 
       let icon = id ? profile.apps.find(a => a.id === id).icon : 'fa-solid fa-globe';
       if (!id || iconWasModified) {
-        if (currentIconMode === 'fa') {
-          icon = document.getElementById('app-icon-fa').value || 'fa-solid fa-globe';
-        } else if (currentIconMode === 'url') {
-          icon = document.getElementById('app-icon-url-input').value.trim();
-        } else if (currentIconMode === 'upload') {
-          icon = uploadedIconBase64;
-        }
+        if (currentIconMode === 'fa') icon = document.getElementById('app-icon-fa').value || 'fa-solid fa-globe';
+        else if (currentIconMode === 'url') icon = document.getElementById('app-icon-url-input').value.trim();
+        else if (currentIconMode === 'upload') icon = uploadedIconBase64;
       }
 
       if (id) {
@@ -2232,8 +1905,7 @@
 
     function confirmDeleteApp(id) {
       openConfirmModal('Delete Tile?', 'Are you sure you want to delete this service tile?', () => {
-        const profile = getCurrentProfile();
-        profile.apps = profile.apps.filter(a => a.id !== id);
+        getCurrentProfile().apps = getCurrentProfile().apps.filter(a => a.id !== id);
         saveState();
         renderApps();
         showToast('Tile deleted', 'emerald');
@@ -2242,8 +1914,7 @@
 
     function confirmDeleteCategory(cat) {
       openConfirmModal('Delete Category?', `Remove category '${cat}'?`, () => {
-        const profile = getCurrentProfile();
-        profile.categories = profile.categories.filter(c => c !== cat);
+        getCurrentProfile().categories = getCurrentProfile().categories.filter(c => c !== cat);
         saveState();
         renderCategories();
         renderApps();
@@ -2279,10 +1950,7 @@
           <div class="flex items-center gap-1.5">
             <button onclick="copyText('${baseUrl}?profile=${p.id}')" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-white/10">Direct Link</button>
             ${currentProfileId !== p.id ? `<button onclick="switchProfile('${p.id}')" class="px-3 py-1 bg-orange-600 text-white rounded-lg text-xs font-semibold">Switch</button>` : `<span class="text-emerald-400 font-semibold px-2">Active</span>`}
-            ${profile.isMain && !p.isMain ? `
-              <button onclick="openEditProfileModal('${p.id}')" class="px-2 py-1 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg text-xs" title="Edit Profile"><i class="fa-solid fa-pen"></i></button>
-              <button onclick="confirmDeleteProfile('${p.id}')" class="px-2 py-1 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 rounded-lg text-xs" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>
-            ` : ''}
+            ${profile.isMain && !p.isMain ? `<button onclick="confirmDeleteProfile('${p.id}')" class="px-2 py-1 bg-rose-500/20 text-rose-400 rounded-lg text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}
           </div>
         </div>
       `).join('');
@@ -2297,7 +1965,6 @@
       document.getElementById('admin-pass-input').value = p.password || '';
       document.getElementById('admin-avatar-input').value = p.avatar || '';
       uploadedAdminAvatarBase64 = p.avatar || '';
-      updateAdminAvatarPreview();
       document.getElementById('admin-edit-modal').classList.remove('hidden');
     }
     function closeAdminEditModal() { document.getElementById('admin-edit-modal').classList.add('hidden'); }
@@ -2305,15 +1972,7 @@
     function updateAdminAvatarPreview() {
       const nameVal = document.getElementById('admin-name-input').value.trim() || 'Admin';
       const avatarVal = document.getElementById('admin-avatar-input').value.trim();
-      const previewEl = document.getElementById('admin-edit-avatar-preview');
-      const nameEl = document.getElementById('admin-edit-name-preview');
-
-      nameEl.innerText = `${nameVal} 👑`;
-      if (avatarVal) {
-        previewEl.innerHTML = `<img src="${avatarVal}" class="w-full h-full object-cover" onerror="this.parentElement.innerText='${nameVal.charAt(0).toUpperCase()}';">`;
-      } else {
-        previewEl.innerText = nameVal.charAt(0).toUpperCase();
-      }
+      document.getElementById('admin-edit-name-preview').innerText = `${nameVal} 👑`;
     }
 
     function handleAdminAvatarUpload(e) {
@@ -2347,55 +2006,19 @@
     function openCreateProfileModal() {
       closeProfilesModal();
       document.getElementById('profile-edit-id').value = '';
-      document.getElementById('profile-modal-title').innerText = 'Create Profile';
       document.getElementById('profile-name-input').value = '';
       document.getElementById('profile-pass-input').value = '';
       document.getElementById('profile-avatar-input').value = '';
-      uploadedProfileAvatarBase64 = '';
-      updateProfileAvatarPreview();
       document.getElementById('profile-edit-modal').classList.remove('hidden');
     }
-
-    function openEditProfileModal(id) {
-      const target = profiles.find(p => p.id === id);
-      if (!target) return;
-      closeProfilesModal();
-      document.getElementById('profile-edit-id').value = target.id;
-      document.getElementById('profile-modal-title').innerText = 'Edit User Profile';
-      document.getElementById('profile-name-input').value = target.name;
-      document.getElementById('profile-pass-input').value = target.password || '';
-      document.getElementById('profile-avatar-input').value = target.avatar || '';
-      uploadedProfileAvatarBase64 = target.avatar || '';
-      updateProfileAvatarPreview();
-      document.getElementById('profile-edit-modal').classList.remove('hidden');
-    }
-
     function closeProfileEditModal() { document.getElementById('profile-edit-modal').classList.add('hidden'); }
-
-    function updateProfileAvatarPreview() {
-      const nameVal = document.getElementById('profile-name-input').value.trim();
-      const avatarVal = document.getElementById('profile-avatar-input').value.trim();
-      const previewEl = document.getElementById('profile-edit-avatar-preview');
-      const nameEl = document.getElementById('profile-edit-name-preview');
-
-      nameEl.innerText = nameVal || 'New User';
-      if (avatarVal) {
-        previewEl.innerHTML = `<img src="${avatarVal}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-user text-sm\\'></i>';">`;
-      } else if (nameVal) {
-        previewEl.innerText = nameVal.charAt(0).toUpperCase();
-      } else {
-        previewEl.innerHTML = `<i class="fa-solid fa-user text-sm"></i>`;
-      }
-    }
 
     function handleProfileAvatarUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(evt) {
-        uploadedProfileAvatarBase64 = evt.target.result;
-        document.getElementById('profile-avatar-input').value = uploadedProfileAvatarBase64;
-        updateProfileAvatarPreview();
+        document.getElementById('profile-avatar-input').value = evt.target.result;
         showToast('Profile avatar loaded', 'emerald');
       };
       reader.readAsDataURL(file);
@@ -2403,64 +2026,44 @@
 
     function saveProfile(e) {
       e.preventDefault();
-      const editId = document.getElementById('profile-edit-id').value;
       const name = document.getElementById('profile-name-input').value.trim();
       const pass = document.getElementById('profile-pass-input').value;
-      const avatar = document.getElementById('profile-avatar-input').value.trim() || uploadedProfileAvatarBase64;
+      const avatar = document.getElementById('profile-avatar-input').value.trim();
       if (!name) return;
 
-      if (editId) {
-        const existing = profiles.find(p => p.id === editId);
-        if (existing) {
-          existing.name = name;
-          existing.password = pass || '';
-          existing.avatar = avatar || '';
-        }
-        saveState();
-        if (currentProfileId === editId) renderCurrentProfileHeader();
-        closeProfileEditModal();
-        openProfilesModal();
-        showToast('Profile updated', 'emerald');
-      } else {
-        const newId = 'user_' + Date.now();
-        const newProfile = {
-          id: newId,
-          name: name,
-          isMain: false,
-          password: pass || '',
-          avatar: avatar || '',
-          theme: 'dark',
-          weatherZip: '28601',
-          pingIntervalSec: 60,
-          tileSpacingVal: '2',
-          customBgData: '',
-          bgScaleMode: 'cover',
-          bgZoomVal: 100,
-          bgOpacity: 30,
-          bgTrueColor: false,
-          bgPosX: 50,
-          bgPosY: 50,
-          showSystemMonitor: false,
-          sysMonConfig: { name: '', osOverride: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 },
-          apps: [...defaultAdminApps],
-          categories: [...defaultCategories]
-        };
-        profiles.push(newProfile);
-        saveState();
-        closeProfileEditModal();
-        openProfilesModal();
-        showToast('Profile created successfully', 'emerald');
-      }
+      const newId = 'user_' + Date.now();
+      profiles.push({
+        id: newId,
+        name: name,
+        isMain: false,
+        password: pass || '',
+        avatar: avatar || '',
+        theme: 'dark',
+        weatherZip: '28601',
+        pingIntervalSec: 60,
+        tileSpacingVal: '2',
+        customBgData: '',
+        bgScaleMode: 'cover',
+        bgZoomVal: 100,
+        bgOpacity: 30,
+        bgTrueColor: false,
+        bgPosX: 50,
+        bgPosY: 50,
+        showSystemMonitor: false,
+        sysMonConfig: { name: '', osOverride: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 },
+        apps: [...defaultAdminApps],
+        categories: [...defaultCategories]
+      });
+      saveState();
+      closeProfileEditModal();
+      openProfilesModal();
+      showToast('Profile created successfully', 'emerald');
     }
 
     function confirmDeleteProfile(id) {
-      const target = profiles.find(p => p.id === id);
-      if (!target || target.isMain) return;
-      openConfirmModal('Delete Profile?', `Are you sure you want to delete profile '${target.name}'?`, () => {
+      openConfirmModal('Delete Profile?', 'Are you sure you want to delete this profile?', () => {
         profiles = profiles.filter(p => p.id !== id);
-        if (currentProfileId === id) {
-          currentProfileId = 'admin';
-        }
+        if (currentProfileId === id) currentProfileId = 'admin';
         saveState();
         applyProfilePreferences();
         renderCurrentProfileHeader();
@@ -2474,7 +2077,6 @@
     function switchProfile(id) {
       const target = profiles.find(p => p.id === id);
       if (!target) return;
-      
       if (target.password && target.password.trim() !== '') {
         pendingSwitchProfileId = id;
         document.getElementById('prompt-profile-name').innerText = `Enter password for ${target.name}`;
@@ -2507,7 +2109,7 @@
       document.body.classList.remove('theme-light', 'theme-neon');
       if (name === 'light') document.body.classList.add('theme-light');
       else if (name === 'neon') document.body.classList.add('theme-neon');
-      if (save) { saveState(); showToast(`Theme updated`, 'emerald'); }
+      if (save) { saveState(); showToast('Theme updated', 'emerald'); }
     }
 
     function saveWeatherZip(val) { getCurrentProfile().weatherZip = val.trim(); saveState(); fetchWeather(); }
@@ -2522,7 +2124,7 @@
         const res = await fetch('/api/upload-wallpaper', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: evt.target.result, filename: file.name, profileId: p.id })
+          body: JSON.stringify({ image: evt.target.result, filename: file.name })
         });
         if (res.ok) {
           const data = await res.json();
@@ -2537,10 +2139,9 @@
     }
 
     function setBgScaleMode(mode) {
-      const p = getCurrentProfile();
-      p.bgScaleMode = mode;
+      getCurrentProfile().bgScaleMode = mode;
       updateBgScaleButtons(mode);
-      applyBackgroundDisplay(p.customBgData);
+      applyBackgroundDisplay(getCurrentProfile().customBgData);
       saveState();
     }
 
@@ -2568,9 +2169,8 @@
     }
 
     function toggleBgTrueColor(checked) {
-      const p = getCurrentProfile();
-      p.bgTrueColor = checked;
-      applyBackgroundDisplay(p.customBgData);
+      getCurrentProfile().bgTrueColor = checked;
+      applyBackgroundDisplay(getCurrentProfile().customBgData);
       saveState();
     }
 
@@ -2589,26 +2189,10 @@
       if (data) {
         bg.style.backgroundImage = `url('${data}')`;
         bg.style.opacity = p.bgTrueColor ? '1' : ((p.bgOpacity !== undefined ? p.bgOpacity : 30) / 100).toString();
-        
         const mode = p.bgScaleMode || 'cover';
         const zoom = p.bgZoomVal || 100;
-        const posX = p.bgPosX !== undefined ? p.bgPosX : 50;
-        const posY = p.bgPosY !== undefined ? p.bgPosY : 50;
-
-        bg.style.backgroundPosition = `${posX}% ${posY}%`;
-        if (mode === 'tile') {
-          bg.style.backgroundSize = `${zoom}%`;
-          bg.style.backgroundRepeat = 'repeat';
-        } else if (mode === 'stretch') {
-          bg.style.backgroundSize = `${zoom}% ${zoom}%`;
-          bg.style.backgroundRepeat = 'no-repeat';
-        } else if (mode === 'contain') {
-          bg.style.backgroundSize = `${zoom}% auto`;
-          bg.style.backgroundRepeat = 'no-repeat';
-        } else {
-          bg.style.backgroundSize = `${zoom}%`;
-          bg.style.backgroundRepeat = 'no-repeat';
-        }
+        bg.style.backgroundPosition = `${p.bgPosX ?? 50}% ${p.bgPosY ?? 50}%`;
+        bg.style.backgroundSize = mode === 'tile' ? `${zoom}%` : `${zoom}%`;
         bg.style.display = 'block';
       } else {
         bg.style.display = 'none';
@@ -2659,13 +2243,7 @@
     function resetToDefaults() { openConfirmModal('Reset?', 'Reset configuration?', () => { localStorage.clear(); location.reload(); }); }
 
     function exportConfig() {
-      const payload = {
-        version: '2.6',
-        timestamp: new Date().toISOString(),
-        currentProfileId,
-        defaultStartupProfileId,
-        profiles
-      };
+      const payload = { version: '2.6', timestamp: new Date().toISOString(), currentProfileId, defaultStartupProfileId, profiles };
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
@@ -2674,36 +2252,6 @@
       downloadAnchor.click();
       downloadAnchor.remove();
       showToast('Configuration exported successfully', 'emerald');
-    }
-
-    function importConfig(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async function(evt) {
-        try {
-          const data = JSON.parse(evt.target.result);
-          if (data && data.profiles && Array.isArray(data.profiles)) {
-            profiles = data.profiles;
-            if (data.defaultStartupProfileId) defaultStartupProfileId = data.defaultStartupProfileId;
-            if (data.currentProfileId && profiles.some(p => p.id === data.currentProfileId)) {
-              currentProfileId = data.currentProfileId;
-            }
-            await saveState();
-            applyProfilePreferences();
-            renderCurrentProfileHeader();
-            renderCategories();
-            renderApps();
-            closeSettingsModal();
-            showToast('Configuration imported successfully!', 'emerald');
-          } else {
-            showToast('Invalid backup file format', 'rose');
-          }
-        } catch (err) {
-          showToast('Failed to parse backup JSON', 'rose');
-        }
-      };
-      reader.readAsText(file);
     }
 
     function copyText(text) {
