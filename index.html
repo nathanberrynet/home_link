@@ -1477,18 +1477,19 @@
 
     // UPDATED PROXY API FETCH FUNCTION (Bypasses CORS & Trailing Slashes)
     async function fetchServiceStats(app) {
-      const name = app.name.toLowerCase();
       try {
-        if ((name.includes('sonarr') || name.includes('radarr')) && app.apiKey) {
-          const res = await fetch(`/api/proxy-stats?targetUrl=${encodeURIComponent(app.url)}&apiKey=${encodeURIComponent(app.apiKey)}`);
-          if (res.ok) {
-            const data = await res.json();
-            appLiveStats[app.id] = `${data.totalRecords || 0} Queue Items`;
+        if (app.apiKey && app.apiKey.trim() !== '') {
+          const url = '/api/proxy-stats?targetUrl=' + encodeURIComponent(app.url) + '&apiKey=' + encodeURIComponent(app.apiKey) + '&serviceName=' + encodeURIComponent(app.name);
+          const res = await fetch(url);
+          const data = await res.json();
+          if (data && data.badge) {
+            appLiveStats[app.id] = data.badge;
             renderApps();
           }
         }
       } catch(e) {}
     }
+
 
     function renderCurrentProfileHeader() {
       const p = getCurrentProfile();

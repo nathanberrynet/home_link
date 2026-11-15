@@ -87,31 +87,112 @@ app.post('/api/config', (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Failed to save config' }); }
 });
 
-// Server-side proxy for Sonarr/Radarr API to bypass browser CORS & trailing slash issues
+// Universal Server-Side Proxy for Homelab Services (Local-Only)
 app.get('/api/proxy-stats', async (req, res) => {
-    const { targetUrl, apiKey } = req.query;
+    const { targetUrl, apiKey, serviceName } = req.query;
     if (!targetUrl) return res.status(400).json({ error: 'Missing targetUrl' });
-    try {
-        const cleanUrl = targetUrl.replace(/\/+$/, '');
-        const client = cleanUrl.startsWith('https') ? https : http;
-        
-        const apiReq = client.get(`${cleanUrl}/api/v3/queue`, {
-            headers: { 'X-Api-Key': apiKey || '' }
-        }, (apiRes) => {
-            let data = '';
-            apiRes.on('data', chunk => data += chunk);
-            apiRes.on('end', () => {
-                try {
-                    res.json(JSON.parse(data));
-                } catch(e) {
-                    res.status(500).json({ error: 'Invalid JSON from service' });
-                }
+    if (!apiKey) return res.status(400).json({ error: 'Missing apiKey' });
+
+    const cleanUrl = targetUrl.replace(/\/+$/, '');
+    const name = (serviceName || '').toLowerCase();
+
+    const fetchService = (fullUrl, headers = {}) => {
+        return new Promise((resolve, reject) => {
+            const client = fullUrl.startsWith('https') ? https : http;
+            const options = {
+                headers: { 'Accept': 'application/json', ...headers },
+                rejectUnauthorized: false
+            };
+            const apiReq = client.get(fullUrl, options, (apiRes) => {
+                let data = '';
+                apiRes.on('data', chunk => data += chunk);
+                apiRes.on('end', () => {
+                    if (apiRes.statusCode >= 400) {
+                        return reject(new Error(`HTTP ${apiRes.statusCode}`));
+                    }
+                    resolve(data);
+                });
+            });
+            apiReq.on('error', reject);
+            apiReq.setTimeout(5000, () => {
+                apiReq.destroy();
+                reject(new Error('Timeout'));
             });
         });
-        apiReq.on('error', (err) => res.status(500).json({ error: err.message }));
-        apiReq.setTimeout(5000, () => { apiReq.destroy(); res.status(504).json({ error: 'Gateway timeout' }); });
-    } catch(err) {
-        res.status(500).json({ error: err.message });
+    };
+
+    try {
+        // 1. OVERSEERR / SEERR
+        if (name.includes('seerr')) {
+            const raw = await fetchService(`${cleanUrl}/api/v1/request/count`, { 'X-Api-Key': apiKey });
+            const json = JSON.parse(raw);
+            const parts = [];
+            if (json.pending > 0) parts.push(`${json.pending} Pending`);
+            if (json.processing > 0) parts.push(`${json.processing} Processing`);
+            const badge = parts.length > 0 ? parts.join(' • ') : `${json.available || 0} Available`;
+            return res.json({ badge, raw: json });
+        }
+
+        // 2. PLEX (Uses X-Plex-Token)
+        if (name.includes('plex')) {
+            const raw = await fetchService(`${cleanUrl}/status/sessions`, { 'X-Plex-Token': apiKey });
+            const json = JSON.parse(raw);
+            const count = json?.MediaContainer?.size || 0;
+            const badge = count > 0 ? `${count} Stream${count > 1 ? 's' : ''}` : 'Idle';
+            return res.json({ badge, raw: json });
+        }
+
+        // 3. PROWLARR
+        if (name.includes('prowlarr')) {
+            const raw = await fetchService(`${cleanUrl}/api/v1/indexer`, { 'X-Api-Key': apiKey });
+            const json = JSON.parse(raw);
+            const enabled = Array.isArray(json) ? json.filter(i => i.enable).length : 0;
+            return res.json({ badge: `${enabled} Indexers`, raw: json });
+        }
+
+        // 4. QBITTORRENT v5.2.0+ (Uses Bearer API Key)
+        if (name.includes('qbit') || name.includes('torrent')) {
+            const raw = await fetchService(`${cleanUrl}/api/v2/sync/maindata`, { 'Authorization': `Bearer ${apiKey}` });
+            const json = JSON.parse(raw);
+            const dlSpeed = ((json?.server_state?.dl_info_speed || 0) / 1048576).toFixed(1);
+            const torrents = Object.values(json?.torrents || {});
+            const active = torrents.filter(t => ['downloading', 'stalledDL', 'metaDL'].includes(t.state)).length;
+            return res.json({ badge: `${active} DL • ${dlSpeed} MB/s`, raw: json });
+        }
+
+        // 5. IMMICH
+        if (name.includes('immich')) {
+            const raw = await fetchService(`${cleanUrl}/api/server/statistics`, { 'x-api-key': apiKey });
+            const json = JSON.parse(raw);
+            const total = (json.photos || 0) + (json.videos || 0);
+            return res.json({ badge: `${total.toLocaleString()} Media`, raw: json });
+        }
+
+        // 6. PI-HOLE
+        if (name.includes('pihole') || name.includes('pi-hole')) {
+            const raw = await fetchService(`${cleanUrl}/admin/api.php?summaryRaw&auth=${encodeURIComponent(apiKey)}`);
+            const json = JSON.parse(raw);
+            const pct = Number(json.ads_percentage_today || 0).toFixed(1);
+            return res.json({ badge: `${pct}% Blocked`, raw: json });
+        }
+
+        // 7. SABNZBD
+        if (name.includes('sabnzbd') || name.includes('sab')) {
+            const raw = await fetchService(`${cleanUrl}/api?mode=queue&output=json&apikey=${encodeURIComponent(apiKey)}`);
+            const json = JSON.parse(raw);
+            const count = json?.queue?.noofslots_total || 0;
+            const speed = json?.queue?.speed || '0 B/s';
+            return res.json({ badge: `${count} Queued • ${speed}`, raw: json });
+        }
+
+        // 8. DEFAULT: SONARR / RADARR / LIDARR / READARR (v3 Queue)
+        const raw = await fetchService(`${cleanUrl}/api/v3/queue`, { 'X-Api-Key': apiKey });
+        const json = JSON.parse(raw);
+        const queued = json.totalRecords ?? (Array.isArray(json.records) ? json.records.length : 0);
+        return res.json({ badge: `${queued} Queued`, totalRecords: queued, raw: json });
+
+    } catch (err) {
+        res.status(502).json({ error: err.message, badge: 'API Error' });
     }
 });
 
