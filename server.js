@@ -72,20 +72,23 @@ app.post('/api/config', (req, res) => {
   }
 });
 
+// Asset scanner with robust swap-file (.swp) and hidden file filtering
 app.get('/api/assets', (req, res) => {
   try {
     let assets = [];
     if (fs.existsSync(ICONS_DIR)) {
       fs.readdirSync(ICONS_DIR).forEach(file => {
         if (file.startsWith('.') || file.endsWith('.swp') || file.endsWith('~')) return;
-        const stats = fs.statSync(path.join(ICONS_DIR, file));
+        const filePath = path.join(ICONS_DIR, file);
+        const stats = fs.statSync(filePath);
         assets.push({ type: 'icon', filename: file, url: `/data/icons/${file}`, size: stats.size, updatedAt: stats.mtime });
       });
     }
     if (fs.existsSync(WALLPAPERS_DIR)) {
       fs.readdirSync(WALLPAPERS_DIR).forEach(file => {
         if (file.startsWith('.') || file.endsWith('.swp') || file.endsWith('~')) return;
-        const stats = fs.statSync(path.join(WALLPAPERS_DIR, file));
+        const filePath = path.join(WALLPAPERS_DIR, file);
+        const stats = fs.statSync(filePath);
         assets.push({ type: 'wallpaper', filename: file, url: `/data/wallpapers/${file}`, size: stats.size, updatedAt: stats.mtime });
       });
     }
