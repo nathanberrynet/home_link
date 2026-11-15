@@ -101,30 +101,72 @@
       50% { opacity: 0.6; transform: scale(1.15); }
     }
     .status-pulse { animation: pulse-glow 2s infinite ease-in-out; }
+
+    /* Interactive Studio Transform Handles */
+    .studio-handle {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: #f97316;
+      border: 2px solid #ffffff;
+      border-radius: 9999px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+      z-index: 60;
+      transition: transform 0.1s ease;
+    }
+    .studio-handle:hover {
+      transform: scale(1.25);
+      background: #fb923c;
+    }
   </style>
 </head>
 <body class="bg-mesh relative selection:bg-orange-500 selection:text-white pb-12">
 
   <div id="custom-bg-overlay" class="fixed inset-0 pointer-events-none transition-all duration-300 z-0" style="display: none;"></div>
 
+  <!-- Interactive Background Studio Overlay (Drag to Move + Edge/Corner Resize Handles) -->
+  <div id="bg-studio-stage" class="fixed inset-0 z-40 hidden select-none overflow-hidden bg-slate-950/30 backdrop-blur-[1px]">
+    <div id="bg-studio-box" class="absolute border-2 border-dashed border-orange-500 shadow-[0_0_0_9999px_rgba(2,6,23,0.55)] cursor-move group" style="left: 10%; top: 10%; width: 80%; height: 80%;">
+      <img id="bg-studio-preview-img" src="" class="w-full h-full object-fill pointer-events-none select-none opacity-90" />
+      
+      <!-- Center Move Badge -->
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div class="bg-slate-950/80 border border-orange-500/40 text-white px-3 py-1.5 rounded-full text-[11px] font-semibold shadow-lg flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+          <i class="fa-solid fa-up-down-left-right text-orange-400"></i> Drag to Move • Pull Edges/Corners to Resize
+        </div>
+      </div>
+
+      <!-- 8 Resize Handles (Corners & Edges) -->
+      <div data-dir="nw" class="studio-handle -top-2 -left-2 cursor-nwse-resize"></div>
+      <div data-dir="n"  class="studio-handle -top-2 left-1/2 -translate-x-1/2 cursor-ns-resize"></div>
+      <div data-dir="ne" class="studio-handle -top-2 -right-2 cursor-nesw-resize"></div>
+      <div data-dir="e"  class="studio-handle top-1/2 -translate-y-1/2 -right-2 cursor-ew-resize"></div>
+      <div data-dir="se" class="studio-handle -bottom-2 -right-2 cursor-nwse-resize"></div>
+      <div data-dir="s"  class="studio-handle -bottom-2 left-1/2 -translate-x-1/2 cursor-ns-resize"></div>
+      <div data-dir="sw" class="studio-handle -bottom-2 -left-2 cursor-nesw-resize"></div>
+      <div data-dir="w"  class="studio-handle top-1/2 -translate-y-1/2 -left-2 cursor-ew-resize"></div>
+    </div>
+  </div>
+
   <!-- Live Background Customizer Floating Studio Toolbar -->
-  <div id="bg-customizer-toolbar" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 glass-panel px-6 py-3 rounded-2xl border border-orange-500/50 shadow-2xl flex items-center gap-4 hidden">
-    <div class="flex items-center gap-2">
-      <div class="w-8 h-8 rounded-xl bg-orange-600/20 text-orange-400 flex items-center justify-center animate-bounce">
-        <i class="fa-solid fa-arrows-up-down-left-right"></i>
+  <div id="bg-customizer-toolbar" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 glass-panel px-5 py-3 rounded-2xl border border-orange-500/50 shadow-2xl flex flex-wrap items-center justify-center gap-4 hidden">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-orange-600/20 text-orange-400 flex items-center justify-center">
+        <i class="fa-solid fa-crop-simple"></i>
       </div>
       <div>
-        <div class="text-xs font-bold text-white">Live Background Studio</div>
-        <div class="text-[10px] text-orange-300">Click & drag anywhere on screen to pan background</div>
+        <div class="text-xs font-bold text-white">Interactive Background Studio</div>
+        <div id="studio-dimensions-readout" class="text-[10px] text-orange-300 font-mono">Scale: 100% | Pos: 50%, 50%</div>
       </div>
     </div>
     <div class="flex items-center gap-2">
-      <button onclick="exitBackgroundStudio()" class="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold shadow-lg">Done / Save Position</button>
+      <button onclick="resetStudioTransform()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-white/10">Reset Fit</button>
+      <button onclick="exitBackgroundStudio()" class="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold shadow-lg">Done / Save</button>
     </div>
   </div>
 
   <!-- Header Navigation -->
-  <header class="sticky top-0 z-40 glass-panel border-b border-white/10 px-4 lg:px-8 py-3 mb-6">
+  <header class="sticky top-0 z-30 glass-panel border-b border-white/10 px-4 lg:px-8 py-3 mb-6">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
       
       <!-- Brand & Date -->
@@ -239,7 +281,7 @@
   </header>
 
   <!-- Main Container -->
-  <main class="max-w-7xl mx-auto px-4 lg:px-8 z-10 relative">
+  <main id="main-dashboard-content" class="max-w-7xl mx-auto px-4 lg:px-8 z-10 relative transition-opacity duration-200">
 
     <!-- Category Filter Bar & Quick Stats -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -436,7 +478,7 @@
     </div>
   </div>
 
-  <!-- Edit Admin Profile Modal -->
+  <!-- Edit Admin Profile Modal (With Live Avatar Preview) -->
   <div id="admin-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 shadow-2xl relative">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
@@ -444,9 +486,20 @@
         <button onclick="closeAdminEditModal()" class="opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form onsubmit="saveAdminProfile(event)" class="space-y-3">
+        <!-- Live Avatar / User Icon Preview -->
+        <div class="flex items-center gap-3 bg-slate-900/60 p-3 rounded-xl border border-white/5">
+          <div id="admin-edit-avatar-preview" class="w-12 h-12 rounded-full bg-orange-600 flex items-center justify-center text-lg font-bold text-white overflow-hidden border-2 border-orange-500/50 flex-shrink-0 shadow-md">
+            A
+          </div>
+          <div class="overflow-hidden">
+            <div id="admin-edit-name-preview" class="text-sm font-bold text-white truncate">Admin 👑</div>
+            <div class="text-[10px] text-slate-400">Profile Icon Preview</div>
+          </div>
+        </div>
+
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Admin Custom Name</label>
-          <input type="text" id="admin-name-input" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+          <input type="text" id="admin-name-input" oninput="updateAdminAvatarPreview()" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
         </div>
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Admin Password (leave blank for none)</label>
@@ -454,7 +507,7 @@
         </div>
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Avatar Image URL or Upload</label>
-          <input type="text" id="admin-avatar-input" placeholder="https://..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white mb-1.5">
+          <input type="text" id="admin-avatar-input" oninput="updateAdminAvatarPreview()" placeholder="https://..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white mb-1.5">
           <input type="file" accept="image/*" onchange="handleAdminAvatarUpload(event)" class="w-full text-[10px] text-slate-400">
         </div>
         <div class="pt-2 flex justify-end gap-2">
@@ -465,7 +518,7 @@
     </div>
   </div>
 
-  <!-- Create Profile Modal -->
+  <!-- Create / Edit Profile Modal (With Live Avatar Preview) -->
   <div id="profile-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 shadow-2xl relative">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
@@ -474,9 +527,21 @@
       </div>
       <form id="profile-form" onsubmit="saveProfile(event)" class="space-y-3">
         <input type="hidden" id="profile-edit-id">
+        
+        <!-- Live Avatar / User Icon Preview -->
+        <div class="flex items-center gap-3 bg-slate-900/60 p-3 rounded-xl border border-white/5">
+          <div id="profile-edit-avatar-preview" class="w-12 h-12 rounded-full bg-orange-600 flex items-center justify-center text-lg font-bold text-white overflow-hidden border-2 border-orange-500/50 flex-shrink-0 shadow-md">
+            <i class="fa-solid fa-user text-sm"></i>
+          </div>
+          <div class="overflow-hidden">
+            <div id="profile-edit-name-preview" class="text-sm font-bold text-white truncate">New User</div>
+            <div class="text-[10px] text-slate-400">Profile Icon Preview</div>
+          </div>
+        </div>
+
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Profile Name</label>
-          <input type="text" id="profile-name-input" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+          <input type="text" id="profile-name-input" oninput="updateProfileAvatarPreview()" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
         </div>
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Optional PIN / Password</label>
@@ -484,7 +549,7 @@
         </div>
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Profile Avatar</label>
-          <input type="text" id="profile-avatar-input" placeholder="https://..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white mb-1.5">
+          <input type="text" id="profile-avatar-input" oninput="updateProfileAvatarPreview()" placeholder="https://..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white mb-1.5">
           <input type="file" accept="image/*" onchange="handleProfileAvatarUpload(event)" class="w-full text-[10px] text-slate-400">
         </div>
         <div class="pt-2 flex justify-end gap-2">
@@ -592,7 +657,7 @@
           <div class="flex items-center justify-between mb-2">
             <label class="block text-xs font-semibold opacity-90">Custom Background Wallpaper & Live Studio</label>
             <button onclick="enterBackgroundStudio()" class="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-1.5">
-              <i class="fa-solid fa-arrows-up-down-left-right"></i> Live Pan & Adjust
+              <i class="fa-solid fa-up-down-left-right"></i> Live Pan & Resize
             </button>
           </div>
 
@@ -624,7 +689,7 @@
                 <span>Custom Zoom / Scale</span>
                 <span id="bg-zoom-label">100%</span>
               </div>
-              <input type="range" id="setting-bg-zoom" min="50" max="300" value="100" oninput="updateBgZoom(this.value)" class="w-full accent-orange-500">
+              <input type="range" id="setting-bg-zoom" min="25" max="300" value="100" oninput="updateBgZoom(this.value)" class="w-full accent-orange-500">
             </div>
 
             <div class="grid grid-cols-2 gap-4 bg-slate-900/50 p-3 rounded-xl border border-white/5">
@@ -704,7 +769,7 @@
         <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="space-y-4 text-xs text-slate-300">
-        <p>HomeLink v2.6 features complete visual asset galleries, thumbnail lightbox previews, and a live drag-to-pan background customizer.</p>
+        <p>HomeLink v2.6 features complete visual asset galleries, thumbnail lightbox previews, and an interactive drag-to-move & edge-resize background studio.</p>
       </div>
     </div>
   </div>
@@ -780,9 +845,13 @@
     let uploadedProfileAvatarBase64 = '';
     let iconWasModified = false;
     let pingTimer = null;
-    let isDraggingBackground = false;
-    let dragStartX = 0;
-    let dragStartY = 0;
+
+    // Interactive Studio State
+    let studioActive = false;
+    let studioInteractionType = null; // 'move' or 'resize'
+    let studioResizeDir = '';
+    let studioStartMouse = { x: 0, y: 0 };
+    let studioStartRect = { left: 0, top: 0, width: 0, height: 0 };
 
     const unifiedIconLibrary = [
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/plex.png', name: 'plex media server' },
@@ -827,7 +896,7 @@
       renderApps();
       runLivePings();
       setupPingInterval();
-      setupBackgroundDragging();
+      initInteractiveStudioListeners();
     });
 
     function getCurrentProfile() {
@@ -1061,44 +1130,182 @@
       showToast('Wallpaper applied from gallery', 'emerald');
     }
 
-    // Live Background Studio (Drag-to-Pan & Scale)
+    // =========================================================================
+    // INTERACTIVE BACKGROUND STUDIO (Click & Drag to Move + Edge/Corner Resize)
+    // =========================================================================
     function enterBackgroundStudio() {
+      const p = getCurrentProfile();
+      if (!p.customBgData) {
+        showToast('Please select or upload a background wallpaper first!', 'rose');
+        return;
+      }
       closeSettingsModal();
+      studioActive = true;
+
+      // Dim dashboard tiles slightly so user can clearly see and position the wallpaper
+      document.getElementById('main-dashboard-content').style.opacity = '0.25';
+      document.getElementById('main-dashboard-content').style.pointerEvents = 'none';
+      document.getElementById('custom-bg-overlay').style.display = 'none';
+
+      const stage = document.getElementById('bg-studio-stage');
+      const box = document.getElementById('bg-studio-box');
+      const previewImg = document.getElementById('bg-studio-preview-img');
+
+      previewImg.src = p.customBgData;
+      stage.classList.remove('hidden');
       document.getElementById('bg-customizer-toolbar').classList.remove('hidden');
-      isDraggingBackground = true;
-      showToast('Studio mode active: Click and drag anywhere to pan background!', 'blue');
+
+      // Calculate initial bounding box from current zoom & posX/posY
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const zoom = (p.bgZoomVal || 100) / 100;
+      const posX = (p.bgPosX !== undefined ? p.bgPosX : 50) / 100;
+      const posY = (p.bgPosY !== undefined ? p.bgPosY : 50) / 100;
+
+      const boxW = Math.max(150, vw * zoom);
+      const boxH = Math.max(150, vh * zoom);
+      const boxLeft = (vw - boxW) * posX;
+      const boxTop = (vh - boxH) * posY;
+
+      box.style.width = `${boxW}px`;
+      box.style.height = `${boxH}px`;
+      box.style.left = `${boxLeft}px`;
+      box.style.top = `${boxTop}px`;
+
+      updateStudioReadout();
+    }
+
+    function resetStudioTransform() {
+      const p = getCurrentProfile();
+      p.bgZoomVal = 100;
+      p.bgPosX = 50;
+      p.bgPosY = 50;
+
+      const box = document.getElementById('bg-studio-box');
+      box.style.width = `${window.innerWidth}px`;
+      box.style.height = `${window.innerHeight}px`;
+      box.style.left = `0px`;
+      box.style.top = `0px`;
+      updateStudioReadout();
     }
 
     function exitBackgroundStudio() {
+      const p = getCurrentProfile();
+      syncBoxToProfile(p);
+
+      studioActive = false;
+      document.getElementById('bg-studio-stage').classList.add('hidden');
       document.getElementById('bg-customizer-toolbar').classList.add('hidden');
-      isDraggingBackground = false;
+      document.getElementById('main-dashboard-content').style.opacity = '1';
+      document.getElementById('main-dashboard-content').style.pointerEvents = 'auto';
+
+      saveState();
+      applyProfilePreferences();
       openSettingsModal();
-      showToast('Background position saved', 'emerald');
+      showToast('Background position & scale saved', 'emerald');
     }
 
-    function setupBackgroundDragging() {
-      window.addEventListener('mousedown', (e) => {
-        if (!isDraggingBackground) return;
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
+    function syncBoxToProfile(p) {
+      const box = document.getElementById('bg-studio-box');
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      const boxW = box.offsetWidth;
+      const boxH = box.offsetHeight;
+      const boxLeft = parseFloat(box.style.left) || 0;
+      const boxTop = parseFloat(box.style.top) || 0;
+
+      const zoomPct = Math.round((boxW / vw) * 100);
+      p.bgZoomVal = Math.max(25, Math.min(300, zoomPct));
+
+      const denomX = vw - boxW;
+      const denomY = vh - boxH;
+      p.bgPosX = Math.abs(denomX) < 1 ? 50 : Math.round((boxLeft / denomX) * 100);
+      p.bgPosY = Math.abs(denomY) < 1 ? 50 : Math.round((boxTop / denomY) * 100);
+    }
+
+    function updateStudioReadout() {
+      const box = document.getElementById('bg-studio-box');
+      const vw = window.innerWidth;
+      const zoomPct = Math.round((box.offsetWidth / vw) * 100);
+      const left = Math.round(parseFloat(box.style.left) || 0);
+      const top = Math.round(parseFloat(box.style.top) || 0);
+      document.getElementById('studio-dimensions-readout').innerText = `Scale: ${zoomPct}% | Offset: ${left}px, ${top}px`;
+    }
+
+    function initInteractiveStudioListeners() {
+      const box = document.getElementById('bg-studio-box');
+
+      box.addEventListener('mousedown', (e) => {
+        if (!studioActive) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const handle = e.target.closest('.studio-handle');
+        studioStartMouse = { x: e.clientX, y: e.clientY };
+        studioStartRect = {
+          left: box.offsetLeft,
+          top: box.offsetTop,
+          width: box.offsetWidth,
+          height: box.offsetHeight
+        };
+
+        if (handle) {
+          studioInteractionType = 'resize';
+          studioResizeDir = handle.getAttribute('data-dir');
+        } else {
+          studioInteractionType = 'move';
+        }
       });
 
       window.addEventListener('mousemove', (e) => {
-        if (!isDraggingBackground) return;
-        const dx = e.clientX - dragStartX;
-        const dy = e.clientY - dragStartY;
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
+        if (!studioActive || !studioInteractionType) return;
+        const dx = e.clientX - studioStartMouse.x;
+        const dy = e.clientY - studioStartMouse.y;
 
-        const p = getCurrentProfile();
-        p.bgPosX = Math.max(0, Math.min(100, (p.bgPosX || 50) - (dx * 0.15)));
-        p.bgPosY = Math.max(0, Math.min(100, (p.bgPosY || 50) - (dy * 0.15)));
-        applyBackgroundDisplay(p.customBgData);
+        if (studioInteractionType === 'move') {
+          box.style.left = `${studioStartRect.left + dx}px`;
+          box.style.top = `${studioStartRect.top + dy}px`;
+        } else if (studioInteractionType === 'resize') {
+          let newLeft = studioStartRect.left;
+          let newTop = studioStartRect.top;
+          let newWidth = studioStartRect.width;
+          let newHeight = studioStartRect.height;
+
+          if (studioResizeDir.includes('e')) {
+            newWidth = Math.max(120, studioStartRect.width + dx);
+          }
+          if (studioResizeDir.includes('s')) {
+            newHeight = Math.max(120, studioStartRect.height + dy);
+          }
+          if (studioResizeDir.includes('w')) {
+            const proposedW = studioStartRect.width - dx;
+            if (proposedW >= 120) {
+              newWidth = proposedW;
+              newLeft = studioStartRect.left + dx;
+            }
+          }
+          if (studioResizeDir.includes('n')) {
+            const proposedH = studioStartRect.height - dy;
+            if (proposedH >= 120) {
+              newHeight = proposedH;
+              newTop = studioStartRect.top + dy;
+            }
+          }
+
+          box.style.left = `${newLeft}px`;
+          box.style.top = `${newTop}px`;
+          box.style.width = `${newWidth}px`;
+          box.style.height = `${newHeight}px`;
+        }
+
+        updateStudioReadout();
       });
 
       window.addEventListener('mouseup', () => {
-        if (isDraggingBackground) {
-          saveState();
+        if (studioInteractionType) {
+          studioInteractionType = null;
+          studioResizeDir = '';
         }
       });
     }
@@ -1530,7 +1737,10 @@
           <div class="flex items-center gap-1.5">
             <button onclick="copyText('${baseUrl}?profile=${p.id}')" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-white/10">Direct Link</button>
             ${currentProfileId !== p.id ? `<button onclick="switchProfile('${p.id}')" class="px-3 py-1 bg-orange-600 text-white rounded-lg text-xs font-semibold">Switch</button>` : `<span class="text-emerald-400 font-semibold px-2">Active</span>`}
-            ${profile.isMain && !p.isMain ? `<button onclick="confirmDeleteProfile('${p.id}')" class="px-2 py-1 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 rounded-lg text-xs" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>` : ''}
+            ${profile.isMain && !p.isMain ? `
+              <button onclick="openEditProfileModal('${p.id}')" class="px-2 py-1 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg text-xs" title="Edit Profile"><i class="fa-solid fa-pen"></i></button>
+              <button onclick="confirmDeleteProfile('${p.id}')" class="px-2 py-1 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 rounded-lg text-xs" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>
+            ` : ''}
           </div>
         </div>
       `).join('');
@@ -1538,6 +1748,7 @@
     }
     function closeProfilesModal() { document.getElementById('profiles-modal').classList.add('hidden'); }
 
+    // Admin Profile Edit & Live Avatar Preview
     function openEditAdminModal() {
       closeProfilesModal();
       const p = getCurrentProfile();
@@ -1545,9 +1756,24 @@
       document.getElementById('admin-pass-input').value = p.password || '';
       document.getElementById('admin-avatar-input').value = p.avatar || '';
       uploadedAdminAvatarBase64 = p.avatar || '';
+      updateAdminAvatarPreview();
       document.getElementById('admin-edit-modal').classList.remove('hidden');
     }
     function closeAdminEditModal() { document.getElementById('admin-edit-modal').classList.add('hidden'); }
+
+    function updateAdminAvatarPreview() {
+      const nameVal = document.getElementById('admin-name-input').value.trim() || 'Admin';
+      const avatarVal = document.getElementById('admin-avatar-input').value.trim();
+      const previewEl = document.getElementById('admin-edit-avatar-preview');
+      const nameEl = document.getElementById('admin-edit-name-preview');
+
+      nameEl.innerText = `${nameVal} 👑`;
+      if (avatarVal) {
+        previewEl.innerHTML = `<img src="${avatarVal}" class="w-full h-full object-cover" onerror="this.parentElement.innerText='${nameVal.charAt(0).toUpperCase()}';">`;
+      } else {
+        previewEl.innerText = nameVal.charAt(0).toUpperCase();
+      }
+    }
 
     function handleAdminAvatarUpload(e) {
       const file = e.target.files[0];
@@ -1556,6 +1782,7 @@
       reader.onload = function(evt) {
         uploadedAdminAvatarBase64 = evt.target.result;
         document.getElementById('admin-avatar-input').value = uploadedAdminAvatarBase64;
+        updateAdminAvatarPreview();
         showToast('Admin avatar loaded', 'emerald');
       };
       reader.readAsDataURL(file);
@@ -1576,6 +1803,7 @@
       showToast('Admin profile updated', 'emerald');
     }
 
+    // Standard Profile Create/Edit & Live Avatar Preview
     function openCreateProfileModal() {
       closeProfilesModal();
       document.getElementById('profile-edit-id').value = '';
@@ -1584,9 +1812,41 @@
       document.getElementById('profile-pass-input').value = '';
       document.getElementById('profile-avatar-input').value = '';
       uploadedProfileAvatarBase64 = '';
+      updateProfileAvatarPreview();
       document.getElementById('profile-edit-modal').classList.remove('hidden');
     }
+
+    function openEditProfileModal(id) {
+      const target = profiles.find(p => p.id === id);
+      if (!target) return;
+      closeProfilesModal();
+      document.getElementById('profile-edit-id').value = target.id;
+      document.getElementById('profile-modal-title').innerText = 'Edit User Profile';
+      document.getElementById('profile-name-input').value = target.name;
+      document.getElementById('profile-pass-input').value = target.password || '';
+      document.getElementById('profile-avatar-input').value = target.avatar || '';
+      uploadedProfileAvatarBase64 = target.avatar || '';
+      updateProfileAvatarPreview();
+      document.getElementById('profile-edit-modal').classList.remove('hidden');
+    }
+
     function closeProfileEditModal() { document.getElementById('profile-edit-modal').classList.add('hidden'); }
+
+    function updateProfileAvatarPreview() {
+      const nameVal = document.getElementById('profile-name-input').value.trim();
+      const avatarVal = document.getElementById('profile-avatar-input').value.trim();
+      const previewEl = document.getElementById('profile-edit-avatar-preview');
+      const nameEl = document.getElementById('profile-edit-name-preview');
+
+      nameEl.innerText = nameVal || 'New User';
+      if (avatarVal) {
+        previewEl.innerHTML = `<img src="${avatarVal}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-user text-sm\\'></i>';">`;
+      } else if (nameVal) {
+        previewEl.innerText = nameVal.charAt(0).toUpperCase();
+      } else {
+        previewEl.innerHTML = `<i class="fa-solid fa-user text-sm"></i>`;
+      }
+    }
 
     function handleProfileAvatarUpload(e) {
       const file = e.target.files[0];
@@ -1595,6 +1855,7 @@
       reader.onload = function(evt) {
         uploadedProfileAvatarBase64 = evt.target.result;
         document.getElementById('profile-avatar-input').value = uploadedProfileAvatarBase64;
+        updateProfileAvatarPreview();
         showToast('Profile avatar loaded', 'emerald');
       };
       reader.readAsDataURL(file);
@@ -1602,37 +1863,52 @@
 
     function saveProfile(e) {
       e.preventDefault();
+      const editId = document.getElementById('profile-edit-id').value;
       const name = document.getElementById('profile-name-input').value.trim();
       const pass = document.getElementById('profile-pass-input').value;
       const avatar = document.getElementById('profile-avatar-input').value.trim() || uploadedProfileAvatarBase64;
       if (!name) return;
 
-      const newId = 'user_' + Date.now();
-      const newProfile = {
-        id: newId,
-        name: name,
-        isMain: false,
-        password: pass || '',
-        avatar: avatar || '',
-        theme: 'dark',
-        weatherZip: '28601',
-        pingIntervalSec: 60,
-        tileSpacingVal: '2',
-        customBgData: '',
-        bgScaleMode: 'cover',
-        bgZoomVal: 100,
-        bgOpacity: 30,
-        bgTrueColor: false,
-        bgPosX: 50,
-        bgPosY: 50,
-        apps: [...defaultAdminApps],
-        categories: [...defaultCategories]
-      };
-      profiles.push(newProfile);
-      saveState();
-      closeProfileEditModal();
-      openProfilesModal();
-      showToast('Profile created successfully', 'emerald');
+      if (editId) {
+        const existing = profiles.find(p => p.id === editId);
+        if (existing) {
+          existing.name = name;
+          existing.password = pass || '';
+          existing.avatar = avatar || '';
+        }
+        saveState();
+        if (currentProfileId === editId) renderCurrentProfileHeader();
+        closeProfileEditModal();
+        openProfilesModal();
+        showToast('Profile updated', 'emerald');
+      } else {
+        const newId = 'user_' + Date.now();
+        const newProfile = {
+          id: newId,
+          name: name,
+          isMain: false,
+          password: pass || '',
+          avatar: avatar || '',
+          theme: 'dark',
+          weatherZip: '28601',
+          pingIntervalSec: 60,
+          tileSpacingVal: '2',
+          customBgData: '',
+          bgScaleMode: 'cover',
+          bgZoomVal: 100,
+          bgOpacity: 30,
+          bgTrueColor: false,
+          bgPosX: 50,
+          bgPosY: 50,
+          apps: [...defaultAdminApps],
+          categories: [...defaultCategories]
+        };
+        profiles.push(newProfile);
+        saveState();
+        closeProfileEditModal();
+        openProfilesModal();
+        showToast('Profile created successfully', 'emerald');
+      }
     }
 
     function confirmDeleteProfile(id) {
@@ -1824,6 +2100,54 @@
     }
     function resetFilters() { searchQuery = ''; activeCategory = 'All'; document.getElementById('search-input').value = ''; renderCategories(); renderApps(); }
     function resetToDefaults() { openConfirmModal('Reset?', 'Reset configuration?', () => { localStorage.clear(); location.reload(); }); }
+
+    function exportConfig() {
+      const payload = {
+        version: '2.6',
+        timestamp: new Date().toISOString(),
+        currentProfileId,
+        defaultStartupProfileId,
+        profiles
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `homelink-backup-${new Date().toISOString().slice(0, 10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Configuration exported successfully', 'emerald');
+    }
+
+    function importConfig(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(evt) {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data && data.profiles && Array.isArray(data.profiles)) {
+            profiles = data.profiles;
+            if (data.defaultStartupProfileId) defaultStartupProfileId = data.defaultStartupProfileId;
+            if (data.currentProfileId && profiles.some(p => p.id === data.currentProfileId)) {
+              currentProfileId = data.currentProfileId;
+            }
+            await saveState();
+            applyProfilePreferences();
+            renderCurrentProfileHeader();
+            renderCategories();
+            renderApps();
+            closeSettingsModal();
+            showToast('Configuration imported successfully!', 'emerald');
+          } else {
+            showToast('Invalid backup file format', 'rose');
+          }
+        } catch (err) {
+          showToast('Failed to parse backup JSON', 'rose');
+        }
+      };
+      reader.readAsText(file);
+    }
 
     function copyText(text) {
       const t = document.createElement('input'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
