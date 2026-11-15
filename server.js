@@ -1,392 +1,69 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
-const http = require('http');
 const os = require('os');
 
 const app = express();
 const PORT = process.env.PORT || 8580;
 const DATA_DIR = path.join(__dirname, 'data');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
-const ICONS_DIR = path.join(DATA_DIR, 'icons');
-const WALLPAPERS_DIR = path.join(DATA_DIR, 'wallpapers');
 
-if (!fs.existsSync(DATA_DIR)) { fs.mkdirSync(DATA_DIR, { recursive: true }); }
-if (!fs.existsSync(ICONS_DIR)) { fs.mkdirSync(ICONS_DIR, { recursive: true }); }
-if (!fs.existsSync(WALLPAPERS_DIR)) { fs.mkdirSync(WALLPAPERS_DIR, { recursive: true }); }
-
-// Automatically bootstrap default config on fresh installs if missing
-if (!fs.existsSync(CONFIG_FILE)) {
-    const defaultInitialConfig = {
-        version: '2.6',
-        timestamp: new Date().toISOString(),
-        currentProfileId: 'admin',
-        defaultStartupProfileId: 'admin',
-        profiles: [
-            {
-                id: 'admin',
-                name: 'Admin',
-                isMain: true,
-                password: '',
-                avatar: '',
-                theme: 'dark',
-                weatherZip: '28601',
-                pingIntervalSec: 60,
-                tileSpacingVal: '2',
-                customBgData: '',
-                bgScaleMode: 'cover',
-                bgZoomVal: 100,
-                bgOpacity: 30,
-                bgTrueColor: false,
-                bgPosX: 50,
-                bgPosY: 50,
-                showSystemMonitor: false,
-                sysMonConfig: { name: '', osOverride: '' },
-                apps: [
-                    { id: '1', name: 'TrueNAS CORE', category: 'Storage & NAS', url: 'https://truenas.local', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', color: 'orange', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'generic' },
-                    { id: '2', name: 'Home Assistant', category: 'Smart Home', url: 'http://192.168.1.234:8123', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', color: 'blue', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'generic' },
-                    { id: '3', name: 'Sonarr', category: 'Media', url: 'http://sonarr.local:8989', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', color: 'cyan', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'sonarr' }
-                ],
-                categories: ['Media', 'Storage & NAS', 'Smart Home', 'Networking', 'Web']
-            }
-        ]
-    };
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
     try {
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaultInitialConfig, null, 2), 'utf8');
-    } catch (err) {}
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+    } catch (err) {
+        console.error('[HomeLink Error] Failed to create data directory. Check volume mount permissions!', err.message);
+    }
 }
 
-app.use(express.json({ limit: '15mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(__dirname));
-app.use('/data', express.static(DATA_DIR));
 
-function downloadAndCacheIcon(url) {
-    return new Promise((resolve) => {
-        if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
-            return resolve(url);
-        }
-
-        const filename = Buffer.from(url).toString('base64').replace(/[/+=]/g, '_') + '.png';
-        const localPath = path.join(ICONS_DIR, filename);
-        const relativePath = `/data/icons/${filename}`;
-
-        if (fs.existsSync(localPath)) return resolve(relativePath);
-
-        const client = url.startsWith('https') ? https : http;
-        const request = client.get(url, (response) => {
-            if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-                return downloadAndCacheIcon(response.headers.location).then(resolve);
-            }
-            if (response.statusCode !== 200) return resolve(url);
-
-            const fileStream = fs.createWriteStream(localPath);
-            response.pipe(fileStream);
-            fileStream.on('finish', () => { fileStream.close(); resolve(relativePath); });
-            fileStream.on('error', () => resolve(url));
-        });
-
-        request.on('error', () => resolve(url));
-        request.setTimeout(5000, () => { request.destroy(); resolve(url); });
-    });
-}
-
-async function cacheAllExistingIconsOnStartup() {
-    if (!fs.existsSync(CONFIG_FILE)) return;
-    try {
-        const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
-        const config = JSON.parse(raw);
-        let updated = false;
-        if (config && Array.isArray(config.profiles)) {
-            for (const profile of config.profiles) {
-                if (Array.isArray(profile.apps)) {
-                    for (const appItem of profile.apps) {
-                        if (appItem.icon && (appItem.icon.startsWith('http://') || appItem.icon.startsWith('https://'))) {
-                            const cachedPath = await downloadAndCacheIcon(appItem.icon);
-                            if (cachedPath !== appItem.icon) { appItem.icon = cachedPath; updated = true; }
-                        }
-                    }
-                }
-            }
-        }
-        if (updated) {
-            fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
-        }
-    } catch (err) {}
-}
-
+// Config Endpoints with robust error logging
 app.get('/api/config', (req, res) => {
     if (fs.existsSync(CONFIG_FILE)) {
-        try { res.json(JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))); }
-        catch (err) { res.status(500).json({ error: 'Failed to parse config' }); }
-    } else { res.json({ categories: [], profiles: [] }); }
+        try { 
+            res.json(JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))); 
+        } catch (err) { 
+            console.error('[HomeLink Error] Failed to parse config.json:', err.message);
+            res.status(500).json({ error: 'Failed to parse config' }); 
+        }
+    } else { 
+        console.warn('[HomeLink Warning] config.json not found on request.');
+        res.json({ categories: [], profiles: [] }); 
+    }
 });
 
 app.post('/api/config', (req, res) => {
     try {
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(req.body, null, 2), 'utf8');
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: 'Failed to save config' }); }
-});
-
-// Helper for JSON API GET requests
-function httpGetJson(targetUrl, headers = {}) {
-    return new Promise((resolve) => {
-        try {
-            const cleanUrl = targetUrl.replace(/\/+$/, '');
-            const client = cleanUrl.startsWith('https') ? https : http;
-            const req = client.get(cleanUrl, { headers }, (res) => {
-                let data = '';
-                res.on('data', chunk => data += chunk);
-                res.on('end', () => {
-                    try { resolve(JSON.parse(data)); }
-                    catch(e) { resolve(null); }
-                });
-            });
-            req.on('error', () => resolve(null));
-            req.setTimeout(4000, () => { req.destroy(); resolve(null); });
-        } catch(e) {
-            resolve(null);
-        }
-    });
-}
-
-// Smart Service API Proxy supporting Sonarr, Radarr, Prowlarr, qBittorrent, Immich & Custom
-app.get('/api/proxy-stats', async (req, res) => {
-    const { targetUrl, apiKey, serviceType } = req.query;
-    if (!targetUrl) return res.status(400).json({ error: 'Missing targetUrl' });
-    try {
-        const cleanUrl = targetUrl.replace(/\/+$/, '');
-        const client = cleanUrl.startsWith('https') ? https : http;
-        let headers = { 'X-Api-Key': apiKey || '' };
-
-        if (serviceType === 'immich') {
-            const stats = await httpGetJson(`${cleanUrl}/api/server/statistics`, { 'x-api-key': apiKey || '' });
-            if (stats && (stats.photos !== undefined || stats.videos !== undefined)) {
-                const photos = stats.photos || 0;
-                const videos = stats.videos || 0;
-                return res.json({ badge: `${photos.toLocaleString()} photos • ${videos.toLocaleString()} videos` });
-            }
-            return res.json({ badge: 'Online (No Stats)' });
-        }
-
-        if (serviceType === 'qbittorrent') {
-            const transferInfo = await httpGetJson(`${cleanUrl}/api/v2/transfer/info`, headers);
-            const torrentsInfo = await httpGetJson(`${cleanUrl}/api/v2/torrents/info`, headers);
-
-            let dlSpeedFormatted = '0 B/s';
-            let activeCount = 0;
-
-            if (transferInfo && typeof transferInfo.dl_info_speed === 'number') {
-                const bytesSec = transferInfo.dl_info_speed;
-                if (bytesSec > 1024 * 1024 * 1024) dlSpeedFormatted = (bytesSec / (1024**3)).toFixed(1) + ' GB/s';
-                else if (bytesSec > 1024 * 1024) dlSpeedFormatted = (bytesSec / (1024**2)).toFixed(1) + ' MB/s';
-                else if (bytesSec > 1024) dlSpeedFormatted = (bytesSec / 1024).toFixed(1) + ' KB/s';
-                else if (bytesSec > 0) dlSpeedFormatted = bytesSec + ' B/s';
-            }
-
-            if (Array.isArray(torrentsInfo)) {
-                activeCount = torrentsInfo.filter(t => 
-                    t.state === 'downloading' || 
-                    t.state === 'uploading' || 
-                    t.state === 'forcedDL' || 
-                    t.state === 'forcedUP' ||
-                    (t.dlspeed && t.dlspeed > 0) ||
-                    (t.upspeed && t.upspeed > 0)
-                ).length;
-            }
-
-            const badgeText = activeCount > 0 
-                ? `${activeCount} active • DL: ${dlSpeedFormatted}` 
-                : `0 active (Idle)`;
-
-            return res.json({ badge: badgeText });
-        }
-
-        let endpoint = '/api/v3/queue';
-        if (serviceType === 'prowlarr') {
-            endpoint = '/api/v1/queue';
-        } else if (serviceType === 'radarr' || serviceType === 'sonarr') {
-            endpoint = '/api/v3/queue';
-        }
-
-        const apiReq = client.get(`${cleanUrl}${endpoint}`, { headers }, (apiRes) => {
-            let data = '';
-            apiRes.on('data', chunk => data += chunk);
-            apiRes.on('end', () => {
-                try {
-                    const json = JSON.parse(data);
-                    let count = 0;
-                    if (Array.isArray(json)) {
-                        count = json.length;
-                    } else if (json && typeof json === 'object' && Array.isArray(json.records)) {
-                        count = json.totalRecords !== undefined ? json.totalRecords : json.records.length;
-                    }
-                    res.json({ badge: `${count} in queue` });
-                } catch(e) {
-                    res.status(500).json({ error: 'Invalid JSON from service' });
-                }
-            });
-        });
-        apiReq.on('error', (err) => res.status(500).json({ error: err.message }));
-        apiReq.setTimeout(5000, () => { apiReq.destroy(); res.status(504).json({ error: 'Gateway timeout' }); });
-    } catch(err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Host System Stats Endpoint
-function getCpuUsagePercent() {
-    return new Promise((resolve) => {
-        const start = os.cpus().map(c => c.times);
-        setTimeout(() => {
-            const end = os.cpus().map(c => c.times);
-            let idleDiff = 0;
-            let totalDiff = 0;
-
-            for (let i = 0; i < start.length; i++) {
-                const s = start[i];
-                const e = end[i];
-                const sTotal = s.user + s.nice + s.sys + s.idle + s.irq;
-                const eTotal = e.user + e.nice + e.sys + e.idle + e.irq;
-                idleDiff += (e.idle - s.idle);
-                totalDiff += (eTotal - sTotal);
-            }
-            const pct = totalDiff > 0 ? Math.round(((totalDiff - idleDiff) / totalDiff) * 100) : 0;
-            resolve(pct);
-        }, 250);
-    });
-}
-
-function getHostOsInfo() {
-    const releaseFiles = ['/host-os-release', '/etc/os-release'];
-    for (const file of releaseFiles) {
-        if (fs.existsSync(file)) {
-            try {
-                const content = fs.readFileSync(file, 'utf8');
-                const match = content.match(/^PRETTY_NAME="?([^"\n]+)"?/m);
-                if (match && match[1]) return match[1];
-            } catch (e) {}
-        }
-    }
-    return `${os.type()} ${os.release()}`;
-}
-
-app.get('/api/system-stats', async (req, res) => {
-    try {
-        const cpuPercent = await getCpuUsagePercent();
-        const totalMem = os.totalmem();
-        const freeMem = os.freemem();
-        const usedMem = totalMem - freeMem;
-        const ramPercent = Math.round((usedMem / totalMem) * 100);
-
-        const formatGB = (bytes) => (bytes / (1024 ** 3)).toFixed(1);
-        const uptimeSec = os.uptime();
-        const days = Math.floor(uptimeSec / 86400);
-        const hours = Math.floor((uptimeSec % 86400) / 3600);
-        const mins = Math.floor((uptimeSec % 3600) / 60);
-
-        res.json({
-            hostname: os.hostname(),
-            osVersion: getHostOsInfo(),
-            kernel: os.release(),
-            arch: os.arch(),
-            cpuCores: os.cpus().length,
-            cpuPercent,
-            ramUsedGB: formatGB(usedMem),
-            ramTotalGB: formatGB(totalMem),
-            ramPercent,
-            uptime: `${days}d ${hours}h ${mins}m`
-        });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to gather system stats' });
+        console.error('[HomeLink Error] Failed to write config.json (Check Docker volume permissions!):', err.message);
+        res.status(500).json({ error: 'Failed to save config' }); 
     }
 });
 
-app.post('/api/cache-icon', async (req, res) => {
-    const { url } = req.body;
-    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
-        return res.status(400).json({ error: 'Invalid URL' });
-    }
-    const cachedUrl = await downloadAndCacheIcon(url);
-    res.json({ url: cachedUrl });
-});
-
-app.post('/api/upload-icon', (req, res) => {
-    const { image, filename, profileId } = req.body;
-    if (!image) return res.status(400).json({ error: 'No image provided' });
-    try {
-        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-        const buffer = Buffer.from(base64Data, 'base64');
-        const ext = filename ? path.extname(filename) : '.png';
-        const safeProfile = profileId || 'admin';
-        const safeName = `icon_${safeProfile}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`;
-        const filePath = path.join(ICONS_DIR, safeName);
-        fs.writeFileSync(filePath, buffer);
-        res.json({ url: `/data/icons/${safeName}` });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to save icon' });
-    }
-});
-
-app.post('/api/upload-wallpaper', (req, res) => {
-    const { image, filename, profileId } = req.body;
-    if (!image) return res.status(400).json({ error: 'No image provided' });
-    try {
-        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-        const buffer = Buffer.from(base64Data, 'base64');
-        const ext = filename ? path.extname(filename) : '.png';
-        const safeProfile = profileId || 'admin';
-        const safeName = `bg_${safeProfile}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`;
-        const filePath = path.join(WALLPAPERS_DIR, safeName);
-        fs.writeFileSync(filePath, buffer);
-        res.json({ url: `/data/wallpapers/${safeName}` });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to save wallpaper' });
-    }
-});
-
+// Assets Endpoints
 app.get('/api/assets', (req, res) => {
-    const { profileId, isAdmin } = req.query;
-    let assets = [];
-    const isUserAdmin = isAdmin === 'true';
-
     try {
-        if (fs.existsSync(ICONS_DIR)) {
-            fs.readdirSync(ICONS_DIR).forEach(filename => {
-                const filePath = path.join(ICONS_DIR, filename);
+        const assets = [];
+        if (fs.existsSync(DATA_DIR)) {
+            const files = fs.readdirSync(DATA_DIR);
+            files.forEach(file => {
+                if (file === 'config.json') return;
+                const filePath = path.join(DATA_DIR, file);
                 const stats = fs.statSync(filePath);
-                const isUserScoped = filename.startsWith('icon_');
-                const ownerId = isUserScoped ? filename.split('_')[1] : null;
-
-                if (isUserAdmin || !isUserScoped || ownerId === profileId) {
+                if (stats.isFile()) {
+                    const isWallpaper = file.startsWith('bg_') || file.includes('wallpaper');
                     assets.push({
-                        filename,
-                        type: 'icon',
-                        owner: ownerId || 'shared',
-                        url: `/data/icons/${filename}`,
+                        type: isWallpaper ? 'wallpaper' : 'icon',
+                        url: `/data/${file}`,
+                        filename: file,
                         size: stats.size,
-                        created: stats.birthtime
-                    });
-                }
-            });
-        }
-
-        if (fs.existsSync(WALLPAPERS_DIR)) {
-            fs.readdirSync(WALLPAPERS_DIR).forEach(filename => {
-                const filePath = path.join(WALLPAPERS_DIR, filename);
-                const stats = fs.statSync(filePath);
-                const parts = filename.split('_');
-                const ownerId = parts.length > 1 ? parts[1] : null;
-
-                if (isUserAdmin || ownerId === profileId) {
-                    assets.push({
-                        filename,
-                        type: 'wallpaper',
-                        owner: ownerId || 'unknown',
-                        url: `/data/wallpapers/${filename}`,
-                        size: stats.size,
-                        created: stats.birthtime
+                        owner: 'admin'
                     });
                 }
             });
@@ -398,23 +75,129 @@ app.get('/api/assets', (req, res) => {
 });
 
 app.delete('/api/assets/:type/:filename', (req, res) => {
-    const { type, filename } = req.params;
-    if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-        return res.status(400).json({ error: 'Invalid filename' });
-    }
-    const targetDir = type === 'wallpaper' ? WALLPAPERS_DIR : ICONS_DIR;
-    const filePath = path.join(targetDir, filename);
-    if (fs.existsSync(filePath)) {
-        try {
+    try {
+        const filename = req.params.filename;
+        const filePath = path.join(DATA_DIR, filename);
+        if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
-            return res.json({ success: true });
-        } catch (err) {
-            return res.status(500).json({ error: 'Failed to delete file' });
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ error: 'File not found' });
         }
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete asset' });
     }
-    res.status(404).json({ error: 'File not found' });
 });
 
-cacheAllExistingIconsOnStartup().then(() => {
-    app.listen(PORT, () => { console.log(`HomeLink running on port ${PORT}`); });
+app.post('/api/upload-icon', (req, res) => {
+    try {
+        const { image, filename } = req.body;
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const safeName = 'icon_' + Date.now() + '_' + filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+        fs.writeFileSync(path.join(DATA_DIR, safeName), buffer);
+        res.json({ url: `/data/${safeName}` });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to upload icon' });
+    }
+});
+
+app.post('/api/upload-wallpaper', (req, res) => {
+    try {
+        const { image, filename } = req.body;
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const safeName = 'bg_' + Date.now() + '_' + filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+        fs.writeFileSync(path.join(DATA_DIR, safeName), buffer);
+        res.json({ url: `/data/${safeName}` });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to upload wallpaper' });
+    }
+});
+
+// Serve data files statically
+app.use('/data', express.static(DATA_DIR));
+
+// System Stats Endpoint
+app.get('/api/system-stats', (req, res) => {
+    try {
+        const cpus = os.cpus();
+        const totalMem = os.totalmem();
+        const freeMem = os.freemem();
+        const usedMem = totalMem - freeMem;
+
+        let totalIdle = 0, totalTick = 0;
+        cpus.forEach(cpu => {
+            for (let type in cpu.times) {
+                totalTick += cpu.times[type];
+            }
+            totalIdle += cpu.times.idle;
+        });
+        const cpuUsage = Math.round(100 - (totalIdle / totalTick) * 100);
+
+        let uptimeStr = '0h 0m';
+        try {
+            const uptimeSec = os.uptime();
+            const hours = Math.floor(uptimeSec / 3600);
+            const mins = Math.floor((uptimeSec % 3600) / 60);
+            uptimeStr = `${hours}h ${mins}m`;
+        } catch(e) {}
+
+        let osVer = `${os.type()} ${os.release()}`;
+        try {
+            if (fs.existsSync('/etc/os-release')) {
+                const releaseContent = fs.readFileSync('/etc/os-release', 'utf8');
+                const match = releaseContent.match(/PRETTY_NAME="([^"]+)"/);
+                if (match && match[1]) osVer = match[1];
+            }
+        } catch(e) {}
+
+        res.json({
+            hostname: os.hostname(),
+            osVersion: osVer,
+            cpuCores: cpus.length,
+            cpuPercent: isNaN(cpuUsage) ? 0 : cpuUsage,
+            ramTotalGB: (totalMem / (1024**3)).toFixed(1),
+            ramUsedGB: (usedMem / (1024**3)).toFixed(1),
+            ramPercent: Math.round((usedMem / totalMem) * 100),
+            uptime: uptimeStr,
+            arch: os.arch()
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch system stats' });
+    }
+});
+
+// Proxy Stats Endpoint for Sonarr/Radarr/etc.
+app.get('/api/proxy-stats', async (req, res) => {
+    const { targetUrl, apiKey, serviceType } = req.query;
+    if (!targetUrl || !apiKey) {
+        return res.status(400).json({ error: 'Missing targetUrl or apiKey' });
+    }
+    try {
+        let apiUrl = targetUrl.replace(/\/$/, '');
+        if (serviceType === 'sonarr' || serviceType === 'radarr') {
+            apiUrl += `/api/v3/queue?apikey=${apiKey}`;
+        } else if (serviceType === 'prowlarr') {
+            apiUrl += `/api/v1/applications?apikey=${apiKey}`;
+        } else {
+            return res.json({ badge: 'Connected' });
+        }
+
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        
+        if (serviceType === 'sonarr' || serviceType === 'radarr') {
+            const count = Array.isArray(data) ? data.length : (data.totalRecords || 0);
+            res.json({ badge: `${count} in queue` });
+        } else {
+            res.json({ badge: 'Online' });
+        }
+    } catch (err) {
+        res.status(500).json({ badge: 'API Offline' });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`[HomeLink] Server running on port ${PORT}`);
 });
