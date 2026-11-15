@@ -867,7 +867,7 @@
         <div class="pt-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
             <div class="text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-emerald-400"></i> Backup & Migration</div>
-            <div class="text-[10px] opacity-60">Export backup or import Heimdall JSON</div>
+            <div class="text-[10px] opacity-60">Export backup or import Heimdall / Homepage configs</div>
           </div>
           <div class="flex flex-wrap gap-2">
             <button onclick="exportConfig()" class="px-3 py-1.5 bg-slate-800 text-slate-200 rounded-xl text-xs font-semibold border border-white/10"><i class="fa-solid fa-download text-emerald-400 mr-1"></i> Export</button>
@@ -876,6 +876,9 @@
             </label>
             <label class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md" title="Import Heimdall Export JSON">
               <i class="fa-solid fa-file-import mr-1"></i> Import Heimdall <input type="file" accept=".json" onchange="importHeimdallJson(event)" class="hidden">
+            </label>
+            <label class="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md" title="Import Homepage services.yaml / JSON">
+              <i class="fa-solid fa-file-import mr-1"></i> Import Homepage <input type="file" accept=".yaml,.yml,.json" onchange="importHomepageConfig(event)" class="hidden">
             </label>
             <button onclick="resetToDefaults()" class="px-3 py-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold">Reset</button>
           </div>
@@ -932,8 +935,8 @@
           <p>HomeLink performs background health checks on your homelab services based on your configured ping interval (default: 60 seconds).</p>
         </div>
         <div id="wiki-content-backup" class="space-y-3 hidden">
-          <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-file-export text-orange-400"></i> Backup, Migration & Heimdall Import</h4>
-          <p>Your complete configuration (including profiles, tile layouts, custom backgrounds, and passwords) can be exported or imported at any time via Settings.</p>
+          <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-file-export text-orange-400"></i> Backup, Migration & Heimdall / Homepage Import</h4>
+          <p>Your complete configuration (including profiles, tile layouts, custom backgrounds, and passwords) can be exported or imported at any time via Settings. You can also import existing Heimdall JSON or Homepage YAML configurations directly.</p>
         </div>
       </div>
     </div>
@@ -2626,6 +2629,174 @@
           showToast('Category added', 'emerald');
         }
       }
+    }
+
+    function importHeimdallJson(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(evt) {
+        try {
+          const data = JSON.parse(evt.target.result);
+          const profile = getCurrentProfile();
+          const items = Array.isArray(data) ? data : (data.items || data.apps || []);
+          
+          let importedCount = 0;
+          items.forEach(item => {
+            const name = item.title || item.name || 'Imported App';
+            const url = item.url || item.link || 'http://localhost';
+            const icon = item.icon || 'fa-solid fa-globe';
+            const category = item.category || profile.categories[0] || 'Web';
+
+            if (!profile.categories.includes(category)) {
+              profile.categories.push(category);
+            }
+
+            profile.apps.push({
+              id: 'heimdall_' + Date.now() + Math.random().toString(36).substr(2, 5),
+              name,
+              category,
+              url,
+              icon: icon.startsWith('http') ? icon : 'fa-solid fa-globe',
+              color: 'orange',
+              customBg: '',
+              fontColor: '',
+              pingEnabled: true,
+              apiKey: '',
+              serviceType: 'generic'
+            });
+            importedCount++;
+          });
+
+          await saveState();
+          renderCategories();
+          renderApps();
+          closeSettingsModal();
+          showToast(`Successfully imported ${importedCount} items from Heimdall!`, 'emerald');
+        } catch (err) {
+          showToast('Failed to parse Heimdall JSON file', 'rose');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function importHomepageConfig(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(evt) {
+        try {
+          const content = evt.target.result;
+          const profile = getCurrentProfile();
+          let importedCount = 0;
+
+          if (file.name.endsWith('.json')) {
+            const data = JSON.parse(content);
+            if (Array.isArray(data)) {
+              data.forEach(group => {
+                const groupName = Object.keys(group)[0] || 'Imported';
+                if (!profile.categories.includes(groupName)) profile.categories.push(groupName);
+                const services = group[groupName] || [];
+                services.forEach(svc => {
+                  const svcName = Object.keys(svc)[0] || 'Service';
+                  const details = svc[svcName] || {};
+                  profile.apps.push({
+                    id: 'homepage_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                    name: svcName,
+                    category: groupName,
+                    url: details.href || details.url || 'http://localhost',
+                    icon: details.icon || 'fa-solid fa-globe',
+                    color: 'orange',
+                    customBg: '',
+                    fontColor: '',
+                    pingEnabled: true,
+                    apiKey: '',
+                    serviceType: 'generic'
+                  });
+                  importedCount++;
+                });
+              });
+            }
+          } else {
+            let currentCategory = profile.categories[0] || 'Web';
+            let currentServiceName = null;
+            let currentHref = '';
+            let currentIcon = '';
+
+            const lines = content.split('\n');
+            lines.forEach(line => {
+              const trimmed = line.trim();
+              if (!trimmed || trimmed.startsWith('#')) return;
+
+              if (line.startsWith('  - ') && trimmed.endsWith(':')) {
+                const groupName = trimmed.replace(/^-\s+/, '').replace(/:$/, '').trim();
+                if (groupName) {
+                  currentCategory = groupName;
+                  if (!profile.categories.includes(currentCategory)) {
+                    profile.categories.push(currentCategory);
+                  }
+                }
+              } else if (line.startsWith('    - ') && trimmed.endsWith(':')) {
+                if (currentServiceName && currentHref) {
+                  profile.apps.push({
+                    id: 'homepage_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                    name: currentServiceName,
+                    category: currentCategory,
+                    url: currentHref,
+                    icon: currentIcon || 'fa-solid fa-globe',
+                    color: 'orange',
+                    customBg: '',
+                    fontColor: '',
+                    pingEnabled: true,
+                    apiKey: '',
+                    serviceType: 'generic'
+                  });
+                  importedCount++;
+                }
+                currentServiceName = trimmed.replace(/^-\s+/, '').replace(/:$/, '').trim();
+                currentHref = '';
+                currentIcon = '';
+              } else if (trimmed.startsWith('href:') || trimmed.startsWith('url:')) {
+                currentHref = trimmed.split(/:(.+)/)[1].trim().replace(/['"]/g, '');
+              } else if (trimmed.startsWith('icon:')) {
+                const iconVal = trimmed.split(/:(.+)/)[1].trim().replace(/['"]/g, '');
+                currentIcon = iconVal.startsWith('http') ? iconVal : `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${iconVal}.png`;
+              }
+            });
+
+            if (currentServiceName && currentHref) {
+              profile.apps.push({
+                id: 'homepage_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                name: currentServiceName,
+                category: currentCategory,
+                url: currentHref,
+                icon: currentIcon || 'fa-solid fa-globe',
+                color: 'orange',
+                customBg: '',
+                fontColor: '',
+                pingEnabled: true,
+                apiKey: '',
+                serviceType: 'generic'
+              });
+              importedCount++;
+            }
+          }
+
+          if (importedCount === 0) {
+            showToast('No valid services found in Homepage file', 'rose');
+            return;
+          }
+
+          await saveState();
+          renderCategories();
+          renderApps();
+          closeSettingsModal();
+          showToast(`Successfully imported ${importedCount} services from Homepage!`, 'emerald');
+        } catch (err) {
+          showToast('Failed to parse Homepage configuration file', 'rose');
+        }
+      };
+      reader.readAsText(file);
     }
 
     let confirmCallback = null;
