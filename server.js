@@ -4,7 +4,7 @@ const path = require('path');
 const os = require('os');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8580;
 
 app.use(express.json({ limit: '50mb' }));
 
