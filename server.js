@@ -87,6 +87,34 @@ app.post('/api/config', (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Failed to save config' }); }
 });
 
+// Server-side proxy for Sonarr/Radarr API to bypass browser CORS & trailing slash issues
+app.get('/api/proxy-stats', async (req, res) => {
+    const { targetUrl, apiKey } = req.query;
+    if (!targetUrl) return res.status(400).json({ error: 'Missing targetUrl' });
+    try {
+        const cleanUrl = targetUrl.replace(/\/+$/, '');
+        const client = cleanUrl.startsWith('https') ? https : http;
+        
+        const apiReq = client.get(`${cleanUrl}/api/v3/queue`, {
+            headers: { 'X-Api-Key': apiKey || '' }
+        }, (apiRes) => {
+            let data = '';
+            apiRes.on('data', chunk => data += chunk);
+            apiRes.on('end', () => {
+                try {
+                    res.json(JSON.parse(data));
+                } catch(e) {
+                    res.status(500).json({ error: 'Invalid JSON from service' });
+                }
+            });
+        });
+        apiReq.on('error', (err) => res.status(500).json({ error: err.message }));
+        apiReq.setTimeout(5000, () => { apiReq.destroy(); res.status(504).json({ error: 'Gateway timeout' }); });
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/cache-icon', async (req, res) => {
     const { url } = req.body;
     if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
