@@ -22,6 +22,8 @@ Scoped Local Asset Manager: Upload and manage personal icons and wallpapers with
 
 Auto-Bootstrapping: Automatically provisions configuration and database files on first boot for a flawless out-of-the-box experience.
 
+
+
 🚀 Quick Start Guide (For Beginners)
 
 Follow these simple steps to install HomeLink on your Docker server (such as Ubuntu, Debian, TrueNAS SCALE, or Unraid).
@@ -58,6 +60,9 @@ http://<your-server-ip>:8580
 
 That's it! HomeLink will automatically generate a default configuration on first boot with sample tiles, ready for you to customize.
 
+
+
+
 🛠️ Customization & Management
 
 Unlocking the Dashboard: Click the "Locked" button in the top navigation bar to enter Edit Mode. Once unlocked, you can add new links, drag and drop tiles to reorder them, or edit existing services.
@@ -66,9 +71,15 @@ Adding API Keys: Edit any service tile, select your service type (Sonarr, Radarr
 
 Backups & Migration: Go to Settings (Sliders icon) > Backup & Migration to export your complete JSON backup or import existing Heimdall dashboard exports.
 
+
+
+
 🔧 Troubleshooting
 
 If your dashboard loads the top header and clock but buttons do not respond, or if you notice permission issues on fresh installs:
+
+
+
 
 Check Container Logs:
 
@@ -81,9 +92,13 @@ If Docker created the ./data folder with root permissions, run:
 sudo chown -R $USER:$USER data
 
 
+
+
 Restart Container:
 
 docker compose restart homelink
+
+
 
 
 📝 License & Credits
