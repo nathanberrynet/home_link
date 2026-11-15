@@ -290,8 +290,18 @@
 
     <!-- Category Filter Bar & Quick Stats -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-      <div id="category-tabs" class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-none">
-        <!-- Rendered via JS -->
+      <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-none">
+        <div id="category-tabs" class="flex items-center gap-1.5">
+          <!-- Rendered via JS -->
+        </div>
+        <button 
+          id="btn-group-toggle"
+          onclick="toggleGroupCategoryView()"
+          title="Toggle Grouped Category Sections View"
+          class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-slate-900/50 text-slate-300 border border-white/5 hover:bg-slate-800 transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-layer-group text-orange-400"></i>
+          <span id="group-toggle-label">Group View</span>
+        </button>
       </div>
 
       <div class="flex items-center gap-3 text-xs opacity-80 bg-slate-900/40 px-3 py-1.5 rounded-xl border border-white/5 w-full sm:w-auto justify-between sm:justify-end">
@@ -306,11 +316,11 @@
       </div>
     </div>
 
-    <!-- App Tiles Grid -->
-    <div 
-      id="apps-grid" 
-      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-      <!-- Dynamically populated -->
+    <!-- App Tiles Grid / Grouped Sections Container -->
+    <div id="dashboard-view-container" class="space-y-6">
+      <div id="apps-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <!-- Dynamically populated -->
+      </div>
     </div>
 
     <!-- Empty Filter State -->
@@ -736,7 +746,7 @@
           </div>
         </div>
 
-        <div class="pt-4 border-t border-white/10">
+        <div class="pt-4 border-t border-white/10 space-y-3">
           <div class="flex items-center justify-between bg-slate-900/50 p-3.5 rounded-xl border border-white/5">
             <div>
               <div class="text-xs font-semibold text-white flex items-center gap-1.5">
@@ -745,6 +755,16 @@
               <div class="text-[10px] opacity-60">Show live server OS, CPU, RAM, and uptime card on dashboard</div>
             </div>
             <input type="checkbox" id="setting-show-sysmon" onchange="toggleSystemMonitorTile(this.checked)" class="w-4 h-4 rounded accent-orange-500 cursor-pointer">
+          </div>
+          
+          <div class="flex items-center justify-between bg-slate-900/50 p-3.5 rounded-xl border border-white/5">
+            <div>
+              <div class="text-xs font-semibold text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-layer-group text-orange-400"></i> Group by Categories View
+              </div>
+              <div class="text-[10px] opacity-60">Display tiles nested under collapsible category section headers</div>
+            </div>
+            <input type="checkbox" id="setting-group-categories" onchange="toggleGroupCategorySetting(this.checked)" class="w-4 h-4 rounded accent-orange-500 cursor-pointer">
           </div>
         </div>
 
@@ -919,6 +939,7 @@
         weatherZip: '28601',
         pingIntervalSec: 60,
         tileSpacingVal: '2',
+        groupByCategory: false,
         customBgData: '',
         bgScaleMode: 'cover',
         bgZoomVal: 100,
@@ -964,6 +985,8 @@
     let studioStartMouse = { x: 0, y: 0 };
     let studioStartRect = { left: 0, top: 0, width: 0, height: 0 };
     let studioNaturalAspect = 16 / 9;
+
+    let draggedCategoryName = null;
 
     const unifiedIconLibrary = [
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/plex.png', name: 'plex media server' },
@@ -1011,7 +1034,6 @@
       setupPingInterval();
       setupSysMonPolling();
       initInteractiveStudioListeners();
-      loadLocalAssetsManager();
     });
 
     function getCurrentProfile() {
@@ -1032,6 +1054,7 @@
             if (!p.weatherZip) p.weatherZip = '28601';
             if (!p.pingIntervalSec) p.pingIntervalSec = 60;
             if (!p.tileSpacingVal) p.tileSpacingVal = '2';
+            if (p.groupByCategory === undefined) p.groupByCategory = false;
             if (p.customBgData === undefined) p.customBgData = '';
             if (!p.bgScaleMode) p.bgScaleMode = 'cover';
             if (!p.bgZoomVal) p.bgZoomVal = 100;
@@ -1081,7 +1104,9 @@
       document.getElementById('bg-zoom-label').innerText = `${p.bgZoomVal || 100}%`;
       document.getElementById('setting-bg-truecolor').checked = !!p.bgTrueColor;
       document.getElementById('setting-show-sysmon').checked = !!p.showSystemMonitor;
+      document.getElementById('setting-group-categories').checked = !!p.groupByCategory;
 
+      updateGroupCategoryUIState();
       updateBgScaleButtons(p.bgScaleMode || 'cover');
 
       const passBadge = document.getElementById('setting-profile-status-badge');
@@ -1110,6 +1135,38 @@
       if (p.showSystemMonitor) {
         fetchHostSystemStats();
         setupSysMonPolling();
+      }
+    }
+
+    function toggleGroupCategorySetting(checked) {
+      const p = getCurrentProfile();
+      p.groupByCategory = checked;
+      saveState();
+      updateGroupCategoryUIState();
+      renderCategories();
+      renderApps();
+      showToast(checked ? 'Grouped category view enabled' : 'Flat category view enabled', 'emerald');
+    }
+
+    function toggleGroupCategoryView() {
+      const p = getCurrentProfile();
+      p.groupByCategory = !p.groupByCategory;
+      saveState();
+      updateGroupCategoryUIState();
+      renderCategories();
+      renderApps();
+    }
+
+    function updateGroupCategoryUIState() {
+      const p = getCurrentProfile();
+      const btn = document.getElementById('btn-group-toggle');
+      const label = document.getElementById('group-toggle-label');
+      if (p.groupByCategory) {
+        btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-orange-600 text-white border border-orange-500 shadow-md transition-all flex items-center gap-1.5';
+        label.innerText = 'Grouped';
+      } else {
+        btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-slate-900/50 text-slate-300 border border-white/5 hover:bg-slate-800 transition-all flex items-center gap-1.5';
+        label.innerText = 'Group View';
       }
     }
 
@@ -1561,9 +1618,16 @@
       const modalSelect = document.getElementById('app-category');
       const allCats = ['All', ...profile.categories];
 
-      container.innerHTML = allCats.map(cat => `
-        <button onclick="setCategory('${cat}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${activeCategory === cat ? 'bg-orange-600 text-white border-orange-500 shadow-md' : 'bg-slate-900/50 text-slate-300 border-white/5 hover:bg-slate-800'}">${cat}</button>
-      `).join('');
+      container.innerHTML = allCats.map(cat => {
+        const isDraggable = isEditMode && cat !== 'All';
+        const dragAttrs = isDraggable ? `draggable="true" ondragstart="onCategoryDragStart(event, '${cat}')" ondragover="event.preventDefault()" ondrop="onCategoryDrop(event, '${cat}')" title="Drag to reorder category"` : '';
+        const cursorClass = isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer';
+        return `
+          <button ${dragAttrs} onclick="setCategory('${cat}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${cursorClass} ${activeCategory === cat ? 'bg-orange-600 text-white border-orange-500 shadow-md' : 'bg-slate-900/50 text-slate-300 border-white/5 hover:bg-slate-800'}">
+            ${isDraggable ? '<i class="fa-solid fa-grip-vertical mr-1 opacity-60"></i>' : ''}${cat}
+          </button>
+        `;
+      }).join('');
 
       modalSelect.innerHTML = profile.categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
       managerList.innerHTML = profile.categories.map(cat => `
@@ -1574,11 +1638,30 @@
       `).join('');
     }
 
+    function onCategoryDragStart(e, catName) {
+      draggedCategoryName = catName;
+    }
+
+    function onCategoryDrop(e, targetCatName) {
+      e.preventDefault();
+      if (!isEditMode || !draggedCategoryName || draggedCategoryName === targetCatName || targetCatName === 'All') return;
+      const profile = getCurrentProfile();
+      const fromIdx = profile.categories.indexOf(draggedCategoryName);
+      const toIdx = profile.categories.indexOf(targetCatName);
+      if (fromIdx < 0 || toIdx < 0) return;
+      const [moved] = profile.categories.splice(fromIdx, 1);
+      profile.categories.splice(toIdx, 0, moved);
+      saveState();
+      renderCategories();
+      renderApps();
+      showToast('Category order updated', 'emerald');
+    }
+
     function setCategory(cat) { activeCategory = cat; renderCategories(); renderApps(); }
 
     function renderApps() {
       const profile = getCurrentProfile();
-      const grid = document.getElementById('apps-grid');
+      const container = document.getElementById('dashboard-view-container');
       const emptyState = document.getElementById('empty-state');
       const engine = document.getElementById('search-engine').value;
 
@@ -1590,13 +1673,52 @@
 
       const showSysTile = !!profile.showSystemMonitor && (activeCategory === 'All' || !searchQuery);
       if (filtered.length === 0 && !showSysTile) {
-        grid.innerHTML = '';
+        container.innerHTML = '';
         emptyState.classList.remove('hidden');
         emptyState.classList.add('flex');
         return;
       }
       emptyState.classList.add('hidden'); emptyState.classList.remove('flex');
 
+      // Helper HTML generator for a single tile
+      const renderTileHtml = (app) => {
+        const theme = colorClasses[app.color] || colorClasses.orange;
+        const isImage = app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://') || app.icon.startsWith('data:image/') || app.icon.startsWith('/data/'));
+        const pingStatus = appPingStatuses[app.id];
+        let statusDotHtml = '';
+        if (app.pingEnabled !== false) {
+          let dotClass = pingStatus === true ? 'bg-emerald-500 status-pulse' : pingStatus === false ? 'bg-rose-500' : 'bg-slate-500';
+          statusDotHtml = `<span class="w-2.5 h-2.5 rounded-full ${dotClass}"></span>`;
+        }
+
+        return `
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative group ${theme.hoverGlow}" draggable="${isEditMode}" ondragstart="onDragStart(event, '${app.id}')" ondragover="event.preventDefault()" ondrop="onDrop(event, '${app.id}')">
+            ${isEditMode ? `
+              <div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10">
+                <span class="cursor-grab px-1 text-slate-400"><i class="fa-solid fa-grip-vertical"></i></span>
+                <button onclick="openAppModal('${app.id}')" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                <button onclick="confirmDeleteApp('${app.id}')" class="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            ` : ''}
+            <a href="${app.url}" target="_blank" rel="noopener noreferrer" class="block flex-1">
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="w-12 h-12 rounded-xl ${theme.bg} ${theme.border} border flex items-center justify-center text-2xl ${theme.text} overflow-hidden shadow-inner">
+                  ${isImage ? `<img src="${app.icon}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.src='https://placehold.co/40x40/1e293b/ffffff?text=App';" />` : `<i class="${app.icon || 'fa-solid fa-globe'}"></i>`}
+                </div>
+                <div class="flex items-center gap-2 ${isEditMode ? 'opacity-20' : ''}">
+                  ${statusDotHtml}
+                </div>
+              </div>
+              <div>
+                <h4 class="font-bold text-sm group-hover:text-orange-400 transition-colors flex items-center gap-1.5">${app.name}</h4>
+                <p class="text-[11px] opacity-60 font-medium truncate mt-1">${app.url}</p>
+              </div>
+            </a>
+          </div>
+        `;
+      };
+
+      // System Monitor Tile HTML
       let sysTileHtml = '';
       if (showSysTile) {
         const s = hostSysStats;
@@ -1644,42 +1766,53 @@
         `;
       }
 
-      grid.innerHTML = sysTileHtml + filtered.map(app => {
-        const theme = colorClasses[app.color] || colorClasses.orange;
-        const isImage = app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://') || app.icon.startsWith('data:image/') || app.icon.startsWith('/data/'));
-        const pingStatus = appPingStatuses[app.id];
-        let statusDotHtml = '';
-        if (app.pingEnabled !== false) {
-          let dotClass = pingStatus === true ? 'bg-emerald-500 status-pulse' : pingStatus === false ? 'bg-rose-500' : 'bg-slate-500';
-          statusDotHtml = `<span class="w-2.5 h-2.5 rounded-full ${dotClass}"></span>`;
+      // Check if Group by Category is enabled and we are viewing 'All' categories without active text filter
+      if (profile.groupByCategory && activeCategory === 'All' && !searchQuery) {
+        let sectionsHtml = '';
+        if (showSysTile) {
+          sectionsHtml += `
+            <div class="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
+              <div class="flex items-center gap-2 pb-2 border-b border-white/10 text-xs font-bold text-orange-400 uppercase tracking-wider">
+                <i class="fa-solid fa-server"></i> System Monitor
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                ${sysTileHtml}
+              </div>
+            </div>
+          `;
         }
 
-        return `
-          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative group ${theme.hoverGlow}" draggable="${isEditMode}" ondragstart="onDragStart(event, '${app.id}')" ondragover="event.preventDefault()" ondrop="onDrop(event, '${app.id}')">
-            ${isEditMode ? `
-              <div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10">
-                <span class="cursor-grab px-1 text-slate-400"><i class="fa-solid fa-grip-vertical"></i></span>
-                <button onclick="openAppModal('${app.id}')" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
-                <button onclick="confirmDeleteApp('${app.id}')" class="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
-              </div>
-            ` : ''}
-            <a href="${app.url}" target="_blank" rel="noopener noreferrer" class="block flex-1">
-              <div class="flex items-start justify-between gap-3 mb-3">
-                <div class="w-12 h-12 rounded-xl ${theme.bg} ${theme.border} border flex items-center justify-center text-2xl ${theme.text} overflow-hidden shadow-inner">
-                  ${isImage ? `<img src="${app.icon}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.src='https://placehold.co/40x40/1e293b/ffffff?text=App';" />` : `<i class="${app.icon || 'fa-solid fa-globe'}"></i>`}
+        profile.categories.forEach(cat => {
+          const catApps = filtered.filter(a => a.category === cat);
+          if (catApps.length > 0 || isEditMode) {
+            const dragAttrs = isEditMode ? `draggable="true" ondragstart="onCategoryDragStart(event, '${cat}')" ondragover="event.preventDefault()" ondrop="onCategoryDrop(event, '${cat}')"` : '';
+            const dragCursor = isEditMode ? 'cursor-grab active:cursor-grabbing hover:border-orange-500/50' : '';
+            sectionsHtml += `
+              <div ${dragAttrs} class="glass-panel p-4 rounded-2xl border border-white/10 space-y-3 transition-colors ${dragCursor}">
+                <div class="flex items-center justify-between pb-2 border-b border-white/10 text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div class="flex items-center gap-2">
+                    ${isEditMode ? '<i class="fa-solid fa-grip-vertical text-orange-400"></i>' : ''}
+                    <span>${cat}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">${catApps.length}</span>
+                  </div>
+                  <button onclick="setCategory('${cat}')" class="text-[10px] text-orange-400 hover:underline">View Only</button>
                 </div>
-                <div class="flex items-center gap-2 ${isEditMode ? 'opacity-20' : ''}">
-                  ${statusDotHtml}
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  ${catApps.map(app => renderTileHtml(app)).join('')}
                 </div>
               </div>
-              <div>
-                <h4 class="font-bold text-sm group-hover:text-orange-400 transition-colors flex items-center gap-1.5">${app.name}</h4>
-                <p class="text-[11px] opacity-60 font-medium truncate mt-1">${app.url}</p>
-              </div>
-            </a>
+            `;
+          }
+        });
+        container.innerHTML = sectionsHtml;
+      } else {
+        // Standard flat grid view
+        container.innerHTML = `
+          <div id="apps-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            ${sysTileHtml} ${filtered.map(app => renderTileHtml(app)).join('')}
           </div>
         `;
-      }).join('');
+      }
     }
 
     let draggedAppId = null;
@@ -1741,15 +1874,19 @@
       const addBtn = document.getElementById('btn-add-link-header');
       addBtn.classList.toggle('hidden', !isEditMode);
       addBtn.classList.toggle('flex', isEditMode);
+      renderCategories();
       renderApps();
     }
 
     function applyTileSpacing(val, save = true) {
-      const grid = document.getElementById('apps-grid');
+      const container = document.getElementById('dashboard-view-container');
       const label = document.getElementById('tile-spacing-label');
-      if (val === '1') { grid.className = grid.className.replace(/gap-\d/, 'gap-2'); label.innerText = 'Tight'; }
-      else if (val === '2') { grid.className = grid.className.replace(/gap-\d/, 'gap-4'); label.innerText = 'Standard'; }
-      else { grid.className = grid.className.replace(/gap-\d/, 'gap-6'); label.innerText = 'Spacious'; }
+      const grids = container.querySelectorAll('.grid');
+      const gapClass = val === '1' ? 'gap-2' : val === '2' ? 'gap-4' : 'gap-6';
+      label.innerText = val === '1' ? 'Tight' : val === '2' ? 'Standard' : 'Spacious';
+      grids.forEach(g => {
+        g.className = g.className.replace(/gap-\d/, gapClass);
+      });
       getCurrentProfile().tileSpacingVal = val;
       if (save) saveState();
     }
@@ -2043,6 +2180,7 @@
         weatherZip: '28601',
         pingIntervalSec: 60,
         tileSpacingVal: '2',
+        groupByCategory: false,
         customBgData: '',
         bgScaleMode: 'cover',
         bgZoomVal: 100,
@@ -2208,6 +2346,7 @@
           p.categories.push(name.trim());
           saveState();
           renderCategories();
+          renderApps();
           showToast('Category added', 'emerald');
         }
       }
