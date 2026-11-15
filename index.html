@@ -836,10 +836,10 @@
         <!-- Local Scoped Assets Manager Section -->
         <div class="pt-4 border-t border-white/10">
           <div class="flex items-center justify-between mb-2">
-            <label class="block text-xs font-semibold opacity-90 flex items-center gap-1.5"><i class="fa-solid fa-server text-orange-400"></i> Local Scoped Assets Manager</label>
+            <label class="block text-xs font-semibold opacity-90 flex items-center gap-1.5"><i class="fa-solid fa-server text-orange-400"></i> Local Scoped Assets Manager <span id="asset-scope-indicator" class="text-[10px] text-orange-300 font-mono font-normal"></span></label>
             <button onclick="loadLocalAssetsManager()" class="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
-          <div class="text-[10px] opacity-60 mb-2">Click any thumbnail to preview full size. Swap files are automatically ignored.</div>
+          <div class="text-[10px] opacity-60 mb-2">Non-admin profiles only display assets owned by your profile. Admins view everything.</div>
           <div id="local-icons-manager-list" class="space-y-1.5 max-h-44 overflow-y-auto p-2 bg-slate-900/50 rounded-xl border border-white/5">
             <!-- Populated via JS -->
           </div>
@@ -855,13 +855,19 @@
 
         <div class="pt-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <div class="text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-emerald-400"></i> Backup & Migration</div>
-            <div class="text-[10px] opacity-60">Export backup or import JSON</div>
+            <div class="text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-emerald-400"></i> Backup, Migration & Imports</div>
+            <div class="text-[10px] opacity-60">Export backup, import JSON, Heimdall, or Homepage configs</div>
           </div>
-          <div class="flex flex-wrap gap-2">
+          <div class="flex flex-wrap gap-2 items-center">
             <button onclick="exportConfig()" class="px-3 py-1.5 bg-slate-800 text-slate-200 rounded-xl text-xs font-semibold border border-white/10"><i class="fa-solid fa-download text-emerald-400 mr-1"></i> Export</button>
             <label class="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md">
               <i class="fa-solid fa-upload mr-1"></i> Import <input type="file" accept=".json,.homelink" onchange="importConfig(event)" class="hidden">
+            </label>
+            <label class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md" title="Import Heimdall JSON backup">
+              <i class="fa-solid fa-file-import mr-1"></i> Heimdall <input type="file" accept=".json" onchange="importHeimdallConfig(event)" class="hidden">
+            </label>
+            <label class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md" title="Import Homepage services.yaml / JSON">
+              <i class="fa-solid fa-file-import mr-1"></i> Homepage <input type="file" accept=".yaml,.yml,.json" onchange="importHomepageConfig(event)" class="hidden">
             </label>
             <button onclick="resetToDefaults()" class="px-3 py-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold">Reset</button>
           </div>
@@ -1227,7 +1233,12 @@
       const p = getCurrentProfile();
       const listEl = document.getElementById('local-icons-manager-list');
       const galleryEl = document.getElementById('wallpaper-gallery-grid');
+      const scopeIndicator = document.getElementById('asset-scope-indicator');
       if (!listEl) return;
+
+      if (scopeIndicator) {
+        scopeIndicator.innerText = p.isMain ? '(Admin - All Assets)' : `(Scoped to: ${p.name})`;
+      }
 
       listEl.innerHTML = `<div class="py-3 text-center text-xs opacity-50"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Scanning server data/ folder...</div>`;
 
@@ -1238,6 +1249,11 @@
           if (res.ok) assets = await res.json();
         } catch(e) {
           assets = [];
+        }
+
+        // Strict role-based scoping: Non-admin users only see their own assets (owner matches profile id or filename tagged with profile id)
+        if (!p.isMain) {
+          assets = assets.filter(a => a.owner === p.id || (a.filename && a.filename.includes(p.id)));
         }
 
         if (p.customBgData && !assets.some(a => a.url === p.customBgData)) {
@@ -1261,7 +1277,7 @@
         }
 
         if (!assets || assets.length === 0) {
-          listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs opacity-50">No scoped local assets found in data/ folder.</div>`;
+          listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs opacity-50">No scoped local assets found for your profile.</div>`;
           return;
         }
 
@@ -1680,7 +1696,6 @@
       }
       emptyState.classList.add('hidden'); emptyState.classList.remove('flex');
 
-      // Helper HTML generator for a single tile
       const renderTileHtml = (app) => {
         const theme = colorClasses[app.color] || colorClasses.orange;
         const isImage = app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://') || app.icon.startsWith('data:image/') || app.icon.startsWith('/data/'));
@@ -1718,7 +1733,6 @@
         `;
       };
 
-      // System Monitor Tile HTML
       let sysTileHtml = '';
       if (showSysTile) {
         const s = hostSysStats;
@@ -1766,7 +1780,6 @@
         `;
       }
 
-      // Check if Group by Category is enabled and we are viewing 'All' categories without active text filter
       if (profile.groupByCategory && activeCategory === 'All' && !searchQuery) {
         let sectionsHtml = '';
         if (showSysTile) {
@@ -1806,7 +1819,6 @@
         });
         container.innerHTML = sectionsHtml;
       } else {
-        // Standard flat grid view
         container.innerHTML = `
           <div id="apps-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             ${sysTileHtml} ${filtered.map(app => renderTileHtml(app)).join('')}
@@ -1835,6 +1847,7 @@
       const p = getCurrentProfile();
       if (p.password && p.password.trim() !== '') {
         pendingProtectedAction = actionType;
+        pendingSwitchProfileId = null;
         document.getElementById('prompt-profile-name').innerText = `Enter password for ${p.name}`;
         document.getElementById('unlock-password-input').value = '';
         document.getElementById('password-prompt-modal').classList.remove('hidden');
@@ -1843,9 +1856,40 @@
       }
     }
 
+    function switchProfile(id) {
+      const target = profiles.find(p => p.id === id);
+      if (!target) return;
+      if (target.password && target.password.trim() !== '') {
+        pendingSwitchProfileId = id;
+        pendingProtectedAction = null;
+        document.getElementById('prompt-profile-name').innerText = `Enter password for ${target.name}`;
+        document.getElementById('unlock-password-input').value = '';
+        document.getElementById('password-prompt-modal').classList.remove('hidden');
+        closeProfilesModal();
+      } else {
+        executeSwitchProfile(id);
+      }
+    }
+
     function verifyProfilePassword(e) {
       e.preventDefault();
       const inputVal = document.getElementById('unlock-password-input').value;
+      
+      if (pendingSwitchProfileId) {
+        const target = profiles.find(p => p.id === pendingSwitchProfileId);
+        if (target && inputVal === target.password) {
+          const targetId = pendingSwitchProfileId;
+          document.getElementById('password-prompt-modal').classList.add('hidden');
+          pendingSwitchProfileId = null;
+          executeSwitchProfile(targetId);
+        } else {
+          showToast('Incorrect password', 'rose');
+          document.getElementById('unlock-password-input').value = '';
+          document.getElementById('unlock-password-input').focus();
+        }
+        return;
+      }
+
       if (inputVal === getCurrentProfile().password) {
         const action = pendingProtectedAction;
         document.getElementById('password-prompt-modal').classList.add('hidden');
@@ -1857,7 +1901,12 @@
         document.getElementById('unlock-password-input').focus();
       }
     }
-    function closePasswordPrompt() { document.getElementById('password-prompt-modal').classList.add('hidden'); pendingProtectedAction = null; }
+
+    function closePasswordPrompt() { 
+      document.getElementById('password-prompt-modal').classList.add('hidden'); 
+      pendingProtectedAction = null; 
+      pendingSwitchProfileId = null; 
+    }
 
     function executeProtectedAction(actionType) {
       if (actionType === 'edit') toggleEditMode();
@@ -1964,7 +2013,7 @@
         const res = await fetch('/api/upload-icon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: evt.target.result, filename: file.name })
+          body: JSON.stringify({ image: evt.target.result, filename: file.name, owner: getCurrentProfile().id })
         });
         if (res.ok) {
           const data = await res.json();
@@ -2109,7 +2158,6 @@
 
     function updateAdminAvatarPreview() {
       const nameVal = document.getElementById('admin-name-input').value.trim() || 'Admin';
-      const avatarVal = document.getElementById('admin-avatar-input').value.trim();
       document.getElementById('admin-edit-name-preview').innerText = `${nameVal} 👑`;
     }
 
@@ -2218,6 +2266,7 @@
       if (!target) return;
       if (target.password && target.password.trim() !== '') {
         pendingSwitchProfileId = id;
+        pendingProtectedAction = null;
         document.getElementById('prompt-profile-name').innerText = `Enter password for ${target.name}`;
         document.getElementById('unlock-password-input').value = '';
         document.getElementById('password-prompt-modal').classList.remove('hidden');
@@ -2236,6 +2285,165 @@
       renderApps();
       closeProfilesModal();
       showToast('Switched profile', 'blue');
+    }
+
+    // ================= HEIMDALL & HOMEPAGE CONFIG IMPORTS =================
+    function importHeimdallConfig(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = JSON.parse(evt.target.result);
+          const profile = getCurrentProfile();
+          const items = Array.isArray(data) ? data : (data.items || data.apps || []);
+          let importedCount = 0;
+          items.forEach(item => {
+            const name = item.title || item.name;
+            const url = item.uri || item.url;
+            if (name && url) {
+              const cat = item.tag || item.category || 'Web';
+              if (!profile.categories.includes(cat)) profile.categories.push(cat);
+              profile.apps.push({
+                id: 'heimdall_' + Date.now() + Math.random().toString(36).slice(2),
+                name: name,
+                category: cat,
+                url: url,
+                icon: item.icon ? (item.icon.startsWith('http') ? item.icon : `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${item.icon}.png`) : 'fa-solid fa-globe',
+                color: 'orange',
+                customBg: '',
+                fontColor: '#f1f5f9',
+                pingEnabled: true,
+                apiKey: '',
+                serviceType: 'generic'
+              });
+              importedCount++;
+            }
+          });
+          saveState();
+          renderCategories();
+          renderApps();
+          closeSettingsModal();
+          showToast(`Imported ${importedCount} items from Heimdall!`, 'emerald');
+        } catch(err) {
+          showToast('Failed to parse Heimdall JSON file', 'rose');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function importHomepageConfig(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const content = evt.target.result;
+          const profile = getCurrentProfile();
+          let importedCount = 0;
+
+          if (file.name.endsWith('.json') || content.trim().startsWith('{')) {
+            const data = JSON.parse(content);
+            Object.keys(data).forEach(catName => {
+              if (!profile.categories.includes(catName)) profile.categories.push(catName);
+              const services = data[catName];
+              if (Array.isArray(services)) {
+                services.forEach(svc => {
+                  const name = Object.keys(svc)[0] || svc.name;
+                  const details = svc[name] || svc;
+                  const url = details.href || details.url;
+                  if (name && url) {
+                    profile.apps.push({
+                      id: 'homepage_' + Date.now() + Math.random().toString(36).slice(2),
+                      name: name,
+                      category: catName,
+                      url: url,
+                      icon: details.icon ? (details.icon.startsWith('http') ? details.icon : `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${details.icon}.png`) : 'fa-solid fa-globe',
+                      color: 'orange',
+                      customBg: '',
+                      fontColor: '#f1f5f9',
+                      pingEnabled: true,
+                      apiKey: '',
+                      serviceType: 'generic'
+                    });
+                    importedCount++;
+                  }
+                });
+              }
+            });
+          } else {
+            // Basic line-by-line parser for Homepage services.yaml
+            let currentCat = 'Web';
+            const lines = content.split('\n');
+            let currentAppName = null;
+            let currentUrl = null;
+            let currentIcon = null;
+
+            lines.forEach(line => {
+              const trimmed = line.trim();
+              if (!trimmed || trimmed.startsWith('#')) return;
+              if (line.indexOf('- ') === 0 || line.indexOf('  - ') === 0) {
+                if (currentAppName && currentUrl) {
+                  if (!profile.categories.includes(currentCat)) profile.categories.push(currentCat);
+                  profile.apps.push({
+                    id: 'homepage_' + Date.now() + Math.random().toString(36).slice(2),
+                    name: currentAppName,
+                    category: currentCat,
+                    url: currentUrl,
+                    icon: currentIcon ? (currentIcon.startsWith('http') ? currentIcon : `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${currentIcon}.png`) : 'fa-solid fa-globe',
+                    color: 'orange',
+                    customBg: '',
+                    fontColor: '#f1f5f9',
+                    pingEnabled: true,
+                    apiKey: '',
+                    serviceType: 'generic'
+                  });
+                  importedCount++;
+                }
+                currentAppName = null; currentUrl = null; currentIcon = null;
+                const part = trimmed.replace(/^-\s*/, '').replace(/:$/, '').trim();
+                if (part && !part.includes(':')) currentAppName = part;
+              } else if (trimmed.endsWith(':') && !trimmed.includes('href') && !trimmed.includes('icon') && !trimmed.includes('url')) {
+                currentCat = trimmed.slice(0, -1).trim();
+              } else if (trimmed.includes(':')) {
+                const parts = trimmed.split(':');
+                const key = parts[0].trim();
+                const val = parts.slice(1).join(':').trim().replace(/^["']|["']$/g, '');
+                if (key === 'href' || key === 'url') currentUrl = val;
+                else if (key === 'icon') currentIcon = val;
+                else if (!currentAppName && key !== 'description') currentAppName = key;
+              }
+            });
+
+            if (currentAppName && currentUrl) {
+              if (!profile.categories.includes(currentCat)) profile.categories.push(currentCat);
+              profile.apps.push({
+                id: 'homepage_' + Date.now() + Math.random().toString(36).slice(2),
+                name: currentAppName,
+                category: currentCat,
+                url: currentUrl,
+                icon: currentIcon ? (currentIcon.startsWith('http') ? currentIcon : `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${currentIcon}.png`) : 'fa-solid fa-globe',
+                color: 'orange',
+                customBg: '',
+                fontColor: '#f1f5f9',
+                pingEnabled: true,
+                apiKey: '',
+                serviceType: 'generic'
+              });
+              importedCount++;
+            }
+          }
+
+          saveState();
+          renderCategories();
+          renderApps();
+          closeSettingsModal();
+          showToast(`Successfully imported items from Homepage!`, 'emerald');
+        } catch(err) {
+          showToast('Failed to parse Homepage config file', 'rose');
+        }
+      };
+      reader.readAsText(file);
     }
 
     function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); loadLocalAssetsManager(); }
@@ -2263,7 +2471,7 @@
         const res = await fetch('/api/upload-wallpaper', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: evt.target.result, filename: file.name })
+          body: JSON.stringify({ image: evt.target.result, filename: file.name, owner: p.id })
         });
         if (res.ok) {
           const data = await res.json();
