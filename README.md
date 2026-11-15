@@ -33,37 +33,14 @@ Open your server terminal via SSH and run the following commands to create and e
 mkdir -p ~/docker/homelink/data && cd ~/docker/homelink
 
 
-Step 2: Create Your compose.yaml File
+Step 2: Download the Example Compose File
 
-Create a new file named compose.yaml using your favorite text editor (e.g., nano compose.yaml or vi compose.yaml):
+Download or copy the compose.example.yaml file from this repository and save it locally as compose.yaml:
 
-nano compose.yaml
-
-
-Paste the following configuration into the file:
-
-services:
-  homelink:
-    image: node:20-alpine
-    container_name: homelink-dashboard
-    restart: unless-stopped
-    ports:
-      - 8580:8580
-    working_dir: /app
-    command: |
-      sh -c " mkdir -p /app/data && apk add --no-cache git && if [ -d '.git' ]; then
-        git pull origin main;
-      else
-        git init &&
-        git remote add origin https://github.com/nathanberrynet/home_link.git &&
-        git fetch origin main &&
-        git reset --hard origin/main;
-      fi && npm install && node server.js "
-    volumes:
-      - ./data:/app/data
+curl -o compose.yaml https://raw.githubusercontent.com/nathanberrynet/home_link/main/compose.example.yaml
 
 
-(If using nano, press Ctrl + O, then Enter to save, and Ctrl + X to exit).
+(Alternatively, you can create the file using nano compose.yaml and copy the contents from compose.example.yaml).
 
 Step 3: Start the Container
 
