@@ -769,7 +769,7 @@
     </div>
   </div>
 
-  <!-- Wiki & Guide Modal (Restored Multi-Tab System) -->
+  <!-- Wiki & Guide Modal -->
   <div id="wiki-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-4xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
       <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
@@ -1475,11 +1475,14 @@
       renderApps();
     }
 
+    // FIXED API KEY FETCH FUNCTION USING X-Api-Key HEADER
     async function fetchServiceStats(app) {
       const name = app.name.toLowerCase();
       try {
-        if (name.includes('sonarr') || name.includes('radarr')) {
-          const res = await fetch(`${app.url}/api/v3/queue?apiKey=${app.apiKey}`);
+        if ((name.includes('sonarr') || name.includes('radarr')) && app.apiKey) {
+          const res = await fetch(`${app.url}/api/v3/queue`, {
+            headers: { 'X-Api-Key': app.apiKey }
+          });
           if (res.ok) {
             const data = await res.json();
             appLiveStats[app.id] = `${data.totalRecords || 0} Queue Items`;
