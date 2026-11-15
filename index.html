@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HomeLink - Homelab Dashboard</title>
-  <!-- Tailwind CSS CDN (Cached locally by browser, with robust local fallbacks) -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -1230,7 +1230,7 @@
             ${isEditMode ? `
               <div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10">
                 <span class="cursor-grab px-1 text-slate-400" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></span>
-                <button onclick="editApp('${app.id}')" title="Edit" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                <button onclick="openAppModal('${app.id}')" title="Edit" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
                 <button onclick="confirmDeleteApp('${app.id}')" title="Delete" class="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 text-[10px] flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
               </div>
             ` : ''}
@@ -1287,6 +1287,30 @@
       } else {
         executeProtectedAction(actionType);
       }
+    }
+
+    function verifyProfilePassword(e) {
+      e.preventDefault();
+      const p = getCurrentProfile();
+      const inputVal = document.getElementById('unlock-password-input').value;
+      
+      if (inputVal === p.password) {
+        closePasswordPrompt();
+        const action = pendingProtectedAction;
+        pendingProtectedAction = null;
+        if (action) {
+          executeProtectedAction(action);
+        }
+      } else {
+        showToast('Incorrect password', 'rose');
+        document.getElementById('unlock-password-input').value = '';
+        document.getElementById('unlock-password-input').focus();
+      }
+    }
+
+    function closePasswordPrompt() {
+      document.getElementById('password-prompt-modal').classList.add('hidden');
+      pendingProtectedAction = null;
     }
 
     function executeProtectedAction(actionType) {
@@ -1453,6 +1477,27 @@
       renderApps();
       closeAppModal();
       showToast('Tile saved', 'emerald');
+    }
+
+    function confirmDeleteApp(id) {
+      openConfirmModal('Delete Tile?', 'Are you sure you want to delete this service tile?', () => {
+        const profile = getCurrentProfile();
+        profile.apps = profile.apps.filter(a => a.id !== id);
+        saveState();
+        renderApps();
+        showToast('Tile deleted', 'emerald');
+      });
+    }
+
+    function confirmDeleteCategory(cat) {
+      openConfirmModal('Delete Category?', `Remove category '${cat}'?`, () => {
+        const profile = getCurrentProfile();
+        profile.categories = profile.categories.filter(c => c !== cat);
+        saveState();
+        renderCategories();
+        renderApps();
+        showToast('Category removed', 'emerald');
+      });
     }
 
     function openProfilesModal() {
