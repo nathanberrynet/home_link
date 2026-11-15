@@ -9,19 +9,16 @@ const PORT = process.env.PORT || 8580;
 const DATA_DIR = path.join(__dirname, 'data');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const ICONS_DIR = path.join(DATA_DIR, 'icons');
+const WALLPAPERS_DIR = path.join(DATA_DIR, 'wallpapers');
 
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-if (!fs.existsSync(ICONS_DIR)) {
-    fs.mkdirSync(ICONS_DIR, { recursive: true });
-}
+if (!fs.existsSync(DATA_DIR)) { fs.mkdirSync(DATA_DIR, { recursive: true }); }
+if (!fs.existsSync(ICONS_DIR)) { fs.mkdirSync(ICONS_DIR, { recursive: true }); }
+if (!fs.existsSync(WALLPAPERS_DIR)) { fs.mkdirSync(WALLPAPERS_DIR, { recursive: true }); }
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '15mb' }));
 app.use(express.static(__dirname));
 app.use('/data', express.static(DATA_DIR));
 
-// Helper to download and cache a remote image URL to /app/data/icons/
 function downloadAndCacheIcon(url) {
     return new Promise((resolve) => {
         if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
@@ -32,99 +29,62 @@ function downloadAndCacheIcon(url) {
         const localPath = path.join(ICONS_DIR, filename);
         const relativePath = `/data/icons/${filename}`;
 
-        if (fs.existsSync(localPath)) {
-            return resolve(relativePath);
-        }
+        if (fs.existsSync(localPath)) return resolve(relativePath);
 
         const client = url.startsWith('https') ? https : http;
         const request = client.get(url, (response) => {
             if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
                 return downloadAndCacheIcon(response.headers.location).then(resolve);
             }
-
-            if (response.statusCode !== 200) {
-                console.warn(`[Icon Cache] Failed to fetch (${response.statusCode}): ${url}`);
-                return resolve(url);
-            }
+            if (response.statusCode !== 200) return resolve(url);
 
             const fileStream = fs.createWriteStream(localPath);
             response.pipe(fileStream);
-            fileStream.on('finish', () => {
-                fileStream.close();
-                console.log(`[Icon Cache] Saved locally: ${relativePath}`);
-                resolve(relativePath);
-            });
-            fileStream.on('error', () => {
-                resolve(url);
-            });
+            fileStream.on('finish', () => { fileStream.close(); resolve(relativePath); });
+            fileStream.on('error', () => resolve(url));
         });
 
-        request.on('error', (err) => {
-            console.warn(`[Icon Cache] Error fetching ${url}: ${err.message}`);
-            resolve(url);
-        });
-
-        request.setTimeout(5000, () => {
-            request.destroy();
-            resolve(url);
-        });
+        request.on('error', () => resolve(url));
+        request.setTimeout(5000, () => { request.destroy(); resolve(url); });
     });
 }
 
-// Automatically sweeps config.json on startup and caches all existing remote icons
 async function cacheAllExistingIconsOnStartup() {
     if (!fs.existsSync(CONFIG_FILE)) return;
-
     try {
         const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
         const config = JSON.parse(raw);
         let updated = false;
-
         if (config && Array.isArray(config.profiles)) {
             for (const profile of config.profiles) {
                 if (Array.isArray(profile.apps)) {
                     for (const appItem of profile.apps) {
                         if (appItem.icon && (appItem.icon.startsWith('http://') || appItem.icon.startsWith('https://'))) {
                             const cachedPath = await downloadAndCacheIcon(appItem.icon);
-                            if (cachedPath !== appItem.icon) {
-                                appItem.icon = cachedPath;
-                                updated = true;
-                            }
+                            if (cachedPath !== appItem.icon) { appItem.icon = cachedPath; updated = true; }
                         }
                     }
                 }
             }
         }
-
         if (updated) {
             fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
-            console.log('[Icon Cache] Startup migration complete: All existing external icons cached to server.');
         }
-    } catch (err) {
-        console.error('[Icon Cache] Startup scan failed:', err.message);
-    }
+    } catch (err) {}
 }
 
 app.get('/api/config', (req, res) => {
     if (fs.existsSync(CONFIG_FILE)) {
-        try {
-            const data = fs.readFileSync(CONFIG_FILE, 'utf8');
-            res.json(JSON.parse(data));
-        } catch (err) {
-            res.status(500).json({ error: 'Failed to parse config file' });
-        }
-    } else {
-        res.json({ categories: [], profiles: [] });
-    }
+        try { res.json(JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))); }
+        catch (err) { res.status(500).json({ error: 'Failed to parse config' }); }
+    } else { res.json({ categories: [], profiles: [] }); }
 });
 
 app.post('/api/config', (req, res) => {
     try {
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(req.body, null, 2), 'utf8');
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to save config file' });
-    }
+    } catch (err) { res.status(500).json({ error: 'Failed to save config' }); }
 });
 
 app.post('/api/cache-icon', async (req, res) => {
@@ -136,37 +96,105 @@ app.post('/api/cache-icon', async (req, res) => {
     res.json({ url: cachedUrl });
 });
 
-// API: List all local cached icon files
-app.get('/api/icons', (req, res) => {
-    if (!fs.existsSync(ICONS_DIR)) return res.json([]);
+// API: Upload user icon to disk scoped to profile
+app.post('/api/upload-icon', (req, res) => {
+    const { image, filename, profileId } = req.body;
+    if (!image) return res.status(400).json({ error: 'No image provided' });
     try {
-        const files = fs.readdirNames = fs.readdirSync(ICONS_DIR).map(filename => {
-            const filePath = path.join(ICONS_DIR, filename);
-            const stats = fs.statSync(filePath);
-            return {
-                filename,
-                url: `/data/icons/${filename}`,
-                size: stats.size,
-                created: stats.birthtime
-            };
-        });
-        res.json(files);
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const ext = filename ? path.extname(filename) : '.png';
+        const safeProfile = profileId || 'admin';
+        const safeName = `icon_${safeProfile}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`;
+        const filePath = path.join(ICONS_DIR, safeName);
+        fs.writeFileSync(filePath, buffer);
+        res.json({ url: `/data/icons/${safeName}` });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to list local icons' });
+        res.status(500).json({ error: 'Failed to save icon' });
     }
 });
 
-// API: Delete a specific local cached icon file
-app.delete('/api/icons/:filename', (req, res) => {
-    const filename = req.params.filename;
+// API: Upload custom background wallpaper scoped to profile
+app.post('/api/upload-wallpaper', (req, res) => {
+    const { image, filename, profileId } = req.body;
+    if (!image) return res.status(400).json({ error: 'No image provided' });
+    try {
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const ext = filename ? path.extname(filename) : '.png';
+        const safeProfile = profileId || 'admin';
+        const safeName = `bg_${safeProfile}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`;
+        const filePath = path.join(WALLPAPERS_DIR, safeName);
+        fs.writeFileSync(filePath, buffer);
+        res.json({ url: `/data/wallpapers/${safeName}` });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to save wallpaper' });
+    }
+});
+
+// API: List assets with strict permission filtering (Admin sees all, Users see only their own)
+app.get('/api/assets', (req, res) => {
+    const { profileId, isAdmin } = req.query;
+    let assets = [];
+    const isUserAdmin = isAdmin === 'true';
+
+    try {
+        if (fs.existsSync(ICONS_DIR)) {
+            fs.readdirSync(ICONS_DIR).forEach(filename => {
+                const filePath = path.join(ICONS_DIR, filename);
+                const stats = fs.statSync(filePath);
+                const isUserScoped = filename.startsWith('icon_');
+                const ownerId = isUserScoped ? filename.split('_')[1] : null;
+
+                if (isUserAdmin || !isUserScoped || ownerId === profileId) {
+                    assets.push({
+                        filename,
+                        type: 'icon',
+                        owner: ownerId || 'shared',
+                        url: `/data/icons/${filename}`,
+                        size: stats.size,
+                        created: stats.birthtime
+                    });
+                }
+            });
+        }
+
+        if (fs.existsSync(WALLPAPERS_DIR)) {
+            fs.readdirSync(WALLPAPERS_DIR).forEach(filename => {
+                const filePath = path.join(WALLPAPERS_DIR, filename);
+                const stats = fs.statSync(filePath);
+                const parts = filename.split('_');
+                const ownerId = parts.length > 1 ? parts[1] : null;
+
+                if (isUserAdmin || ownerId === profileId) {
+                    assets.push({
+                        filename,
+                        type: 'wallpaper',
+                        owner: ownerId || 'unknown',
+                        url: `/data/wallpapers/${filename}`,
+                        size: stats.size,
+                        created: stats.birthtime
+                    });
+                }
+            });
+        }
+        res.json(assets);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to list assets' });
+    }
+});
+
+// API: Delete specific local asset
+app.delete('/api/assets/:type/:filename', (req, res) => {
+    const { type, filename } = req.params;
     if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
         return res.status(400).json({ error: 'Invalid filename' });
     }
-    const filePath = path.join(ICONS_DIR, filename);
+    const targetDir = type === 'wallpaper' ? WALLPAPERS_DIR : ICONS_DIR;
+    const filePath = path.join(targetDir, filename);
     if (fs.existsSync(filePath)) {
         try {
             fs.unlinkSync(filePath);
-            console.log(`[Icon Cache] Deleted local asset: ${filename}`);
             return res.json({ success: true });
         } catch (err) {
             return res.status(500).json({ error: 'Failed to delete file' });
@@ -175,9 +203,6 @@ app.delete('/api/icons/:filename', (req, res) => {
     res.status(404).json({ error: 'File not found' });
 });
 
-// Run bulk icon migration before accepting connections
 cacheAllExistingIconsOnStartup().then(() => {
-    app.listen(PORT, () => {
-        console.log(`HomeLink running on port ${PORT}`);
-    });
+    app.listen(PORT, () => { console.log(`HomeLink running on port ${PORT}`); });
 });

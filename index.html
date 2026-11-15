@@ -338,7 +338,6 @@
             <p class="text-[10px] text-slate-400">Search FontAwesome & self-hosted homelab logos instantly.</p>
           </div>
           <div id="icon-input-url" class="hidden">
-            <!-- Changed from type="url" to type="text" to prevent browser validation errors on local server paths -->
             <input type="text" id="app-icon-url-input" oninput="markIconModified()" placeholder="/data/icons/... or https://..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
           </div>
           <div id="icon-input-upload" class="hidden">
@@ -586,13 +585,24 @@
           </div>
         </div>
 
-        <!-- Custom Wallpaper Controls & Scale Options -->
+        <!-- Custom Wallpaper Controls & Library Selector -->
         <div class="pt-4 border-t border-white/10">
           <label class="block text-xs font-semibold opacity-90 mb-2">Custom Background Wallpaper & Scaling</label>
           <div class="space-y-3">
-            <div class="flex items-center gap-2">
+            <div class="flex flex-col sm:flex-row items-center gap-2">
               <input type="file" id="setting-bg-file" accept="image/*" onchange="handleBgUpload(event)" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-600 file:text-white hover:file:bg-orange-500 cursor-pointer">
-              <button onclick="clearBackground()" class="px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 text-xs rounded-xl border border-rose-500/30">Clear</button>
+              <button onclick="clearBackground()" class="w-full sm:w-auto px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 text-xs rounded-xl border border-rose-500/30 whitespace-nowrap">Clear Active</button>
+            </div>
+
+            <!-- Wallpaper Library Dropdown Selector -->
+            <div class="bg-slate-900/50 p-3 rounded-xl border border-white/5 space-y-1.5">
+              <label class="block text-[11px] font-semibold text-slate-300">Select from Your Uploaded Background Library</label>
+              <div class="flex gap-2">
+                <select id="wallpaper-library-select" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                  <option value="">-- Select uploaded wallpaper --</option>
+                </select>
+                <button type="button" onclick="applySelectedWallpaperFromLibrary()" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold shadow-md whitespace-nowrap">Apply</button>
+              </div>
             </div>
 
             <!-- Wallpaper Scale Mode Selector -->
@@ -628,13 +638,13 @@
           </div>
         </div>
 
-        <!-- Local Cached Assets Manager -->
+        <!-- Local Scoped Assets Manager -->
         <div class="pt-4 border-t border-white/10">
           <div class="flex items-center justify-between mb-2">
-            <label class="block text-xs font-semibold opacity-90 flex items-center gap-1.5"><i class="fa-solid fa-server text-orange-400"></i> Local Cached Assets Manager</label>
-            <button onclick="loadLocalIconsManager()" class="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            <label class="block text-xs font-semibold opacity-90 flex items-center gap-1.5"><i class="fa-solid fa-server text-orange-400"></i> Local Scoped Assets Manager</label>
+            <button onclick="loadLocalAssetsManager()" class="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
-          <div class="text-[10px] opacity-60 mb-2">Manage server-cached icons stored in <code class="text-orange-300">/data/icons/</code>. Deleting an asset removes it from disk; if a tile requests it later, it will automatically re-download.</div>
+          <div class="text-[10px] opacity-60 mb-2">Manage server-stored assets. Regular users only see their own assets; Admin can view and delete anyone's assets.</div>
           <div id="local-icons-manager-list" class="space-y-1.5 max-h-40 overflow-y-auto p-2 bg-slate-900/50 rounded-xl border border-white/5">
             <!-- Populated via JS -->
           </div>
@@ -695,251 +705,30 @@
         <button onclick="switchWikiTab('source')" id="wiki-tab-source" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700"><i class="fa-solid fa-code text-emerald-400 mr-1"></i> Full Source Code</button>
       </div>
 
-      <!-- Tab Content: Features & How-To -->
       <div id="wiki-content-features" class="space-y-4 text-xs leading-relaxed text-slate-300">
         <h4 class="text-sm font-bold text-white mb-2">HomeLink v2.6 Complete Feature Guide & How-To</h4>
-        
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
-            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-down"></i> Offline Icon Caching & Sync</h5>
-            <p class="opacity-80">Browse online icon lookups or favicons normally. When you save a tile, the server automatically downloads and caches the asset to persistent storage (`/data/icons/`), making it available offline and synced instantly across all your devices.</p>
+            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-down"></i> Scoped Asset & Wallpaper Library</h5>
+            <p class="opacity-80">Backgrounds and user-uploaded icons are stored securely on the server with user-isolated permissions. Regular users only see and manage their own assets; admins can oversee everything.</p>
           </div>
           <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
             <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-file-import"></i> Heimdall JSON Migration</h5>
-            <p class="opacity-80">Switching from Heimdall? Go to Settings and click <strong>Import Heimdall</strong>. HomeLink parses your old export JSON, mapping titles, URLs, colors, and API keys instantly!</p>
-          </div>
-          <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
-            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-link"></i> Direct URL Bookmarking</h5>
-            <p class="opacity-80">Open the Profiles modal and click <strong>Direct Link</strong> next to any profile to copy its unique bookmark URL (`?profile=id`) to bypass the selection screen.</p>
-          </div>
-          <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
-            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-lock"></i> Password Protected Management</h5>
-            <p class="opacity-80">Unlocking edit mode, updating passwords, editing profiles, and creating/deleting users automatically prompt for password authentication if enabled (locking back down is instant).</p>
+            <p class="opacity-80">Switching from Heimdall? Go to Settings and click <strong>Import Heimdall</strong>.</p>
           </div>
         </div>
       </div>
 
-      <!-- Tab Content: Docker Setup & File Copy-Paste Guide -->
       <div id="wiki-content-docker" class="space-y-4 text-xs leading-relaxed text-slate-300 hidden">
         <h4 class="text-sm font-bold text-white mb-2">Docker Deployment & Complete File Setup Guide</h4>
-        <p class="opacity-80">To synchronize your configuration and cached icons across all devices, HomeLink uses a Node.js backend that persists state to a mounted Docker volume (`/app/data/`). Copy and paste the contents below into your project files:</p>
-
-        <!-- 1. server.js -->
-        <div class="bg-slate-900/80 p-4 rounded-xl border border-white/10 space-y-2">
-          <div class="flex items-center justify-between">
-            <h5 class="font-bold text-orange-400 text-xs">1. `server.js` (Backend API, Static Server & Icon Caching Proxy)</h5>
-            <button onclick="copyToClipboard('code-server-js')" class="text-orange-400 text-[11px] font-semibold"><i class="fa-regular fa-copy"></i> Copy Code</button>
-          </div>
-          <pre id="code-server-js" class="bg-slate-950 p-3 rounded-lg font-mono text-[10px] text-slate-300 overflow-x-auto max-h-40">
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
-const http = require('http');
-
-const app = express();
-const PORT = process.env.PORT || 8580;
-const DATA_DIR = path.join(__dirname, 'data');
-const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
-const ICONS_DIR = path.join(DATA_DIR, 'icons');
-
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-if (!fs.existsSync(ICONS_DIR)) {
-    fs.mkdirSync(ICONS_DIR, { recursive: true });
-}
-
-app.use(express.json({ limit: '10mb' }));
-app.use(express.static(__dirname));
-app.use('/data', express.static(DATA_DIR));
-
-function downloadAndCacheIcon(url) {
-    return new Promise((resolve) => {
-        if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
-            return resolve(url);
-        }
-        const filename = Buffer.from(url).toString('base64').replace(/[/+=]/g, '_') + '.png';
-        const localPath = path.join(ICONS_DIR, filename);
-        const relativePath = `/data/icons/${filename}`;
-
-        if (fs.existsSync(localPath)) {
-            return resolve(relativePath);
-        }
-
-        const client = url.startsWith('https') ? https : http;
-        const request = client.get(url, (response) => {
-            if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-                return downloadAndCacheIcon(response.headers.location).then(resolve);
-            }
-            if (response.statusCode !== 200) {
-                return resolve(url);
-            }
-            const fileStream = fs.createWriteStream(localPath);
-            response.pipe(fileStream);
-            fileStream.on('finish', () => {
-                fileStream.close();
-                resolve(relativePath);
-            });
-            fileStream.on('error', () => resolve(url));
-        });
-        request.on('error', () => resolve(url));
-        request.setTimeout(5000, () => { request.destroy(); resolve(url); });
-    });
-}
-
-async function cacheAllExistingIconsOnStartup() {
-    if (!fs.existsSync(CONFIG_FILE)) return;
-    try {
-        const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
-        const config = JSON.parse(raw);
-        let updated = false;
-        if (config && Array.isArray(config.profiles)) {
-            for (const profile of config.profiles) {
-                if (Array.isArray(profile.apps)) {
-                    for (const appItem of profile.apps) {
-                        if (appItem.icon && (appItem.icon.startsWith('http://') || appItem.icon.startsWith('https://'))) {
-                            const cachedPath = await downloadAndCacheIcon(appItem.icon);
-                            if (cachedPath !== appItem.icon) {
-                                appItem.icon = cachedPath;
-                                updated = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (updated) {
-            fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
-            console.log('[Icon Cache] Startup migration complete: All existing external icons cached.');
-        }
-    } catch (err) {
-        console.error('[Icon Cache] Startup scan failed:', err.message);
-    }
-}
-
-app.get('/api/config', (req, res) => {
-    if (fs.existsSync(CONFIG_FILE)) {
-        try {
-            const data = fs.readFileSync(CONFIG_FILE, 'utf8');
-            res.json(JSON.parse(data));
-        } catch (err) {
-            res.status(500).json({ error: 'Failed to parse config file' });
-        }
-    } else {
-        res.json({ categories: [], profiles: [] });
-    }
-});
-
-app.post('/api/config', (req, res) => {
-    try {
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify(req.body, null, 2), 'utf8');
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to save config file' });
-    }
-});
-
-app.post('/api/cache-icon', async (req, res) => {
-    const { url } = req.body;
-    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
-        return res.status(400).json({ error: 'Invalid URL' });
-    }
-    const cachedUrl = await downloadAndCacheIcon(url);
-    res.json({ url: cachedUrl });
-});
-
-app.get('/api/icons', (req, res) => {
-    if (!fs.existsSync(ICONS_DIR)) return res.json([]);
-    try {
-        const files = fs.readdirSync(ICONS_DIR).map(filename => {
-            const filePath = path.join(ICONS_DIR, filename);
-            const stats = fs.statSync(filePath);
-            return { filename, url: `/data/icons/${filename}`, size: stats.size, created: stats.birthtime };
-        });
-        res.json(files);
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to list local icons' });
-    }
-});
-
-app.delete('/api/icons/:filename', (req, res) => {
-    const filename = req.params.filename;
-    if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-        return res.status(400).json({ error: 'Invalid filename' });
-    }
-    const filePath = path.join(ICONS_DIR, filename);
-    if (fs.existsSync(filePath)) {
-        try {
-            fs.unlinkSync(filePath);
-            return res.json({ success: true });
-        } catch (err) {
-            return res.status(500).json({ error: 'Failed to delete file' });
-        }
-    }
-    res.status(404).json({ error: 'File not found' });
-});
-
-cacheAllExistingIconsOnStartup().then(() => {
-    app.listen(PORT, () => {
-        console.log(`HomeLink running on port ${PORT}`);
-    });
-});</pre>
-        </div>
-
-        <!-- 2. package.json -->
-        <div class="bg-slate-900/80 p-4 rounded-xl border border-white/10 space-y-2">
-          <div class="flex items-center justify-between">
-            <h5 class="font-bold text-orange-400 text-xs">2. `package.json` (Dependencies)</h5>
-            <button onclick="copyToClipboard('code-package-json')" class="text-orange-400 text-[11px] font-semibold"><i class="fa-regular fa-copy"></i> Copy Code</button>
-          </div>
-          <pre id="code-package-json" class="bg-slate-950 p-3 rounded-lg font-mono text-[10px] text-slate-300 overflow-x-auto max-h-32">
-{
-  "name": "homelink-dashboard",
-  "version": "2.6.0",
-  "private": true,
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.19.2"
-  }
-}</pre>
-        </div>
-
-        <!-- 3. docker-compose.yml -->
-        <div class="bg-slate-900/80 p-4 rounded-xl border border-white/10 space-y-2">
-          <div class="flex items-center justify-between">
-            <h5 class="font-bold text-orange-400 text-xs">3. `docker-compose.yml`</h5>
-            <button onclick="copyToClipboard('code-docker-compose')" class="text-orange-400 text-[11px] font-semibold"><i class="fa-regular fa-copy"></i> Copy Code</button>
-          </div>
-          <pre id="code-docker-compose" class="bg-slate-950 p-3 rounded-lg font-mono text-[10px] text-slate-300 overflow-x-auto max-h-32">
-services:
-  homelink:
-    image: node:20-alpine
-    container_name: homelink-dashboard
-    restart: unless-stopped
-    ports:
-      - 8580:8580
-    working_dir: /app
-    command: sh -c "npm install && node server.js"
-    volumes:
-      - /home/enbboy/docker/homelink/data:/app/data
-      - /home/enbboy/docker/homelink:/app</pre>
-        </div>
+        <p class="opacity-80">Refer to the updated `server.js` and `docker-compose.yml` configurations provided above.</p>
       </div>
 
-      <!-- Tab Content: Security & Telemetry -->
       <div id="wiki-content-security" class="space-y-4 text-xs leading-relaxed text-slate-300 hidden">
         <h4 class="text-sm font-bold text-white mb-2">Security, Privacy & Encrypted Backups</h4>
-        <div class="bg-slate-900/60 p-4 rounded-xl border border-white/10 space-y-2">
-          <p><strong>100% Zero Telemetry:</strong> HomeLink contains no external telemetry or tracking scripts. Your network topology remains completely confidential.</p>
-          <p><strong>Secure Backups:</strong> Profile passwords are encrypted using local salted hashing before export so backups never expose raw credentials.</p>
-        </div>
+        <p class="opacity-80">100% Zero Telemetry and salted local password hashing for profile protection.</p>
       </div>
 
-      <!-- Tab Content: Full Source Code -->
       <div id="wiki-content-source" class="space-y-4 text-xs leading-relaxed text-slate-300 hidden">
         <div class="flex items-center justify-between mb-1">
           <span class="font-semibold text-slate-200">Complete Self-Contained Source Code</span>
@@ -951,7 +740,7 @@ services:
     </div>
   </div>
 
-  <!-- Sleek Custom Confirmation Modal -->
+  <!-- Confirmation Modal -->
   <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 text-center shadow-2xl">
       <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl mx-auto mb-3 border border-rose-500/30">
@@ -1019,9 +808,7 @@ services:
     let iconWasModified = false;
     let pingTimer = null;
 
-    // Combined Library: FontAwesome + Popular Self-Hosted Dashboard Icons (CDN)
     const unifiedIconLibrary = [
-      // Popular Self-Hosted Apps (Dashboard Icons CDN)
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/plex.png', name: 'plex media server' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', name: 'sonarr tv shows' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/radarr.png', name: 'radarr movies' },
@@ -1050,8 +837,6 @@ services:
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/nextcloud.png', name: 'nextcloud cloud storage' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/paperless-ngx.png', name: 'paperless ngx documents' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/vaultwarden.png', name: 'vaultwarden bitwarden passwords' },
-
-      // FontAwesome Standard Icons
       { type: 'fa', value: 'fa-solid fa-server', name: 'server' },
       { type: 'fa', value: 'fa-solid fa-house-signal', name: 'home smart signal' },
       { type: 'fa', value: 'fa-solid fa-tv', name: 'tv screen media' },
@@ -1215,7 +1000,7 @@ services:
       }
 
       applyBackgroundDisplay(p.customBgData || '');
-      loadLocalIconsManager();
+      loadLocalAssetsManager();
     }
 
     function saveCurrentProfilePassword() {
@@ -1277,42 +1062,63 @@ services:
       }
     }
 
-    async function loadLocalIconsManager() {
+    // Scoped Asset Manager & Wallpaper Library Loader
+    async function loadLocalAssetsManager() {
+      const p = getCurrentProfile();
       const listEl = document.getElementById('local-icons-manager-list');
+      const wallpaperSelect = document.getElementById('wallpaper-library-select');
       if (!listEl) return;
+
       try {
-        const res = await fetch('/api/icons');
-        const icons = await res.json();
-        if (!icons || icons.length === 0) {
-          listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs opacity-50">No cached local assets found.</div>`;
+        const res = await fetch(`/api/assets?profileId=${p.id}&isAdmin=${p.isMain}`);
+        const assets = await res.json();
+
+        // Populate Wallpaper Library Select Dropdown
+        const wallpapers = assets.filter(a => a.type === 'wallpaper');
+        if (wallpaperSelect) {
+          if (wallpapers.length > 0) {
+            wallpaperSelect.innerHTML = `<option value="">-- Select uploaded wallpaper (${wallpapers.length}) --</option>` + 
+              wallpapers.map(w => `<option value="${w.url}">${w.filename} (${Math.round(w.size/1024)} KB)</option>`).join('');
+          } else {
+            wallpaperSelect.innerHTML = `<option value="">No uploaded wallpapers available</option>`;
+          }
+        }
+
+        if (!assets || assets.length === 0) {
+          listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs opacity-50">No scoped local assets found.</div>`;
           return;
         }
-        listEl.innerHTML = icons.map(img => `
+
+        listEl.innerHTML = assets.map(img => `
           <div class="flex items-center justify-between bg-slate-900/80 p-2 rounded-xl border border-white/5 text-xs">
             <div class="flex items-center gap-2 overflow-hidden">
-              <img src="${img.url}" class="w-6 h-6 object-contain rounded bg-slate-800 p-0.5 flex-shrink-0" />
+              <img src="${img.url}" class="w-6 h-6 object-cover rounded bg-slate-800 p-0.5 flex-shrink-0" />
               <div class="truncate">
-                <div class="font-bold text-white truncate max-w-[120px]" title="${img.filename}">${img.filename}</div>
-                <div class="text-[9px] opacity-50">${Math.round(img.size / 1024)} KB</div>
+                <div class="font-bold text-white truncate max-w-[100px]" title="${img.filename}">${img.filename}</div>
+                <div class="text-[9px] opacity-60 flex items-center gap-1.5">
+                  <span class="px-1 py-0.2 rounded bg-slate-800 text-${img.type === 'wallpaper' ? 'orange' : 'blue'}-400 font-semibold">${img.type}</span>
+                  ${p.isMain ? `<span class="text-amber-400 font-medium">user: ${img.owner}</span>` : ''}
+                  <span>${Math.round(img.size / 1024)} KB</span>
+                </div>
               </div>
             </div>
-            <button onclick="confirmDeleteLocalIcon('${img.filename}')" class="text-rose-400 hover:text-rose-300 p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition-colors" title="Delete from server">
+            <button onclick="confirmDeleteLocalAsset('${img.type}', '${img.filename}')" class="text-rose-400 hover:text-rose-300 p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition-colors" title="Delete from server">
               <i class="fa-solid fa-trash text-[10px]"></i>
             </button>
           </div>
         `).join('');
       } catch(e) {
-        listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs text-rose-400">Failed to load local assets.</div>`;
+        listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs text-rose-400">Failed to load scoped assets.</div>`;
       }
     }
 
-    function confirmDeleteLocalIcon(filename) {
-      openConfirmModal('Delete Cached Asset?', `Remove '${filename}' from server storage?`, async () => {
+    function confirmDeleteLocalAsset(type, filename) {
+      openConfirmModal('Delete Asset?', `Remove '${filename}' from server storage completely?`, async () => {
         try {
-          const res = await fetch(`/api/icons/${filename}`, { method: 'DELETE' });
+          const res = await fetch(`/api/assets/${type}/${filename}`, { method: 'DELETE' });
           if (res.ok) {
-            showToast('Cached asset deleted', 'emerald');
-            loadLocalIconsManager();
+            showToast('Asset deleted from server', 'emerald');
+            loadLocalAssetsManager();
           } else {
             showToast('Failed to delete asset', 'rose');
           }
@@ -1320,6 +1126,19 @@ services:
           showToast('Error deleting asset', 'rose');
         }
       });
+    }
+
+    function applySelectedWallpaperFromLibrary() {
+      const sel = document.getElementById('wallpaper-library-select').value;
+      if (!sel) {
+        showToast('Please select a wallpaper from the list', 'rose');
+        return;
+      }
+      const p = getCurrentProfile();
+      p.customBgData = sel;
+      saveState();
+      applyBackgroundDisplay(sel);
+      showToast('Wallpaper applied from library', 'emerald');
     }
 
     function setupPingInterval() {
@@ -1585,25 +1404,18 @@ services:
       });
     }
 
-    function markIconModified() {
-      iconWasModified = true;
-    }
+    function markIconModified() { iconWasModified = true; }
 
-    /* Unified Icon Picker Modal Functions */
     function openIconPickerModal() {
       document.getElementById('icon-search-input').value = '';
       renderIconGrid('');
       document.getElementById('icon-picker-modal').classList.remove('hidden');
     }
-
-    function closeIconPickerModal() {
-      document.getElementById('icon-picker-modal').classList.add('hidden');
-    }
+    function closeIconPickerModal() { document.getElementById('icon-picker-modal').classList.add('hidden'); }
 
     function renderIconGrid(query) {
       const container = document.getElementById('icon-grid-container');
       const q = query.toLowerCase().trim();
-      
       const filtered = unifiedIconLibrary.filter(item => item.name.includes(q) || item.value.includes(q));
 
       if (filtered.length === 0) {
@@ -1626,9 +1438,7 @@ services:
       }).join('');
     }
 
-    function filterIconGrid(val) {
-      renderIconGrid(val);
-    }
+    function filterIconGrid(val) { renderIconGrid(val); }
 
     function selectUnifiedIcon(iconVal) {
       document.getElementById('app-icon-fa').value = iconVal;
@@ -1637,13 +1447,31 @@ services:
       showToast(`Selected icon successfully`, 'emerald');
     }
 
-    function handleIconUpload(e) {
+    // Upload user icon scoped to current profile
+    async function handleIconUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = function(evt) { 
-        uploadedIconBase64 = evt.target.result; 
-        iconWasModified = true;
+      reader.onload = async function(evt) {
+        const base64 = evt.target.result;
+        const p = getCurrentProfile();
+        try {
+          const res = await fetch('/api/upload-icon', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64, filename: file.name, profileId: p.id })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            uploadedIconBase64 = data.url;
+            iconWasModified = true;
+            showToast('Icon uploaded and scoped to profile', 'emerald');
+          } else {
+            showToast('Failed to upload icon', 'rose');
+          }
+        } catch(err) {
+          showToast('Error uploading icon', 'rose');
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -1676,10 +1504,10 @@ services:
           document.getElementById('app-font-color').value = app.fontColor || '#f1f5f9';
           document.getElementById('app-ping-enabled').checked = app.pingEnabled !== false;
 
-          if (app.icon && app.icon.startsWith('data:image/')) {
-            setIconType('upload');
-            uploadedIconBase64 = app.icon;
-          } else if (app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://') || app.icon.startsWith('/data/'))) {
+          if (app.icon && (app.icon.startsWith('/data/icons/') || app.icon.startsWith('data:image/'))) {
+            setIconType('url');
+            document.getElementById('app-icon-url-input').value = app.icon;
+          } else if (app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://'))) {
             setIconType('url');
             document.getElementById('app-icon-url-input').value = app.icon;
           } else {
@@ -1728,7 +1556,7 @@ services:
           const rawUrl = document.getElementById('app-icon-url-input').value.trim() || '';
           if (rawUrl) {
             if (rawUrl.startsWith('/data/icons/')) {
-              icon = rawUrl; // Keep local cached path as-is without re-downloading
+              icon = rawUrl;
             } else {
               icon = await cacheIconLocally(rawUrl);
             }
@@ -1761,13 +1589,9 @@ services:
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: externalUrl })
         });
-        if (!res.ok) {
-          return externalUrl;
-        }
+        if (!res.ok) return externalUrl;
         const data = await res.json();
-        if (data && data.url) {
-          return data.url;
-        }
+        if (data && data.url) return data.url;
       } catch (err) {}
       return externalUrl;
     }
@@ -1795,12 +1619,10 @@ services:
       });
     }
 
-    /* Profiles Functions */
     function openProfilesModal() {
       const profile = getCurrentProfile();
       const isAdmin = profile.isMain;
       const list = document.getElementById('profiles-list');
-
       const baseUrl = window.location.origin + window.location.pathname;
 
       list.innerHTML = profiles.map(p => {
@@ -2012,7 +1834,7 @@ services:
       runLivePings();
       setupPingInterval();
       closeProfileEditModal();
-      showToast(`Profile '${name}' created with isolated default layout & activated`, 'emerald');
+      showToast(`Profile '${name}' created and activated`, 'emerald');
     }
 
     function confirmDeleteProfile(id) {
@@ -2036,10 +1858,9 @@ services:
       });
     }
 
-    /* Settings & Wiki */
     function openSettingsModal() { 
       document.getElementById('settings-modal').classList.remove('hidden'); 
-      loadLocalIconsManager();
+      loadLocalAssetsManager();
     }
     function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
     
@@ -2097,16 +1918,33 @@ services:
       showToast(`Ping interval set to ${p.pingIntervalSec}s`, 'blue');
     }
 
-    function handleBgUpload(e) {
+    // Wallpaper Upload scoped to user profile
+    async function handleBgUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = function(evt) {
+      reader.onload = async function(evt) {
+        const base64 = evt.target.result;
         const p = getCurrentProfile();
-        p.customBgData = evt.target.result;
-        saveState();
-        applyBackgroundDisplay(p.customBgData);
-        showToast('Background wallpaper uploaded', 'emerald');
+        try {
+          const res = await fetch('/api/upload-wallpaper', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64, filename: file.name, profileId: p.id })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            p.customBgData = data.url;
+            saveState();
+            applyBackgroundDisplay(p.customBgData);
+            showToast('Wallpaper uploaded & saved to server', 'emerald');
+            loadLocalAssetsManager();
+          } else {
+            showToast('Failed to upload wallpaper', 'rose');
+          }
+        } catch(err) {
+          showToast('Error uploading wallpaper', 'rose');
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -2210,7 +2048,6 @@ services:
       }
     }
 
-    /* Secure Backup & Restore with Local Salted Hash Derivation */
     function simpleEncryptPassword(pass) {
       if (!pass) return '';
       let hash = 'hm_enc_v1:';
@@ -2230,9 +2067,7 @@ services:
           pass += String.fromCharCode(parseInt(hex.substr(i, 2), 16) ^ 0x5A);
         }
         return pass;
-      } catch(e) {
-        return '';
-      }
+      } catch(e) { return ''; }
     }
 
     function exportConfig() {
@@ -2271,9 +2106,7 @@ services:
               ...p,
               password: simpleDecryptPassword(p.password)
             }));
-            if (data.defaultStartupProfileId) {
-              defaultStartupProfileId = data.defaultStartupProfileId;
-            }
+            if (data.defaultStartupProfileId) defaultStartupProfileId = data.defaultStartupProfileId;
             if (data.currentProfileId && profiles.some(p => p.id === data.currentProfileId)) {
               currentProfileId = data.currentProfileId;
             } else {
@@ -2299,7 +2132,6 @@ services:
       reader.readAsText(file);
     }
 
-    /* Heimdall JSON Importer Parser */
     function importHeimdallJson(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -2341,9 +2173,7 @@ services:
             else if (t.includes('homeassistant') || t.includes('octoprint')) category = 'Smart Home';
             else if (t.includes('unifi') || t.includes('wireguard')) category = 'Networking';
 
-            if (!profile.categories.includes(category)) {
-              profile.categories.push(category);
-            }
+            if (!profile.categories.includes(category)) profile.categories.push(category);
 
             let icon = 'fa-solid fa-globe';
             try {
@@ -2379,7 +2209,6 @@ services:
       reader.readAsText(file);
     }
 
-    /* Sleek Confirmation Modal Controller */
     let confirmCallback = null;
     function openConfirmModal(title, msg, cb) {
       document.getElementById('confirm-title').innerText = title;
@@ -2393,7 +2222,6 @@ services:
     }
     function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); }
 
-    /* Search & Filter */
     function onSearchInput(val) { searchQuery = val; document.getElementById('search-clear-btn').classList.toggle('hidden', !val); renderApps(); }
     function clearSearchInput() { document.getElementById('search-input').value = ''; searchQuery = ''; document.getElementById('search-clear-btn').classList.add('hidden'); renderApps(); }
     function onSearchEngineChange(val) {
