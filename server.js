@@ -88,22 +88,83 @@ app.post('/api/config', (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Failed to save config' }); }
 });
 
-// Smart Service API Proxy supporting Sonarr, Radarr, Prowlarr, qBittorrent & Custom
+// Helper for JSON API GET requests
+function httpGetJson(targetUrl, headers = {}) {
+    return new Promise((resolve) => {
+        try {
+            const cleanUrl = targetUrl.replace(/\/+$/, '');
+            const client = cleanUrl.startsWith('https') ? https : http;
+            const req = client.get(cleanUrl, { headers }, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                    try { resolve(JSON.parse(data)); }
+                    catch(e) { resolve(null); }
+                });
+            });
+            req.on('error', () => resolve(null));
+            req.setTimeout(4000, () => { req.destroy(); resolve(null); });
+        } catch(e) {
+            resolve(null);
+        }
+    });
+}
+
+// Smart Service API Proxy supporting Sonarr, Radarr, Prowlarr, qBittorrent, Immich & Custom
 app.get('/api/proxy-stats', async (req, res) => {
     const { targetUrl, apiKey, serviceType } = req.query;
     if (!targetUrl) return res.status(400).json({ error: 'Missing targetUrl' });
     try {
         const cleanUrl = targetUrl.replace(/\/+$/, '');
         const client = cleanUrl.startsWith('https') ? https : http;
-        
-        let endpoint = '/api/v3/queue';
         let headers = { 'X-Api-Key': apiKey || '' };
 
+        if (serviceType === 'immich') {
+            const stats = await httpGetJson(`${cleanUrl}/api/server/statistics`, { 'x-api-key': apiKey || '' });
+            if (stats && (stats.photos !== undefined || stats.videos !== undefined)) {
+                const photos = stats.photos || 0;
+                const videos = stats.videos || 0;
+                return res.json({ badge: `${photos.toLocaleString()} photos • ${videos.toLocaleString()} videos` });
+            }
+            return res.json({ badge: 'Online (No Stats)' });
+        }
+
+        if (serviceType === 'qbittorrent') {
+            const transferInfo = await httpGetJson(`${cleanUrl}/api/v2/transfer/info`, headers);
+            const torrentsInfo = await httpGetJson(`${cleanUrl}/api/v2/torrents/info`, headers);
+
+            let dlSpeedFormatted = '0 B/s';
+            let activeCount = 0;
+
+            if (transferInfo && typeof transferInfo.dl_info_speed === 'number') {
+                const bytesSec = transferInfo.dl_info_speed;
+                if (bytesSec > 1024 * 1024 * 1024) dlSpeedFormatted = (bytesSec / (1024**3)).toFixed(1) + ' GB/s';
+                else if (bytesSec > 1024 * 1024) dlSpeedFormatted = (bytesSec / (1024**2)).toFixed(1) + ' MB/s';
+                else if (bytesSec > 1024) dlSpeedFormatted = (bytesSec / 1024).toFixed(1) + ' KB/s';
+                else if (bytesSec > 0) dlSpeedFormatted = bytesSec + ' B/s';
+            }
+
+            if (Array.isArray(torrentsInfo)) {
+                activeCount = torrentsInfo.filter(t => 
+                    t.state === 'downloading' || 
+                    t.state === 'uploading' || 
+                    t.state === 'forcedDL' || 
+                    t.state === 'forcedUP' ||
+                    (t.dlspeed && t.dlspeed > 0) ||
+                    (t.upspeed && t.upspeed > 0)
+                ).length;
+            }
+
+            const badgeText = activeCount > 0 
+                ? `${activeCount} active • DL: ${dlSpeedFormatted}` 
+                : `0 active (Idle)`;
+
+            return res.json({ badge: badgeText });
+        }
+
+        let endpoint = '/api/v3/queue';
         if (serviceType === 'prowlarr') {
             endpoint = '/api/v1/queue';
-        } else if (serviceType === 'qbittorrent') {
-            endpoint = '/api/v2/transfer/info';
-            headers = {}; // qBittorrent uses cookie or open depending on settings
         } else if (serviceType === 'radarr' || serviceType === 'sonarr') {
             endpoint = '/api/v3/queue';
         }
@@ -114,21 +175,13 @@ app.get('/api/proxy-stats', async (req, res) => {
             apiRes.on('end', () => {
                 try {
                     const json = JSON.parse(data);
-                    let badgeText = '';
-
-                    if (serviceType === 'qbittorrent') {
-                        const dlSpeed = json.dl_info ? (json.dl_info / 1024 / 1024).toFixed(1) + ' MB/s' : 'Online';
-                        badgeText = `DL: ${dlSpeed}`;
-                    } else {
-                        let count = 0;
-                        if (Array.isArray(json)) {
-                            count = json.length;
-                        } else if (json && typeof json === 'object' && Array.isArray(json.records)) {
-                            count = json.totalRecords !== undefined ? json.totalRecords : json.records.length;
-                        }
-                        badgeText = `${count} in queue`;
+                    let count = 0;
+                    if (Array.isArray(json)) {
+                        count = json.length;
+                    } else if (json && typeof json === 'object' && Array.isArray(json.records)) {
+                        count = json.totalRecords !== undefined ? json.totalRecords : json.records.length;
                     }
-                    res.json({ badge: badgeText });
+                    res.json({ badge: `${count} in queue` });
                 } catch(e) {
                     res.status(500).json({ error: 'Invalid JSON from service' });
                 }

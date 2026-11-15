@@ -340,7 +340,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2 sm:col-span-1">
             <label class="block text-xs font-semibold opacity-90 mb-1">Service Name *</label>
-            <input type="text" id="app-name" required placeholder="e.g. Plex, Sonarr" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <input type="text" id="app-name" required placeholder="e.g. Plex, Immich" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
           </div>
           <div class="col-span-2 sm:col-span-1">
             <label class="block text-xs font-semibold opacity-90 mb-1">Category *</label>
@@ -352,7 +352,7 @@
 
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">URL / Address *</label>
-          <input type="url" id="app-url" required placeholder="http://192.168.1.100:8989" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+          <input type="url" id="app-url" required placeholder="http://192.168.1.100:2283" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -362,6 +362,7 @@
               <option value="sonarr">Sonarr / Radarr (Queue)</option>
               <option value="prowlarr">Prowlarr (Queue/Index)</option>
               <option value="qbittorrent">qBittorrent (Transfer Speed)</option>
+              <option value="immich">Immich (Photos & Videos Count)</option>
               <option value="generic">Generic API</option>
             </select>
           </div>
@@ -880,7 +881,7 @@
           <p>HomeLink performs background health checks on your homelab services based on your configured ping interval (default: 60 seconds).</p>
           <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-2">
             <div class="font-bold text-white">API Integration Notes</div>
-            <p class="text-slate-400">Services like Sonarr and Radarr support API key integration in tile settings. When provided, HomeLink pulls active queue counts and displays live telemetry badges directly on the service cards.</p>
+            <p class="text-slate-400">Services like Sonarr, Radarr, qBittorrent, and Immich support API key integration in tile settings. When provided, HomeLink pulls live statistics (queue counts, transfer speeds, and photo/video tallies) directly onto your service cards.</p>
           </div>
         </div>
 
@@ -990,6 +991,7 @@
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/plex.png', name: 'plex media server' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', name: 'sonarr tv shows' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/radarr.png', name: 'radarr movies' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png', name: 'immich photos backup' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', name: 'truenas core scale storage nas' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', name: 'home assistant smart home' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/unifi.png', name: 'unifi network router' },
@@ -1511,7 +1513,6 @@
 
     function setupSysMonPolling() {
       if (sysMonPollTimer) clearInterval(sysMonPollTimer);
-      // Real-time polling every 3 seconds for live CPU/RAM fluctuation
       sysMonPollTimer = setInterval(() => {
         const p = getCurrentProfile();
         if (p.showSystemMonitor) {
