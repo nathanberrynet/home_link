@@ -1295,8 +1295,8 @@
       const inputVal = document.getElementById('unlock-password-input').value;
       
       if (inputVal === p.password) {
-        closePasswordPrompt();
         const action = pendingProtectedAction;
+        document.getElementById('password-prompt-modal').classList.add('hidden');
         pendingProtectedAction = null;
         if (action) {
           executeProtectedAction(action);
