@@ -88,29 +88,47 @@ app.post('/api/config', (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Failed to save config' }); }
 });
 
-// Server-side proxy for Sonarr/Radarr API
+// Smart Service API Proxy supporting Sonarr, Radarr, Prowlarr, qBittorrent & Custom
 app.get('/api/proxy-stats', async (req, res) => {
-    const { targetUrl, apiKey, serviceName } = req.query;
+    const { targetUrl, apiKey, serviceType } = req.query;
     if (!targetUrl) return res.status(400).json({ error: 'Missing targetUrl' });
     try {
         const cleanUrl = targetUrl.replace(/\/+$/, '');
         const client = cleanUrl.startsWith('https') ? https : http;
         
-        const apiReq = client.get(`${cleanUrl}/api/v3/queue`, {
-            headers: { 'X-Api-Key': apiKey || '' }
-        }, (apiRes) => {
+        let endpoint = '/api/v3/queue';
+        let headers = { 'X-Api-Key': apiKey || '' };
+
+        if (serviceType === 'prowlarr') {
+            endpoint = '/api/v1/queue';
+        } else if (serviceType === 'qbittorrent') {
+            endpoint = '/api/v2/transfer/info';
+            headers = {}; // qBittorrent uses cookie or open depending on settings
+        } else if (serviceType === 'radarr' || serviceType === 'sonarr') {
+            endpoint = '/api/v3/queue';
+        }
+
+        const apiReq = client.get(`${cleanUrl}${endpoint}`, { headers }, (apiRes) => {
             let data = '';
             apiRes.on('data', chunk => data += chunk);
             apiRes.on('end', () => {
                 try {
                     const json = JSON.parse(data);
-                    let count = 0;
-                    if (Array.isArray(json)) {
-                        count = json.length;
-                    } else if (json && typeof json === 'object' && Array.isArray(json.records)) {
-                        count = json.totalRecords !== undefined ? json.totalRecords : json.records.length;
+                    let badgeText = '';
+
+                    if (serviceType === 'qbittorrent') {
+                        const dlSpeed = json.dl_info ? (json.dl_info / 1024 / 1024).toFixed(1) + ' MB/s' : 'Online';
+                        badgeText = `DL: ${dlSpeed}`;
+                    } else {
+                        let count = 0;
+                        if (Array.isArray(json)) {
+                            count = json.length;
+                        } else if (json && typeof json === 'object' && Array.isArray(json.records)) {
+                            count = json.totalRecords !== undefined ? json.totalRecords : json.records.length;
+                        }
+                        badgeText = `${count} in queue`;
                     }
-                    res.json({ badge: `${count} in queue` });
+                    res.json({ badge: badgeText });
                 } catch(e) {
                     res.status(500).json({ error: 'Invalid JSON from service' });
                 }

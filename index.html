@@ -355,9 +355,20 @@
           <input type="url" id="app-url" required placeholder="http://192.168.1.100:8989" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold opacity-90 mb-1">Optional API Key <span class="text-[10px] text-slate-400 font-normal">(Sonarr, Radarr, etc.)</span></label>
-          <input type="password" id="app-api-key" placeholder="API key..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">API Service Type</label>
+            <select id="app-service-type" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+              <option value="sonarr">Sonarr / Radarr (Queue)</option>
+              <option value="prowlarr">Prowlarr (Queue/Index)</option>
+              <option value="qbittorrent">qBittorrent (Transfer Speed)</option>
+              <option value="generic">Generic API</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Optional API Key</label>
+            <input type="password" id="app-api-key" placeholder="API key..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+          </div>
         </div>
 
         <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-white/5">
@@ -441,6 +452,30 @@
         <div class="pt-4 border-t border-white/10 flex justify-end gap-3">
           <button type="button" onclick="closeAppModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Cancel</button>
           <button type="submit" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold shadow-lg shadow-orange-600/30">Save Tile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- System Monitor Edit Modal -->
+  <div id="sysmon-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+        <h3 class="text-base font-bold text-white">Edit System Monitor Tile 🖥️</h3>
+        <button onclick="closeSysMonModal()" class="opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="saveSysMonConfig(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Server Display Name</label>
+          <input type="text" id="sysmon-name-input" placeholder="e.g. pluto" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">OS Type / Version Override</label>
+          <input type="text" id="sysmon-os-input" placeholder="e.g. Ubuntu 24.04 LTS" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeSysMonModal()" class="px-3 py-1.5 bg-slate-800 text-xs rounded-xl text-slate-300">Cancel</button>
+          <button type="submit" class="px-3 py-1.5 bg-orange-600 text-xs rounded-xl text-white font-semibold">Save Server Stats</button>
         </div>
       </form>
     </div>
@@ -892,9 +927,9 @@
   <!-- Application Script -->
   <script>
     const defaultAdminApps = [
-      { id: '1', name: 'TrueNAS CORE', category: 'Storage & NAS', url: 'https://truenas.local', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', color: 'orange', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '' },
-      { id: '2', name: 'Home Assistant', category: 'Smart Home', url: 'http://192.168.1.234:8123', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', color: 'blue', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '' },
-      { id: '3', name: 'Sonarr', category: 'Media', url: 'http://sonarr.local:8989', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', color: 'cyan', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '' }
+      { id: '1', name: 'TrueNAS CORE', category: 'Storage & NAS', url: 'https://truenas.local', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', color: 'orange', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'generic' },
+      { id: '2', name: 'Home Assistant', category: 'Smart Home', url: 'http://192.168.1.234:8123', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', color: 'blue', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'generic' },
+      { id: '3', name: 'Sonarr', category: 'Media', url: 'http://sonarr.local:8989', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', color: 'cyan', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'sonarr' }
     ];
 
     const defaultCategories = ['Media', 'Storage & NAS', 'Smart Home', 'Networking', 'Web'];
@@ -918,6 +953,7 @@
         bgPosX: 50,
         bgPosY: 50,
         showSystemMonitor: false,
+        sysMonConfig: { name: '', osOverride: '' },
         apps: [...defaultAdminApps],
         categories: [...defaultCategories]
       }
@@ -940,6 +976,7 @@
     let uploadedProfileAvatarBase64 = '';
     let iconWasModified = false;
     let pingTimer = null;
+    let sysMonPollTimer = null;
 
     // Interactive Studio State
     let studioActive = false;
@@ -992,6 +1029,7 @@
       renderApps();
       runLivePings();
       setupPingInterval();
+      setupSysMonPolling();
       initInteractiveStudioListeners();
     });
 
@@ -1018,6 +1056,7 @@
             if (p.bgPosX === undefined) p.bgPosX = 50;
             if (p.bgPosY === undefined) p.bgPosY = 50;
             if (p.showSystemMonitor === undefined) p.showSystemMonitor = false;
+            if (!p.sysMonConfig) p.sysMonConfig = { name: '', osOverride: '' };
           });
           if (data.defaultStartupProfileId) {
             defaultStartupProfileId = data.defaultStartupProfileId;
@@ -1470,6 +1509,17 @@
       pingTimer = setInterval(runLivePings, interval);
     }
 
+    function setupSysMonPolling() {
+      if (sysMonPollTimer) clearInterval(sysMonPollTimer);
+      // Real-time polling every 3 seconds for live CPU/RAM fluctuation
+      sysMonPollTimer = setInterval(() => {
+        const p = getCurrentProfile();
+        if (p.showSystemMonitor) {
+          fetchHostSystemStats();
+        }
+      }, 3000);
+    }
+
     async function runLivePings() {
       const profile = getCurrentProfile();
       let checkedCount = 0, onlineCount = 0;
@@ -1504,7 +1554,7 @@
     async function fetchServiceStats(app) {
       try {
         if (app.apiKey && app.apiKey.trim() !== '') {
-          const url = '/api/proxy-stats?targetUrl=' + encodeURIComponent(app.url) + '&apiKey=' + encodeURIComponent(app.apiKey) + '&serviceName=' + encodeURIComponent(app.name);
+          const url = '/api/proxy-stats?targetUrl=' + encodeURIComponent(app.url) + '&apiKey=' + encodeURIComponent(app.apiKey) + '&serviceType=' + encodeURIComponent(app.serviceType || 'sonarr');
           const res = await fetch(url);
           const data = await res.json();
           if (data && data.badge) {
@@ -1537,6 +1587,27 @@
         renderApps();
       }
       showToast(checked ? 'System Monitor tile enabled' : 'System Monitor tile hidden', 'emerald');
+    }
+
+    function openSysMonModal() {
+      const p = getCurrentProfile();
+      document.getElementById('sysmon-name-input').value = p.sysMonConfig?.name || '';
+      document.getElementById('sysmon-os-input').value = p.sysMonConfig?.osOverride || '';
+      document.getElementById('sysmon-modal').classList.remove('hidden');
+    }
+    function closeSysMonModal() {
+      document.getElementById('sysmon-modal').classList.add('hidden');
+    }
+    function saveSysMonConfig(e) {
+      e.preventDefault();
+      const p = getCurrentProfile();
+      if (!p.sysMonConfig) p.sysMonConfig = {};
+      p.sysMonConfig.name = document.getElementById('sysmon-name-input').value.trim();
+      p.sysMonConfig.osOverride = document.getElementById('sysmon-os-input').value.trim();
+      saveState();
+      renderApps();
+      closeSysMonModal();
+      showToast('System monitor settings updated', 'emerald');
     }
 
     function renderCurrentProfileHeader() {
@@ -1608,8 +1679,17 @@
         const cpuColor = cpuPct > 85 ? 'bg-rose-500' : cpuPct > 65 ? 'bg-amber-500' : 'bg-emerald-500';
         const ramColor = ramPct > 85 ? 'bg-rose-500' : ramPct > 65 ? 'bg-amber-500' : 'bg-orange-500';
 
+        const customName = profile.sysMonConfig?.name || (s ? s.hostname : 'Docker Host');
+        const customOs = profile.sysMonConfig?.osOverride || (s ? s.osVersion : 'Loading OS...');
+
         sysTileHtml = `
-          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative border-orange-500/30 hover:border-orange-500/60">
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative border-orange-500/30 hover:border-orange-500/60 group">
+            ${isEditMode ? `
+              <div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10">
+                <button onclick="openSysMonModal()" title="Edit Server Stats" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+              </div>
+            ` : ''}
+
             <div>
               <div class="flex items-start justify-between gap-2 mb-2.5">
                 <div class="flex items-center gap-2.5 overflow-hidden">
@@ -1617,8 +1697,8 @@
                     <i class="fa-solid fa-server"></i>
                   </div>
                   <div class="overflow-hidden">
-                    <h4 class="font-bold text-sm text-white truncate">${s ? s.hostname : 'Docker Host'}</h4>
-                    <p class="text-[10px] text-slate-400 truncate" title="${s ? s.osVersion : 'Loading...'}">${s ? s.osVersion : 'Loading OS...'}</p>
+                    <h4 class="font-bold text-sm text-white truncate">${customName}</h4>
+                    <p class="text-[10px] text-slate-400 truncate" title="${customOs}">${customOs}</p>
                   </div>
                 </div>
                 <span class="w-2.5 h-2.5 rounded-full ${s ? 'bg-emerald-500 status-pulse' : 'bg-slate-500'} flex-shrink-0 mt-1" title="${s ? 'Online • Up ' + s.uptime : 'Polling...'}"></span>
@@ -1631,7 +1711,7 @@
                     <span class="text-white font-mono">${s ? cpuPct + '%' : '--%'}</span>
                   </div>
                   <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div class="${cpuColor} h-full transition-all duration-500" style="width: ${cpuPct}%"></div>
+                    <div class="${cpuColor} h-full transition-all duration-300" style="width: ${cpuPct}%"></div>
                   </div>
                 </div>
 
@@ -1641,7 +1721,7 @@
                     <span class="text-white font-mono">${s ? ramPct + '%' : '--%'}</span>
                   </div>
                   <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div class="${ramColor} h-full transition-all duration-500" style="width: ${ramPct}%"></div>
+                    <div class="${ramColor} h-full transition-all duration-300" style="width: ${ramPct}%"></div>
                   </div>
                 </div>
               </div>
@@ -1909,6 +1989,7 @@
       document.getElementById('app-form').reset();
       document.getElementById('app-id').value = '';
       document.getElementById('app-api-key').value = '';
+      document.getElementById('app-service-type').value = 'sonarr';
       uploadedIconBase64 = '';
       iconWasModified = false;
       setIconType('fa');
@@ -1924,6 +2005,7 @@
           document.getElementById('app-url').value = app.url;
           document.getElementById('app-color').value = app.color || 'orange';
           document.getElementById('app-api-key').value = app.apiKey || '';
+          document.getElementById('app-service-type').value = app.serviceType || 'sonarr';
           document.getElementById('app-custom-bg').value = app.customBg || '#1e293b';
           document.getElementById('app-font-color').value = app.fontColor || '#f1f5f9';
           document.getElementById('app-ping-enabled').checked = app.pingEnabled !== false;
@@ -1945,6 +2027,7 @@
       const url = document.getElementById('app-url').value;
       const color = document.getElementById('app-color').value;
       const apiKey = document.getElementById('app-api-key').value.trim();
+      const serviceType = document.getElementById('app-service-type').value;
       const customBg = document.getElementById('app-custom-bg').value === '#1e293b' ? '' : document.getElementById('app-custom-bg').value;
       const fontColor = document.getElementById('app-font-color').value === '#f1f5f9' ? '' : document.getElementById('app-font-color').value;
       const pingEnabled = document.getElementById('app-ping-enabled').checked;
@@ -1962,9 +2045,9 @@
 
       if (id) {
         const idx = profile.apps.findIndex(a => a.id === id);
-        if (idx !== -1) profile.apps[idx] = { ...profile.apps[idx], name, category, url, icon, color, apiKey, customBg, fontColor, pingEnabled };
+        if (idx !== -1) profile.apps[idx] = { ...profile.apps[idx], name, category, url, icon, color, apiKey, serviceType, customBg, fontColor, pingEnabled };
       } else {
-        profile.apps.unshift({ id: Date.now().toString(), name, category, url, icon, color, apiKey, customBg, fontColor, pingEnabled });
+        profile.apps.unshift({ id: Date.now().toString(), name, category, url, icon, color, apiKey, serviceType, customBg, fontColor, pingEnabled });
       }
       saveState();
       renderApps();
@@ -2183,6 +2266,7 @@
           bgPosX: 50,
           bgPosY: 50,
           showSystemMonitor: false,
+          sysMonConfig: { name: '', osOverride: '' },
           apps: [...defaultAdminApps],
           categories: [...defaultCategories]
         };
