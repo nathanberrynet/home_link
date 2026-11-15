@@ -776,6 +776,8 @@
     let appLiveStats = {};
     let currentIconMode = 'fa';
     let uploadedIconBase64 = '';
+    let uploadedAdminAvatarBase64 = '';
+    let uploadedProfileAvatarBase64 = '';
     let iconWasModified = false;
     let pingTimer = null;
     let isDraggingBackground = false;
@@ -1503,12 +1505,23 @@
     function openProfilesModal() {
       const profile = getCurrentProfile();
       const list = document.getElementById('profiles-list');
+      const adminActions = document.getElementById('profiles-admin-actions');
       const baseUrl = window.location.origin + window.location.pathname;
+
+      if (profile.isMain) {
+        adminActions.classList.remove('hidden');
+        adminActions.classList.add('flex');
+      } else {
+        adminActions.classList.remove('flex');
+        adminActions.classList.add('hidden');
+      }
 
       list.innerHTML = profiles.map(p => `
         <div class="flex items-center justify-between bg-slate-900/85 p-3 rounded-xl border border-white/5 text-xs">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center font-bold text-white">${p.name.charAt(0)}</div>
+            <div class="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center font-bold text-white overflow-hidden">
+              ${p.avatar ? `<img src="${p.avatar}" class="w-full h-full object-cover">` : p.name.charAt(0)}
+            </div>
             <div>
               <div class="font-bold text-white">${p.name} ${p.isMain ? '👑' : ''}</div>
               <div class="text-[10px] opacity-60">${p.apps.length} tiles</div>
@@ -1517,12 +1530,128 @@
           <div class="flex items-center gap-1.5">
             <button onclick="copyText('${baseUrl}?profile=${p.id}')" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-white/10">Direct Link</button>
             ${currentProfileId !== p.id ? `<button onclick="switchProfile('${p.id}')" class="px-3 py-1 bg-orange-600 text-white rounded-lg text-xs font-semibold">Switch</button>` : `<span class="text-emerald-400 font-semibold px-2">Active</span>`}
+            ${profile.isMain && !p.isMain ? `<button onclick="confirmDeleteProfile('${p.id}')" class="px-2 py-1 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 rounded-lg text-xs" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>` : ''}
           </div>
         </div>
       `).join('');
       document.getElementById('profiles-modal').classList.remove('hidden');
     }
     function closeProfilesModal() { document.getElementById('profiles-modal').classList.add('hidden'); }
+
+    function openEditAdminModal() {
+      closeProfilesModal();
+      const p = getCurrentProfile();
+      document.getElementById('admin-name-input').value = p.name;
+      document.getElementById('admin-pass-input').value = p.password || '';
+      document.getElementById('admin-avatar-input').value = p.avatar || '';
+      uploadedAdminAvatarBase64 = p.avatar || '';
+      document.getElementById('admin-edit-modal').classList.remove('hidden');
+    }
+    function closeAdminEditModal() { document.getElementById('admin-edit-modal').classList.add('hidden'); }
+
+    function handleAdminAvatarUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        uploadedAdminAvatarBase64 = evt.target.result;
+        document.getElementById('admin-avatar-input').value = uploadedAdminAvatarBase64;
+        showToast('Admin avatar loaded', 'emerald');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveAdminProfile(e) {
+      e.preventDefault();
+      const p = getCurrentProfile();
+      if (!p.isMain) return;
+      p.name = document.getElementById('admin-name-input').value.trim() || 'Admin';
+      const pass = document.getElementById('admin-pass-input').value;
+      if (pass !== undefined) p.password = pass;
+      p.avatar = document.getElementById('admin-avatar-input').value.trim() || uploadedAdminAvatarBase64;
+      saveState();
+      renderCurrentProfileHeader();
+      applyProfilePreferences();
+      closeAdminEditModal();
+      showToast('Admin profile updated', 'emerald');
+    }
+
+    function openCreateProfileModal() {
+      closeProfilesModal();
+      document.getElementById('profile-edit-id').value = '';
+      document.getElementById('profile-modal-title').innerText = 'Create Profile';
+      document.getElementById('profile-name-input').value = '';
+      document.getElementById('profile-pass-input').value = '';
+      document.getElementById('profile-avatar-input').value = '';
+      uploadedProfileAvatarBase64 = '';
+      document.getElementById('profile-edit-modal').classList.remove('hidden');
+    }
+    function closeProfileEditModal() { document.getElementById('profile-edit-modal').classList.add('hidden'); }
+
+    function handleProfileAvatarUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        uploadedProfileAvatarBase64 = evt.target.result;
+        document.getElementById('profile-avatar-input').value = uploadedProfileAvatarBase64;
+        showToast('Profile avatar loaded', 'emerald');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveProfile(e) {
+      e.preventDefault();
+      const name = document.getElementById('profile-name-input').value.trim();
+      const pass = document.getElementById('profile-pass-input').value;
+      const avatar = document.getElementById('profile-avatar-input').value.trim() || uploadedProfileAvatarBase64;
+      if (!name) return;
+
+      const newId = 'user_' + Date.now();
+      const newProfile = {
+        id: newId,
+        name: name,
+        isMain: false,
+        password: pass || '',
+        avatar: avatar || '',
+        theme: 'dark',
+        weatherZip: '28601',
+        pingIntervalSec: 60,
+        tileSpacingVal: '2',
+        customBgData: '',
+        bgScaleMode: 'cover',
+        bgZoomVal: 100,
+        bgOpacity: 30,
+        bgTrueColor: false,
+        bgPosX: 50,
+        bgPosY: 50,
+        apps: [...defaultAdminApps],
+        categories: [...defaultCategories]
+      };
+      profiles.push(newProfile);
+      saveState();
+      closeProfileEditModal();
+      openProfilesModal();
+      showToast('Profile created successfully', 'emerald');
+    }
+
+    function confirmDeleteProfile(id) {
+      const target = profiles.find(p => p.id === id);
+      if (!target || target.isMain) return;
+      openConfirmModal('Delete Profile?', `Are you sure you want to delete profile '${target.name}'?`, () => {
+        profiles = profiles.filter(p => p.id !== id);
+        if (currentProfileId === id) {
+          currentProfileId = 'admin';
+        }
+        saveState();
+        applyProfilePreferences();
+        renderCurrentProfileHeader();
+        renderCategories();
+        renderApps();
+        openProfilesModal();
+        showToast('Profile deleted', 'emerald');
+      });
+    }
 
     function switchProfile(id) {
       currentProfileId = id;
