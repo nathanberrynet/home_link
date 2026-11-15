@@ -1011,6 +1011,7 @@
       setupPingInterval();
       setupSysMonPolling();
       initInteractiveStudioListeners();
+      loadLocalAssetsManager();
     });
 
     function getCurrentProfile() {
@@ -1171,11 +1172,13 @@
       const galleryEl = document.getElementById('wallpaper-gallery-grid');
       if (!listEl) return;
 
+      listEl.innerHTML = `<div class="py-3 text-center text-xs opacity-50"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Scanning server data/ folder...</div>`;
+
       try {
         let assets = [];
         try {
           const res = await fetch('/api/assets');
-          assets = await res.json();
+          if (res.ok) assets = await res.json();
         } catch(e) {
           assets = [];
         }
@@ -1201,7 +1204,7 @@
         }
 
         if (!assets || assets.length === 0) {
-          listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs opacity-50">No local scoped assets found in data/ folder.</div>`;
+          listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs opacity-50">No scoped local assets found in data/ folder.</div>`;
           return;
         }
 
@@ -1217,9 +1220,7 @@
                 </div>
               </div>
             </div>
-            <button onclick="confirmDeleteLocalAsset('${img.type}', '${img.filename}')" class="text-rose-400 hover:text-rose-300 p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 transition-colors" title="Delete from server">
-              <i class="fa-solid fa-trash text-xs"></i>
-            </button>
+            ${img.filename !== 'Active Background' ? `<button onclick="confirmDeleteLocalAsset('${img.type}', '${img.filename}')" class="text-rose-400 hover:text-rose-300 p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 transition-colors" title="Delete from server"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
           </div>
         `).join('');
       } catch(e) {
