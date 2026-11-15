@@ -129,14 +129,12 @@
     <div id="bg-studio-box" class="absolute border-2 border-dashed border-orange-500 shadow-[0_0_0_9999px_rgba(2,6,23,0.6)] cursor-move group" style="left: 10%; top: 10%; width: 80%; height: 80%;">
       <img id="bg-studio-preview-img" src="" class="w-full h-full object-fill pointer-events-none select-none opacity-90" />
       
-      <!-- Center Move Badge -->
       <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div class="bg-slate-950/90 border border-orange-500/50 text-white px-3.5 py-2 rounded-full text-xs font-bold shadow-2xl flex items-center gap-2.5 opacity-90 group-hover:opacity-100 transition-opacity">
           <i class="fa-solid fa-up-down-left-right text-orange-400"></i> Drag to Move • Pull Edges/Corners (Aspect Ratio Locked)
         </div>
       </div>
 
-      <!-- 8 Resize Handles -->
       <div data-dir="nw" class="studio-handle -top-2.5 -left-2.5 cursor-nwse-resize"></div>
       <div data-dir="n"  class="studio-handle -top-2.5 left-1/2 -translate-x-1/2 cursor-ns-resize"></div>
       <div data-dir="ne" class="studio-handle -top-2.5 -right-2.5 cursor-nesw-resize"></div>
@@ -169,7 +167,6 @@
   <header class="sticky top-0 z-30 glass-panel border-b border-white/10 px-4 lg:px-8 py-3 mb-6">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
       
-      <!-- Brand & Date -->
       <div class="flex items-center justify-between w-full md:w-auto">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
@@ -219,9 +216,8 @@
         </form>
       </div>
 
-      <!-- Weather & Header Actions (Right Aligned) -->
+      <!-- Weather & Header Actions -->
       <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
-        <!-- Weather Widget -->
         <a 
           id="weather-widget" 
           href="#" 
@@ -235,12 +231,10 @@
           <i class="fa-solid fa-arrow-up-right-from-square text-[9px] opacity-40 ml-0.5"></i>
         </a>
 
-        <!-- Live Clock Desktop -->
         <div class="hidden md:flex flex-col text-right mr-2 whitespace-nowrap">
           <div id="clock-desktop" class="text-lg lg:text-xl font-bold tracking-wider font-mono whitespace-nowrap">00:00:00 AM</div>
         </div>
 
-        <!-- Master Edit Lock Toggle Button -->
         <button 
           id="btn-edit-mode"
           onclick="requestAuthForAction('edit')" 
@@ -250,7 +244,6 @@
           <span class="hidden sm:inline" id="edit-mode-label">Locked</span>
         </button>
 
-        <!-- "+ Add Link" Button -->
         <button 
           id="btn-add-link-header"
           onclick="openAppModal()" 
@@ -259,7 +252,6 @@
           <span class="hidden sm:inline">Add Link</span>
         </button>
 
-        <!-- Profiles Button -->
         <button 
           onclick="openProfilesModal()" 
           title="User Profiles"
@@ -268,7 +260,6 @@
           <span id="header-profile-name" class="text-xs font-semibold hidden sm:inline">Admin</span>
         </button>
 
-        <!-- Settings Button -->
         <button 
           onclick="requestAuthForAction('settings')" 
           title="Settings & Themes"
@@ -279,6 +270,30 @@
 
     </div>
   </header>
+
+  <!-- Connection & Configuration Error Banner -->
+  <div id="connection-error-banner" class="max-w-7xl mx-auto px-4 lg:px-8 mb-6 hidden">
+    <div class="glass-panel bg-rose-950/40 border border-rose-500/40 p-4 rounded-2xl flex items-start gap-3.5 shadow-2xl">
+      <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 text-lg flex-shrink-0 mt-0.5">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="flex-1">
+        <h4 class="font-bold text-sm text-rose-300">HomeLink Backend Connection or Storage Error</h4>
+        <p id="connection-error-message" class="text-xs text-rose-200/80 mt-0.5">Unable to communicate with the backend server or load <code class="bg-slate-900 px-1.5 py-0.5 rounded text-orange-300 font-mono">config.json</code>.</p>
+        <div class="mt-2 text-[11px] text-slate-300 space-y-1 bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+          <div class="font-semibold text-white">How to fix:</div>
+          <ul class="list-disc list-inside space-y-0.5 text-slate-400">
+            <li>Verify your Docker volume mount is correct in <code class="text-orange-300 font-mono">compose.yaml</code> (e.g., <code class="text-orange-300 font-mono">- ./data:/app/data</code> or absolute path).</li>
+            <li>Check container logs: <code class="text-orange-300 font-mono">docker logs homelink-dashboard</code></li>
+            <li>Fix host permissions if needed: <code class="text-orange-300 font-mono">sudo chown -R $USER:$USER data</code></li>
+          </ul>
+        </div>
+      </div>
+      <button onclick="location.reload()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow whitespace-nowrap self-center">
+        <i class="fa-solid fa-rotate mr-1"></i> Retry
+      </button>
+    </div>
+  </div>
 
   <!-- Main Container -->
   <main id="main-dashboard-content" class="max-w-7xl mx-auto px-4 lg:px-8 z-10 relative transition-opacity duration-200">
@@ -383,7 +398,6 @@
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Icon Source</label>
           
-          <!-- Live Icon Preview Box -->
           <div class="flex items-center gap-3 bg-slate-900/90 p-3 rounded-xl border border-orange-500/30 mb-3 shadow-inner">
             <div id="modal-icon-preview-box" class="w-11 h-11 rounded-xl bg-orange-500/10 border border-orange-500/40 flex items-center justify-center text-2xl text-orange-400 overflow-hidden flex-shrink-0 shadow">
               <i class="fa-solid fa-globe"></i>
@@ -460,12 +474,12 @@
 
   <!-- System Monitor Edit Modal -->
   <div id="sysmon-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
-    <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 shadow-2xl relative">
+    <div class="glass-panel w-full max-w-md rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
         <h3 class="text-base font-bold text-white">Edit System Monitor Tile 🖥️</h3>
         <button onclick="closeSysMonModal()" class="opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <form onsubmit="saveSysMonConfig(event)" class="space-y-3">
+      <form onsubmit="saveSysMonConfig(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Server Display Name</label>
           <input type="text" id="sysmon-name-input" placeholder="e.g. pluto" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
@@ -473,6 +487,44 @@
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">OS Type / Version Override</label>
           <input type="text" id="sysmon-os-input" placeholder="e.g. Ubuntu 24.04 LTS" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Refresh Interval (Seconds)</label>
+            <input type="number" id="sysmon-refresh-input" min="1" max="60" value="3" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Glow Theme</label>
+            <select id="sysmon-color-input" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+              <option value="orange">Orange 🧡</option>
+              <option value="blue">Blue</option>
+              <option value="emerald">Emerald</option>
+              <option value="amber">Amber</option>
+              <option value="purple">Purple</option>
+              <option value="rose">Rose</option>
+              <option value="cyan">Cyan</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Tile BG Color</label>
+            <div class="flex items-center gap-1.5">
+              <input type="color" id="sysmon-custom-bg-input" value="#1e293b" class="w-9 h-9 rounded-lg border border-white/10 cursor-pointer bg-slate-900 p-0.5">
+              <button type="button" onclick="document.getElementById('sysmon-custom-bg-input').value='#1e293b'" class="text-[10px] text-slate-400 hover:text-white px-2 py-1.5 bg-slate-800 rounded-lg border border-white/10">Default</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Font Color</label>
+            <div class="flex items-center gap-1.5">
+              <input type="color" id="sysmon-font-color-input" value="#f1f5f9" class="w-9 h-9 rounded-lg border border-white/10 cursor-pointer bg-slate-900 p-0.5">
+              <button type="button" onclick="document.getElementById('sysmon-font-color-input').value='#f1f5f9'" class="text-[10px] text-slate-400 hover:text-white px-2 py-1.5 bg-slate-800 rounded-lg border border-white/10">Default</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Icon (FontAwesome Class or Image URL)</label>
+          <input type="text" id="sysmon-icon-input" placeholder="fa-solid fa-server" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
         </div>
         <div class="pt-2 flex justify-end gap-2">
           <button type="button" onclick="closeSysMonModal()" class="px-3 py-1.5 bg-slate-800 text-xs rounded-xl text-slate-300">Cancel</button>
@@ -635,7 +687,6 @@
       </div>
 
       <div class="space-y-6">
-        <!-- Profile Password Management -->
         <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5 space-y-3">
           <div class="flex items-center justify-between">
             <div>
@@ -652,7 +703,6 @@
           </div>
         </div>
 
-        <!-- Default Startup Profile Selection (Admin Only) -->
         <div id="admin-default-profile-section" class="bg-slate-900/50 p-4 rounded-xl border border-white/5 space-y-2 hidden">
           <div class="text-xs font-semibold text-white flex items-center gap-1.5"><i class="fa-solid fa-crown text-amber-400"></i> Admin Control: Default Startup Profile</div>
           <div class="text-[10px] opacity-60">Select which profile loads by default when HomeLink is launched without a URL parameter.</div>
@@ -666,7 +716,6 @@
           </div>
         </div>
 
-        <!-- Theme & Weather Location -->
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-2">Visual Theme & Weather Location</label>
           <div class="grid grid-cols-3 gap-3 mb-3">
@@ -686,7 +735,6 @@
           </div>
         </div>
 
-        <!-- Host System Monitor Tile Toggle -->
         <div class="pt-4 border-t border-white/10">
           <div class="flex items-center justify-between bg-slate-900/50 p-3.5 rounded-xl border border-white/5">
             <div>
@@ -699,7 +747,6 @@
           </div>
         </div>
 
-        <!-- Tile Spacing Scale Slider -->
         <div class="pt-4 border-t border-white/10">
           <label class="block text-xs font-semibold opacity-90 mb-1">Tile Spacing & Size Scale</label>
           <div class="bg-slate-900/50 p-3 rounded-xl border border-white/5">
@@ -711,7 +758,6 @@
           </div>
         </div>
 
-        <!-- Custom Wallpaper Controls & Visual Gallery -->
         <div class="pt-4 border-t border-white/10">
           <div class="flex items-center justify-between mb-2">
             <label class="block text-xs font-semibold opacity-90">Custom Background Wallpaper & Live Studio</label>
@@ -726,7 +772,6 @@
               <button onclick="clearBackground()" class="w-full sm:w-auto px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 text-xs rounded-xl border border-rose-500/30 whitespace-nowrap">Clear Active</button>
             </div>
 
-            <!-- Visual Wallpaper Gallery Grid -->
             <div class="bg-slate-900/50 p-3 rounded-xl border border-white/5 space-y-2">
               <label class="block text-[11px] font-semibold text-slate-300">Your Wallpaper Gallery <span class="text-[10px] opacity-65">(Click to select & preview)</span></label>
               <div id="wallpaper-gallery-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1">
@@ -734,7 +779,6 @@
               </div>
             </div>
 
-            <!-- Wallpaper Scale Mode Selector -->
             <div class="grid grid-cols-4 gap-2">
               <button onclick="setBgScaleMode('cover')" id="bg-scale-cover" class="px-2 py-1.5 rounded-xl text-xs font-semibold border border-white/10 bg-slate-900 text-slate-300">Cover</button>
               <button onclick="setBgScaleMode('contain')" id="bg-scale-contain" class="px-2 py-1.5 rounded-xl text-xs font-semibold border border-white/10 bg-slate-900 text-slate-300">Fit / Contain</button>
@@ -742,7 +786,6 @@
               <button onclick="setBgScaleMode('tile')" id="bg-scale-tile" class="px-2 py-1.5 rounded-xl text-xs font-semibold border border-white/10 bg-slate-900 text-slate-300">Tile</button>
             </div>
 
-            <!-- Custom Zoom / Scale Slider -->
             <div class="bg-slate-900/50 p-3 rounded-xl border border-white/5">
               <div class="flex justify-between text-[11px] mb-1">
                 <span>Custom Zoom / Scale</span>
@@ -767,7 +810,6 @@
           </div>
         </div>
 
-        <!-- Local Scoped Assets Manager with Previews -->
         <div class="pt-4 border-t border-white/10">
           <div class="flex items-center justify-between mb-2">
             <label class="block text-xs font-semibold opacity-90 flex items-center gap-1.5"><i class="fa-solid fa-server text-orange-400"></i> Local Scoped Assets Manager</label>
@@ -779,7 +821,6 @@
           </div>
         </div>
 
-        <!-- Category Manager -->
         <div class="pt-4 border-t border-white/10">
           <div class="flex items-center justify-between mb-2">
             <label class="block text-xs font-semibold opacity-90">Category Manager</label>
@@ -788,7 +829,6 @@
           <div id="category-manager-list" class="space-y-2 max-h-36 overflow-y-auto"></div>
         </div>
 
-        <!-- Backup & Migration -->
         <div class="pt-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
             <div class="text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-emerald-400"></i> Backup & Migration</div>
@@ -828,7 +868,6 @@
         <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <!-- Wiki Tabs Navigation -->
       <div class="flex items-center gap-2 border-b border-white/10 pb-3 mb-4 overflow-x-auto">
         <button onclick="switchWikiTab('arch')" id="wiki-tab-arch" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow-md transition-all whitespace-nowrap">
           <i class="fa-solid fa-server mr-1"></i> Architecture & Infra
@@ -844,60 +883,23 @@
         </button>
       </div>
 
-      <!-- Wiki Tab Contents -->
       <div class="overflow-y-auto space-y-4 text-xs text-slate-300 pr-2 max-h-[60vh]">
-        
-        <!-- Tab 1: Architecture -->
         <div id="wiki-content-arch" class="space-y-3">
           <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-network-wired text-orange-400"></i> Homelab Architecture Overview</h4>
           <p>HomeLink v2.6 is designed for high-performance self-hosted environments. It runs inside lightweight container environments (such as Ubuntu VMs on TrueNAS SCALE/CORE), providing instant status checks, customizable dashboards, and zero external telemetry.</p>
-          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-2">
-            <div class="font-bold text-white">Key Components</div>
-            <ul class="list-disc list-inside space-y-1 text-slate-400">
-              <li><strong>Frontend:</strong> Responsive Tailwind CSS glassmorphism UI with theme support (Dark, Light, Cyberpunk).</li>
-              <li><strong>Storage:</strong> Local scoped asset manager supporting direct base64 & server-synced image uploads.</li>
-              <li><strong>Network Pings:</strong> Asynchronous background fetch ping checks to verify container uptime across local subnets.</li>
-            </ul>
-          </div>
         </div>
-
-        <!-- Tab 2: Profiles -->
         <div id="wiki-content-profiles" class="space-y-3 hidden">
           <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-user-shield text-orange-400"></i> Role-Scoped Profiles & Wallpapers</h4>
           <p>HomeLink supports multiple user profiles alongside the Master Admin account. Each profile maintains its own isolated tile layout, custom category tabs, and wallpaper settings.</p>
-          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-2">
-            <div class="font-bold text-white">Security & Permissions</div>
-            <ul class="list-disc list-inside space-y-1 text-slate-400">
-              <li><strong>Admin Profile (👑):</strong> Full control over default startup profiles, global settings, and user management.</li>
-              <li><strong>Standard Users:</strong> Can customize their own dashboards and upload personal wallpapers and icons without affecting other users.</li>
-              <li><strong>Guaranteed Gallery Visibility:</strong> Active custom backgrounds are automatically indexed into user wallpaper galleries for seamless selection.</li>
-            </ul>
-          </div>
         </div>
-
-        <!-- Tab 3: APIs -->
         <div id="wiki-content-apis" class="space-y-3 hidden">
           <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-chart-line text-orange-400"></i> Live Health Pings & API Stats</h4>
           <p>HomeLink performs background health checks on your homelab services based on your configured ping interval (default: 60 seconds).</p>
-          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-2">
-            <div class="font-bold text-white">API Integration Notes</div>
-            <p class="text-slate-400">Services like Sonarr, Radarr, qBittorrent, and Immich support API key integration in tile settings. When provided, HomeLink pulls live statistics (queue counts, transfer speeds, and photo/video tallies) directly onto your service cards.</p>
-          </div>
         </div>
-
-        <!-- Tab 4: Backup -->
         <div id="wiki-content-backup" class="space-y-3 hidden">
           <h4 class="font-bold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-file-export text-orange-400"></i> Backup, Migration & Heimdall Import</h4>
           <p>Your complete configuration (including profiles, tile layouts, custom backgrounds, and passwords) can be exported or imported at any time via Settings.</p>
-          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-2">
-            <div class="font-bold text-white">Migration Options</div>
-            <ul class="list-disc list-inside space-y-1 text-slate-400">
-              <li><strong>JSON Backup:</strong> Full snapshot export for disaster recovery or moving to a new server.</li>
-              <li><strong>Heimdall Import:</strong> Directly import existing Heimdall dashboard JSON exports into HomeLink tiles.</li>
-            </ul>
-          </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -954,7 +956,7 @@
         bgPosX: 50,
         bgPosY: 50,
         showSystemMonitor: false,
-        sysMonConfig: { name: '', osOverride: '' },
+        sysMonConfig: { name: '', osOverride: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 },
         apps: [...defaultAdminApps],
         categories: [...defaultCategories]
       }
@@ -979,7 +981,6 @@
     let pingTimer = null;
     let sysMonPollTimer = null;
 
-    // Interactive Studio State
     let studioActive = false;
     let studioInteractionType = null;
     let studioResizeDir = '';
@@ -1040,8 +1041,11 @@
     }
 
     async function loadState() {
+      const banner = document.getElementById('connection-error-banner');
+      const msgEl = document.getElementById('connection-error-message');
       try {
         const res = await fetch('/api/config');
+        if (!res.ok) throw new Error(`Server responded with status ${res.status}`);
         const data = await res.json();
         if (data && data.profiles && Array.isArray(data.profiles)) {
           profiles = data.profiles;
@@ -1058,14 +1062,22 @@
             if (p.bgPosX === undefined) p.bgPosX = 50;
             if (p.bgPosY === undefined) p.bgPosY = 50;
             if (p.showSystemMonitor === undefined) p.showSystemMonitor = false;
-            if (!p.sysMonConfig) p.sysMonConfig = { name: '', osOverride: '' };
+            if (!p.sysMonConfig) p.sysMonConfig = { name: '', osOverride: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 };
+            if (!p.sysMonConfig.icon) p.sysMonConfig.icon = 'fa-solid fa-server';
+            if (!p.sysMonConfig.color) p.sysMonConfig.color = 'orange';
+            if (!p.sysMonConfig.refreshInterval) p.sysMonConfig.refreshInterval = 3;
           });
           if (data.defaultStartupProfileId) {
             defaultStartupProfileId = data.defaultStartupProfileId;
           }
+          if (banner) banner.classList.add('hidden');
+        } else {
+          throw new Error('Invalid configuration payload received');
         }
       } catch (e) {
-        console.warn('Using default config.');
+        console.warn('Config load failed:', e);
+        if (banner) banner.classList.remove('hidden');
+        if (msgEl) msgEl.innerText = `Failed to fetch configuration from server: ${e.message}.`;
       }
     }
 
@@ -1127,6 +1139,7 @@
 
       if (p.showSystemMonitor) {
         fetchHostSystemStats();
+        setupSysMonPolling();
       }
     }
 
@@ -1294,7 +1307,6 @@
       showToast('Wallpaper applied from gallery', 'emerald');
     }
 
-    // Wiki Tab Switcher
     function switchWikiTab(tab) {
       ['arch', 'profiles', 'apis', 'backup'].forEach(t => {
         const btn = document.getElementById(`wiki-tab-${t}`);
@@ -1309,7 +1321,6 @@
       });
     }
 
-    // Interactive Studio
     function enterBackgroundStudio() {
       const p = getCurrentProfile();
       if (!p.customBgData) {
@@ -1513,12 +1524,14 @@
 
     function setupSysMonPolling() {
       if (sysMonPollTimer) clearInterval(sysMonPollTimer);
+      const p = getCurrentProfile();
+      const intervalSec = p.sysMonConfig?.refreshInterval || 3;
       sysMonPollTimer = setInterval(() => {
-        const p = getCurrentProfile();
-        if (p.showSystemMonitor) {
+        const curProfile = getCurrentProfile();
+        if (curProfile.showSystemMonitor) {
           fetchHostSystemStats();
         }
-      }, 3000);
+      }, intervalSec * 1000);
     }
 
     async function runLivePings() {
@@ -1584,6 +1597,7 @@
       saveState();
       if (checked) {
         fetchHostSystemStats();
+        setupSysMonPolling();
       } else {
         renderApps();
       }
@@ -1592,8 +1606,14 @@
 
     function openSysMonModal() {
       const p = getCurrentProfile();
-      document.getElementById('sysmon-name-input').value = p.sysMonConfig?.name || '';
-      document.getElementById('sysmon-os-input').value = p.sysMonConfig?.osOverride || '';
+      const cfg = p.sysMonConfig || {};
+      document.getElementById('sysmon-name-input').value = cfg.name || '';
+      document.getElementById('sysmon-os-input').value = cfg.osOverride || '';
+      document.getElementById('sysmon-refresh-input').value = cfg.refreshInterval || 3;
+      document.getElementById('sysmon-color-input').value = cfg.color || 'orange';
+      document.getElementById('sysmon-custom-bg-input').value = cfg.customBg || '#1e293b';
+      document.getElementById('sysmon-font-color-input').value = cfg.fontColor || '#f1f5f9';
+      document.getElementById('sysmon-icon-input').value = cfg.icon || 'fa-solid fa-server';
       document.getElementById('sysmon-modal').classList.remove('hidden');
     }
     function closeSysMonModal() {
@@ -1605,7 +1625,14 @@
       if (!p.sysMonConfig) p.sysMonConfig = {};
       p.sysMonConfig.name = document.getElementById('sysmon-name-input').value.trim();
       p.sysMonConfig.osOverride = document.getElementById('sysmon-os-input').value.trim();
+      p.sysMonConfig.refreshInterval = parseInt(document.getElementById('sysmon-refresh-input').value) || 3;
+      p.sysMonConfig.color = document.getElementById('sysmon-color-input').value;
+      p.sysMonConfig.customBg = document.getElementById('sysmon-custom-bg-input').value === '#1e293b' ? '' : document.getElementById('sysmon-custom-bg-input').value;
+      p.sysMonConfig.fontColor = document.getElementById('sysmon-font-color-input').value === '#f1f5f9' ? '' : document.getElementById('sysmon-font-color-input').value;
+      p.sysMonConfig.icon = document.getElementById('sysmon-icon-input').value.trim() || 'fa-solid fa-server';
+
       saveState();
+      setupSysMonPolling();
       renderApps();
       closeSysMonModal();
       showToast('System monitor settings updated', 'emerald');
@@ -1682,9 +1709,14 @@
 
         const customName = profile.sysMonConfig?.name || (s ? s.hostname : 'Docker Host');
         const customOs = profile.sysMonConfig?.osOverride || (s ? s.osVersion : 'Loading OS...');
+        const sysIcon = profile.sysMonConfig?.icon || 'fa-solid fa-server';
+        const sysTheme = colorClasses[profile.sysMonConfig?.color || 'orange'] || colorClasses.orange;
+        const sysCustomBg = profile.sysMonConfig?.customBg ? `background-color: ${profile.sysMonConfig.customBg};` : '';
+        const sysFontColor = profile.sysMonConfig?.fontColor ? `color: ${profile.sysMonConfig.fontColor};` : '';
+        const isImgIcon = sysIcon.startsWith('http://') || sysIcon.startsWith('https://') || sysIcon.startsWith('data:image/') || sysIcon.startsWith('/data/');
 
         sysTileHtml = `
-          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative border-orange-500/30 hover:border-orange-500/60 group">
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative ${sysTheme.hoverGlow}" style="${sysCustomBg}">
             ${isEditMode ? `
               <div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10">
                 <button onclick="openSysMonModal()" title="Edit Server Stats" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
@@ -1694,12 +1726,12 @@
             <div>
               <div class="flex items-start justify-between gap-2 mb-2.5">
                 <div class="flex items-center gap-2.5 overflow-hidden">
-                  <div class="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-lg text-orange-400 flex-shrink-0">
-                    <i class="fa-solid fa-server"></i>
+                  <div class="w-10 h-10 rounded-xl ${sysTheme.bg} ${sysTheme.border} border flex items-center justify-center text-lg ${sysTheme.text} flex-shrink-0 overflow-hidden shadow-inner">
+                    ${isImgIcon ? `<img src="${sysIcon}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.src='https://placehold.co/40x40/1e293b/ffffff?text=Host';" />` : `<i class="${sysIcon}"></i>`}
                   </div>
                   <div class="overflow-hidden">
-                    <h4 class="font-bold text-sm text-white truncate">${customName}</h4>
-                    <p class="text-[10px] text-slate-400 truncate" title="${customOs}">${customOs}</p>
+                    <h4 class="font-bold text-sm truncate" style="${sysFontColor}">${customName}</h4>
+                    <p class="text-[10px] text-slate-400 truncate" title="${customOs}" style="${sysFontColor}">${customOs}</p>
                   </div>
                 </div>
                 <span class="w-2.5 h-2.5 rounded-full ${s ? 'bg-emerald-500 status-pulse' : 'bg-slate-500'} flex-shrink-0 mt-1" title="${s ? 'Online • Up ' + s.uptime : 'Polling...'}"></span>
@@ -1708,8 +1740,8 @@
               <div class="space-y-2 mt-3">
                 <div>
                   <div class="flex justify-between text-[10px] font-semibold mb-1">
-                    <span class="text-slate-300">CPU (${s ? s.cpuCores + ' Cores' : '--'})</span>
-                    <span class="text-white font-mono">${s ? cpuPct + '%' : '--%'}</span>
+                    <span class="text-slate-300" style="${sysFontColor}">CPU (${s ? s.cpuCores + ' Cores' : '--'})</span>
+                    <span class="text-white font-mono" style="${sysFontColor}">${s ? cpuPct + '%' : '--%'}</span>
                   </div>
                   <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                     <div class="${cpuColor} h-full transition-all duration-300" style="width: ${cpuPct}%"></div>
@@ -1718,8 +1750,8 @@
 
                 <div>
                   <div class="flex justify-between text-[10px] font-semibold mb-1">
-                    <span class="text-slate-300">RAM (${s ? s.ramUsedGB + '/' + s.ramTotalGB + ' GB' : '--'})</span>
-                    <span class="text-white font-mono">${s ? ramPct + '%' : '--%'}</span>
+                    <span class="text-slate-300" style="${sysFontColor}">RAM (${s ? s.ramUsedGB + '/' + s.ramTotalGB + ' GB' : '--'})</span>
+                    <span class="text-white font-mono" style="${sysFontColor}">${s ? ramPct + '%' : '--%'}</span>
                   </div>
                   <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                     <div class="${ramColor} h-full transition-all duration-300" style="width: ${ramPct}%"></div>
@@ -1728,7 +1760,7 @@
               </div>
             </div>
 
-            <div class="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+            <div class="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-400 font-mono" style="${sysFontColor}">
               <span><i class="fa-solid fa-clock text-orange-400 mr-1"></i>${s ? s.uptime : '--'}</span>
               <span>${s ? s.arch : ''}</span>
             </div>
@@ -2267,7 +2299,7 @@
           bgPosX: 50,
           bgPosY: 50,
           showSystemMonitor: false,
-          sysMonConfig: { name: '', osOverride: '' },
+          sysMonConfig: { name: '', osOverride: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 },
           apps: [...defaultAdminApps],
           categories: [...defaultCategories]
         };
