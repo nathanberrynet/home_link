@@ -330,7 +330,7 @@
           </div>
           <div id="icon-input-fa" class="space-y-2">
             <div class="flex gap-2">
-              <input type="text" id="app-icon-fa" placeholder="fa-solid fa-server or CDN URL" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <input type="text" id="app-icon-fa" oninput="markIconModified()" placeholder="fa-solid fa-server or CDN URL" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
               <button type="button" onclick="openIconPickerModal()" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap shadow-md flex items-center gap-1.5">
                 <i class="fa-solid fa-magnifying-glass"></i> Browse Icons
               </button>
@@ -338,7 +338,8 @@
             <p class="text-[10px] text-slate-400">Search FontAwesome & self-hosted homelab logos instantly.</p>
           </div>
           <div id="icon-input-url" class="hidden">
-            <input type="url" id="app-icon-url-input" placeholder="https://cdn.example.com/icon.png" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <!-- Changed from type="url" to type="text" to prevent browser validation errors on local server paths -->
+            <input type="text" id="app-icon-url-input" oninput="markIconModified()" placeholder="/data/icons/... or https://..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
           </div>
           <div id="icon-input-upload" class="hidden">
             <input type="file" id="app-icon-file" accept="image/*" onchange="handleIconUpload(event)" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
@@ -627,6 +628,18 @@
           </div>
         </div>
 
+        <!-- Local Cached Assets Manager -->
+        <div class="pt-4 border-t border-white/10">
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-semibold opacity-90 flex items-center gap-1.5"><i class="fa-solid fa-server text-orange-400"></i> Local Cached Assets Manager</label>
+            <button onclick="loadLocalIconsManager()" class="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+          <div class="text-[10px] opacity-60 mb-2">Manage server-cached icons stored in <code class="text-orange-300">/data/icons/</code>. Deleting an asset removes it from disk; if a tile requests it later, it will automatically re-download.</div>
+          <div id="local-icons-manager-list" class="space-y-1.5 max-h-40 overflow-y-auto p-2 bg-slate-900/50 rounded-xl border border-white/5">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
         <!-- Category Manager -->
         <div class="pt-4 border-t border-white/10">
           <div class="flex items-center justify-between mb-2">
@@ -814,7 +827,7 @@ app.get('/api/config', (req, res) => {
             res.status(500).json({ error: 'Failed to parse config file' });
         }
     } else {
-        res.json({ categories: [], tiles: [] });
+        res.json({ categories: [], profiles: [] });
     }
 });
 
@@ -834,6 +847,37 @@ app.post('/api/cache-icon', async (req, res) => {
     }
     const cachedUrl = await downloadAndCacheIcon(url);
     res.json({ url: cachedUrl });
+});
+
+app.get('/api/icons', (req, res) => {
+    if (!fs.existsSync(ICONS_DIR)) return res.json([]);
+    try {
+        const files = fs.readdirSync(ICONS_DIR).map(filename => {
+            const filePath = path.join(ICONS_DIR, filename);
+            const stats = fs.statSync(filePath);
+            return { filename, url: `/data/icons/${filename}`, size: stats.size, created: stats.birthtime };
+        });
+        res.json(files);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to list local icons' });
+    }
+});
+
+app.delete('/api/icons/:filename', (req, res) => {
+    const filename = req.params.filename;
+    if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+        return res.status(400).json({ error: 'Invalid filename' });
+    }
+    const filePath = path.join(ICONS_DIR, filename);
+    if (fs.existsSync(filePath)) {
+        try {
+            fs.unlinkSync(filePath);
+            return res.json({ success: true });
+        } catch (err) {
+            return res.status(500).json({ error: 'Failed to delete file' });
+        }
+    }
+    res.status(404).json({ error: 'File not found' });
 });
 
 cacheAllExistingIconsOnStartup().then(() => {
@@ -972,6 +1016,7 @@ services:
     let appLiveStats = {};
     let currentIconMode = 'fa';
     let uploadedIconBase64 = '';
+    let iconWasModified = false;
     let pingTimer = null;
 
     // Combined Library: FontAwesome + Popular Self-Hosted Dashboard Icons (CDN)
@@ -1170,6 +1215,7 @@ services:
       }
 
       applyBackgroundDisplay(p.customBgData || '');
+      loadLocalIconsManager();
     }
 
     function saveCurrentProfilePassword() {
@@ -1229,6 +1275,51 @@ services:
         document.getElementById('weather-temp').innerText = 'Forecast';
         document.getElementById('weather-city').innerText = p.weatherZip;
       }
+    }
+
+    async function loadLocalIconsManager() {
+      const listEl = document.getElementById('local-icons-manager-list');
+      if (!listEl) return;
+      try {
+        const res = await fetch('/api/icons');
+        const icons = await res.json();
+        if (!icons || icons.length === 0) {
+          listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs opacity-50">No cached local assets found.</div>`;
+          return;
+        }
+        listEl.innerHTML = icons.map(img => `
+          <div class="flex items-center justify-between bg-slate-900/80 p-2 rounded-xl border border-white/5 text-xs">
+            <div class="flex items-center gap-2 overflow-hidden">
+              <img src="${img.url}" class="w-6 h-6 object-contain rounded bg-slate-800 p-0.5 flex-shrink-0" />
+              <div class="truncate">
+                <div class="font-bold text-white truncate max-w-[120px]" title="${img.filename}">${img.filename}</div>
+                <div class="text-[9px] opacity-50">${Math.round(img.size / 1024)} KB</div>
+              </div>
+            </div>
+            <button onclick="confirmDeleteLocalIcon('${img.filename}')" class="text-rose-400 hover:text-rose-300 p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition-colors" title="Delete from server">
+              <i class="fa-solid fa-trash text-[10px]"></i>
+            </button>
+          </div>
+        `).join('');
+      } catch(e) {
+        listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs text-rose-400">Failed to load local assets.</div>`;
+      }
+    }
+
+    function confirmDeleteLocalIcon(filename) {
+      openConfirmModal('Delete Cached Asset?', `Remove '${filename}' from server storage?`, async () => {
+        try {
+          const res = await fetch(`/api/icons/${filename}`, { method: 'DELETE' });
+          if (res.ok) {
+            showToast('Cached asset deleted', 'emerald');
+            loadLocalIconsManager();
+          } else {
+            showToast('Failed to delete asset', 'rose');
+          }
+        } catch(e) {
+          showToast('Error deleting asset', 'rose');
+        }
+      });
     }
 
     function setupPingInterval() {
@@ -1480,6 +1571,7 @@ services:
 
     function setIconType(mode) {
       currentIconMode = mode;
+      iconWasModified = true;
       ['favicon', 'fa', 'url', 'upload'].forEach(m => {
         const btn = document.getElementById(`btn-icon-${m}`);
         const input = document.getElementById(`icon-input-${m}`);
@@ -1491,6 +1583,10 @@ services:
           if (input) input.classList.add('hidden');
         }
       });
+    }
+
+    function markIconModified() {
+      iconWasModified = true;
     }
 
     /* Unified Icon Picker Modal Functions */
@@ -1536,6 +1632,7 @@ services:
 
     function selectUnifiedIcon(iconVal) {
       document.getElementById('app-icon-fa').value = iconVal;
+      iconWasModified = true;
       closeIconPickerModal();
       showToast(`Selected icon successfully`, 'emerald');
     }
@@ -1544,7 +1641,10 @@ services:
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = function(evt) { uploadedIconBase64 = evt.target.result; };
+      reader.onload = function(evt) { 
+        uploadedIconBase64 = evt.target.result; 
+        iconWasModified = true;
+      };
       reader.readAsDataURL(file);
     }
 
@@ -1556,6 +1656,7 @@ services:
       document.getElementById('app-font-color').value = '#f1f5f9';
       document.getElementById('app-ping-enabled').checked = true;
       uploadedIconBase64 = '';
+      iconWasModified = false;
       setIconType('fa');
       document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-square-plus text-orange-400"></i> Add New Tile';
 
@@ -1585,6 +1686,7 @@ services:
             setIconType('fa');
             document.getElementById('app-icon-fa').value = app.icon || '';
           }
+          iconWasModified = false;
           document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square text-amber-400"></i> Edit Tile';
         }
       }
@@ -1608,24 +1710,32 @@ services:
       const fontColor = fontColorVal === '#f1f5f9' ? '' : fontColorVal;
       const pingEnabled = document.getElementById('app-ping-enabled').checked;
 
-      let icon = 'fa-solid fa-globe';
-      if (currentIconMode === 'favicon') {
-        try { 
-          const faviconUrl = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=128`;
-          icon = await cacheIconLocally(faviconUrl);
-        } catch(e){}
-      } else if (currentIconMode === 'fa') {
-        icon = document.getElementById('app-icon-fa').value || 'fa-solid fa-globe';
-        if (icon.startsWith('http://') || icon.startsWith('https://')) {
-          icon = await cacheIconLocally(icon);
+      const existingApp = id ? profile.apps.find(a => a.id === id) : null;
+      let icon = existingApp ? existingApp.icon : 'fa-solid fa-globe';
+
+      if (!id || iconWasModified) {
+        if (currentIconMode === 'favicon') {
+          try { 
+            const faviconUrl = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=128`;
+            icon = await cacheIconLocally(faviconUrl);
+          } catch(e){}
+        } else if (currentIconMode === 'fa') {
+          icon = document.getElementById('app-icon-fa').value || 'fa-solid fa-globe';
+          if (icon.startsWith('http://') || icon.startsWith('https://')) {
+            icon = await cacheIconLocally(icon);
+          }
+        } else if (currentIconMode === 'url') {
+          const rawUrl = document.getElementById('app-icon-url-input').value.trim() || '';
+          if (rawUrl) {
+            if (rawUrl.startsWith('/data/icons/')) {
+              icon = rawUrl; // Keep local cached path as-is without re-downloading
+            } else {
+              icon = await cacheIconLocally(rawUrl);
+            }
+          }
+        } else if (currentIconMode === 'upload') {
+          icon = uploadedIconBase64 || '';
         }
-      } else if (currentIconMode === 'url') {
-        const rawUrl = document.getElementById('app-icon-url-input').value || '';
-        if (rawUrl) {
-          icon = await cacheIconLocally(rawUrl);
-        }
-      } else if (currentIconMode === 'upload') {
-        icon = uploadedIconBase64 || '';
       }
 
       if (id) {
@@ -1644,20 +1754,21 @@ services:
     }
 
     async function cacheIconLocally(externalUrl) {
-      if (!externalUrl.startsWith('http://') && !externalUrl.startsWith('https://')) return externalUrl;
+      if (!externalUrl || (!externalUrl.startsWith('http://') && !externalUrl.startsWith('https://'))) return externalUrl;
       try {
         const res = await fetch('/api/cache-icon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: externalUrl })
         });
+        if (!res.ok) {
+          return externalUrl;
+        }
         const data = await res.json();
         if (data && data.url) {
           return data.url;
         }
-      } catch (err) {
-        console.warn('Failed to cache icon on server, falling back to URL', err);
-      }
+      } catch (err) {}
       return externalUrl;
     }
 
@@ -1926,7 +2037,10 @@ services:
     }
 
     /* Settings & Wiki */
-    function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); }
+    function openSettingsModal() { 
+      document.getElementById('settings-modal').classList.remove('hidden'); 
+      loadLocalIconsManager();
+    }
     function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
     
     function openWikiModal() {
@@ -2073,7 +2187,6 @@ services:
           bg.style.backgroundRepeat = 'no-repeat';
           bg.style.backgroundPosition = 'center center';
         } else {
-          // Cover
           bg.style.backgroundSize = `${zoom}%`;
           bg.style.backgroundRepeat = 'no-repeat';
           bg.style.backgroundPosition = 'center center';

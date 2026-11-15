@@ -38,7 +38,6 @@ function downloadAndCacheIcon(url) {
 
         const client = url.startsWith('https') ? https : http;
         const request = client.get(url, (response) => {
-            // Follow redirects (e.g., Google Favicon service)
             if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
                 return downloadAndCacheIcon(response.headers.location).then(resolve);
             }
@@ -115,7 +114,7 @@ app.get('/api/config', (req, res) => {
             res.status(500).json({ error: 'Failed to parse config file' });
         }
     } else {
-        res.json({ categories: [], tiles: [] });
+        res.json({ categories: [], profiles: [] });
     }
 });
 
@@ -135,6 +134,45 @@ app.post('/api/cache-icon', async (req, res) => {
     }
     const cachedUrl = await downloadAndCacheIcon(url);
     res.json({ url: cachedUrl });
+});
+
+// API: List all local cached icon files
+app.get('/api/icons', (req, res) => {
+    if (!fs.existsSync(ICONS_DIR)) return res.json([]);
+    try {
+        const files = fs.readdirNames = fs.readdirSync(ICONS_DIR).map(filename => {
+            const filePath = path.join(ICONS_DIR, filename);
+            const stats = fs.statSync(filePath);
+            return {
+                filename,
+                url: `/data/icons/${filename}`,
+                size: stats.size,
+                created: stats.birthtime
+            };
+        });
+        res.json(files);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to list local icons' });
+    }
+});
+
+// API: Delete a specific local cached icon file
+app.delete('/api/icons/:filename', (req, res) => {
+    const filename = req.params.filename;
+    if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+        return res.status(400).json({ error: 'Invalid filename' });
+    }
+    const filePath = path.join(ICONS_DIR, filename);
+    if (fs.existsSync(filePath)) {
+        try {
+            fs.unlinkSync(filePath);
+            console.log(`[Icon Cache] Deleted local asset: ${filename}`);
+            return res.json({ success: true });
+        } catch (err) {
+            return res.status(500).json({ error: 'Failed to delete file' });
+        }
+    }
+    res.status(404).json({ error: 'File not found' });
 });
 
 // Run bulk icon migration before accepting connections
