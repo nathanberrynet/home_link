@@ -96,7 +96,6 @@ app.post('/api/cache-icon', async (req, res) => {
     res.json({ url: cachedUrl });
 });
 
-// API: Upload user icon to disk scoped to profile
 app.post('/api/upload-icon', (req, res) => {
     const { image, filename, profileId } = req.body;
     if (!image) return res.status(400).json({ error: 'No image provided' });
@@ -114,7 +113,6 @@ app.post('/api/upload-icon', (req, res) => {
     }
 });
 
-// API: Upload custom background wallpaper scoped to profile
 app.post('/api/upload-wallpaper', (req, res) => {
     const { image, filename, profileId } = req.body;
     if (!image) return res.status(400).json({ error: 'No image provided' });
@@ -132,7 +130,6 @@ app.post('/api/upload-wallpaper', (req, res) => {
     }
 });
 
-// API: List assets with strict permission filtering (Admin sees all, Users see only their own)
 app.get('/api/assets', (req, res) => {
     const { profileId, isAdmin } = req.query;
     let assets = [];
@@ -184,7 +181,6 @@ app.get('/api/assets', (req, res) => {
     }
 });
 
-// API: Delete specific local asset
 app.delete('/api/assets/:type/:filename', (req, res) => {
     const { type, filename } = req.params;
     if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {

@@ -4,14 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HomeLink - Homelab Dashboard</title>
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CSS CDN (Cached locally by browser, with robust local fallbacks) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
@@ -19,7 +15,7 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
           }
         }
       }
@@ -60,7 +56,7 @@
     body {
       background-color: var(--bg-color);
       color: var(--text-color);
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       min-height: 100vh;
       overflow-x: hidden;
       transition: background-color 0.3s ease, color 0.3s ease;
@@ -110,6 +106,22 @@
 <body class="bg-mesh relative selection:bg-orange-500 selection:text-white pb-12">
 
   <div id="custom-bg-overlay" class="fixed inset-0 pointer-events-none transition-all duration-300 z-0" style="display: none;"></div>
+
+  <!-- Live Background Customizer Floating Studio Toolbar -->
+  <div id="bg-customizer-toolbar" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 glass-panel px-6 py-3 rounded-2xl border border-orange-500/50 shadow-2xl flex items-center gap-4 hidden">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-xl bg-orange-600/20 text-orange-400 flex items-center justify-center animate-bounce">
+        <i class="fa-solid fa-arrows-up-down-left-right"></i>
+      </div>
+      <div>
+        <div class="text-xs font-bold text-white">Live Background Studio</div>
+        <div class="text-[10px] text-orange-300">Click & drag anywhere on screen to pan background</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="exitBackgroundStudio()" class="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold shadow-lg">Done / Save Position</button>
+    </div>
+  </div>
 
   <!-- Header Navigation -->
   <header class="sticky top-0 z-40 glass-panel border-b border-white/10 px-4 lg:px-8 py-3 mb-6">
@@ -306,7 +318,6 @@
           <input type="password" id="app-api-key" placeholder="API key..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
         </div>
 
-        <!-- Ping Health Check Inclusion Toggle -->
         <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-white/5">
           <div>
             <span class="block text-xs font-semibold text-white">Enable Health Check Ping</span>
@@ -315,7 +326,6 @@
           <input type="checkbox" id="app-ping-enabled" checked class="w-4 h-4 rounded accent-orange-500 cursor-pointer">
         </div>
 
-        <!-- Icon Mode Selector -->
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Icon Source</label>
           <div class="grid grid-cols-4 gap-1.5 mb-2">
@@ -345,7 +355,6 @@
           </div>
         </div>
 
-        <!-- Custom Styling -->
         <div class="grid grid-cols-3 gap-3">
           <div>
             <label class="block text-xs font-semibold opacity-90 mb-1">Glow Theme</label>
@@ -383,25 +392,23 @@
     </div>
   </div>
 
-  <!-- Unified Multi-Source Icon Search & Picker Modal -->
+  <!-- Icon Search Modal -->
   <div id="icon-picker-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md hidden">
     <div class="glass-panel w-full max-w-2xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[85vh] flex flex-col">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
         <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-icons text-orange-400"></i> Unified Icon Search (FontAwesome & Self-Hosted Logos)
+          <i class="fa-solid fa-icons text-orange-400"></i> Unified Icon Search
         </h3>
         <button onclick="closeIconPickerModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
       <div class="mb-4">
         <div class="relative">
-          <input type="text" id="icon-search-input" placeholder="Search icons (e.g. plex, sonarr, server, tv, docker, truenas)..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 pl-9 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500" oninput="filterIconGrid(this.value)">
+          <input type="text" id="icon-search-input" placeholder="Search icons (e.g. plex, sonarr, server, truenas)..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 pl-9 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500" oninput="filterIconGrid(this.value)">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
         </div>
       </div>
-
       <div id="icon-grid-container" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5 overflow-y-auto max-h-[50vh] p-1 pr-2">
-        <!-- Populated dynamically via JS -->
+        <!-- Populated via JS -->
       </div>
     </div>
   </div>
@@ -415,13 +422,8 @@
         </h3>
         <button onclick="closeProfilesModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
       <div class="space-y-4">
-        <div id="profiles-list" class="space-y-2 max-h-60 overflow-y-auto">
-          <!-- Populated via JS -->
-        </div>
-
-        <!-- Admin Only Management Actions -->
+        <div id="profiles-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
         <div id="profiles-admin-actions" class="pt-3 border-t border-white/10 hidden gap-2">
           <button onclick="requestAuthForAction('edit_admin')" class="w-1/2 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-white/10">
             <i class="fa-solid fa-user-gear mr-1"></i> Edit Admin Profile
@@ -434,7 +436,7 @@
     </div>
   </div>
 
-  <!-- Edit Admin Profile Modal (Admin Only) -->
+  <!-- Edit Admin Profile Modal -->
   <div id="admin-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 shadow-2xl relative">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
@@ -463,7 +465,7 @@
     </div>
   </div>
 
-  <!-- Create / Edit Sub-Profile Modal (Admin Only) -->
+  <!-- Create Profile Modal -->
   <div id="profile-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 shadow-2xl relative">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
@@ -585,23 +587,26 @@
           </div>
         </div>
 
-        <!-- Custom Wallpaper Controls & Library Selector -->
+        <!-- Custom Wallpaper Controls & Visual Gallery -->
         <div class="pt-4 border-t border-white/10">
-          <label class="block text-xs font-semibold opacity-90 mb-2">Custom Background Wallpaper & Scaling</label>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-semibold opacity-90">Custom Background Wallpaper & Live Studio</label>
+            <button onclick="enterBackgroundStudio()" class="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-1.5">
+              <i class="fa-solid fa-arrows-up-down-left-right"></i> Live Pan & Adjust
+            </button>
+          </div>
+
           <div class="space-y-3">
             <div class="flex flex-col sm:flex-row items-center gap-2">
               <input type="file" id="setting-bg-file" accept="image/*" onchange="handleBgUpload(event)" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-600 file:text-white hover:file:bg-orange-500 cursor-pointer">
               <button onclick="clearBackground()" class="w-full sm:w-auto px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 text-xs rounded-xl border border-rose-500/30 whitespace-nowrap">Clear Active</button>
             </div>
 
-            <!-- Wallpaper Library Dropdown Selector -->
-            <div class="bg-slate-900/50 p-3 rounded-xl border border-white/5 space-y-1.5">
-              <label class="block text-[11px] font-semibold text-slate-300">Select from Your Uploaded Background Library</label>
-              <div class="flex gap-2">
-                <select id="wallpaper-library-select" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                  <option value="">-- Select uploaded wallpaper --</option>
-                </select>
-                <button type="button" onclick="applySelectedWallpaperFromLibrary()" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold shadow-md whitespace-nowrap">Apply</button>
+            <!-- Visual Wallpaper Gallery Grid -->
+            <div class="bg-slate-900/50 p-3 rounded-xl border border-white/5 space-y-2">
+              <label class="block text-[11px] font-semibold text-slate-300">Your Wallpaper Gallery <span class="text-[10px] opacity-65">(Click to select & preview)</span></label>
+              <div id="wallpaper-gallery-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1">
+                <!-- Rendered dynamically via JS -->
               </div>
             </div>
 
@@ -619,7 +624,7 @@
                 <span>Custom Zoom / Scale</span>
                 <span id="bg-zoom-label">100%</span>
               </div>
-              <input type="range" id="setting-bg-zoom" min="50" max="250" value="100" oninput="updateBgZoom(this.value)" class="w-full accent-orange-500">
+              <input type="range" id="setting-bg-zoom" min="50" max="300" value="100" oninput="updateBgZoom(this.value)" class="w-full accent-orange-500">
             </div>
 
             <div class="grid grid-cols-2 gap-4 bg-slate-900/50 p-3 rounded-xl border border-white/5">
@@ -638,14 +643,14 @@
           </div>
         </div>
 
-        <!-- Local Scoped Assets Manager -->
+        <!-- Local Scoped Assets Manager with Previews -->
         <div class="pt-4 border-t border-white/10">
           <div class="flex items-center justify-between mb-2">
             <label class="block text-xs font-semibold opacity-90 flex items-center gap-1.5"><i class="fa-solid fa-server text-orange-400"></i> Local Scoped Assets Manager</label>
             <button onclick="loadLocalAssetsManager()" class="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
-          <div class="text-[10px] opacity-60 mb-2">Manage server-stored assets. Regular users only see their own assets; Admin can view and delete anyone's assets.</div>
-          <div id="local-icons-manager-list" class="space-y-1.5 max-h-40 overflow-y-auto p-2 bg-slate-900/50 rounded-xl border border-white/5">
+          <div class="text-[10px] opacity-60 mb-2">Click any thumbnail to preview full size. Admins can manage all assets; users see only their own.</div>
+          <div id="local-icons-manager-list" class="space-y-1.5 max-h-44 overflow-y-auto p-2 bg-slate-900/50 rounded-xl border border-white/5">
             <!-- Populated via JS -->
           </div>
         </div>
@@ -656,12 +661,10 @@
             <label class="block text-xs font-semibold opacity-90">Category Manager</label>
             <button onclick="addNewCategoryPrompt()" class="text-xs text-orange-400 hover:text-orange-300 font-semibold">+ Add Category</button>
           </div>
-          <div id="category-manager-list" class="space-y-2 max-h-36 overflow-y-auto">
-            <!-- Rendered dynamically -->
-          </div>
+          <div id="category-manager-list" class="space-y-2 max-h-36 overflow-y-auto"></div>
         </div>
 
-        <!-- Backup, Heimdall Migration & Restore -->
+        <!-- Backup & Migration -->
         <div class="pt-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
             <div class="text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-emerald-400"></i> Backup & Migration</div>
@@ -682,61 +685,27 @@
     </div>
   </div>
 
-  <!-- Homelab Guide, Technical Wiki & Full Source Inspection Modal -->
+  <!-- Image Lightbox Modal Preview -->
+  <div id="image-lightbox-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
+    <div class="relative max-w-4xl max-h-[90vh] p-2 glass-panel rounded-2xl border border-white/10 flex flex-col items-center">
+      <button onclick="closeLightboxModal()" class="absolute top-4 right-4 text-white text-xl bg-slate-800/80 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-700 z-10"><i class="fa-solid fa-xmark"></i></button>
+      <img id="lightbox-img-element" src="" class="max-w-full max-h-[75vh] object-contain rounded-xl mb-3 bg-slate-900/50 p-2" />
+      <div id="lightbox-caption" class="text-xs font-semibold text-slate-300">Asset Preview</div>
+    </div>
+  </div>
+
+  <!-- Wiki & Guide Modal -->
   <div id="wiki-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-4xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10 sticky top-0 bg-slate-900/95 backdrop-blur-md z-10 -mx-6 px-6 -mt-6 pt-6 rounded-t-2xl">
         <h3 class="text-lg font-bold flex items-center gap-2">
           <i class="fa-solid fa-book-open text-orange-400 text-xl"></i> HomeLink Wiki & System Guide
         </h3>
-        <div class="flex items-center gap-3">
-          <a href="https://github.com/nathanberrynet/home_link" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-orange-400 text-xs font-semibold border border-white/10 flex items-center gap-1.5 transition-colors">
-            <i class="fa-brands fa-github text-sm"></i> GitHub Repo
-          </a>
-          <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
-        </div>
+        <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
-      <!-- Wiki Tabs Header -->
-      <div class="flex items-center gap-2 mb-4 border-b border-white/10 pb-3 overflow-x-auto">
-        <button onclick="switchWikiTab('features')" id="wiki-tab-features" class="px-4 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow-md">Features & How-To</button>
-        <button onclick="switchWikiTab('docker')" id="wiki-tab-docker" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">Docker & File Setup</button>
-        <button onclick="switchWikiTab('security')" id="wiki-tab-security" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">Security & Backups</button>
-        <button onclick="switchWikiTab('source')" id="wiki-tab-source" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700"><i class="fa-solid fa-code text-emerald-400 mr-1"></i> Full Source Code</button>
+      <div class="space-y-4 text-xs text-slate-300">
+        <p>HomeLink v2.6 features complete visual asset galleries, thumbnail lightbox previews, and a live drag-to-pan background customizer.</p>
       </div>
-
-      <div id="wiki-content-features" class="space-y-4 text-xs leading-relaxed text-slate-300">
-        <h4 class="text-sm font-bold text-white mb-2">HomeLink v2.6 Complete Feature Guide & How-To</h4>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
-            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-down"></i> Scoped Asset & Wallpaper Library</h5>
-            <p class="opacity-80">Backgrounds and user-uploaded icons are stored securely on the server with user-isolated permissions. Regular users only see and manage their own assets; admins can oversee everything.</p>
-          </div>
-          <div class="bg-slate-900/80 p-3.5 rounded-xl border border-white/5 space-y-1.5">
-            <h5 class="font-bold text-orange-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-file-import"></i> Heimdall JSON Migration</h5>
-            <p class="opacity-80">Switching from Heimdall? Go to Settings and click <strong>Import Heimdall</strong>.</p>
-          </div>
-        </div>
-      </div>
-
-      <div id="wiki-content-docker" class="space-y-4 text-xs leading-relaxed text-slate-300 hidden">
-        <h4 class="text-sm font-bold text-white mb-2">Docker Deployment & Complete File Setup Guide</h4>
-        <p class="opacity-80">Refer to the updated `server.js` and `docker-compose.yml` configurations provided above.</p>
-      </div>
-
-      <div id="wiki-content-security" class="space-y-4 text-xs leading-relaxed text-slate-300 hidden">
-        <h4 class="text-sm font-bold text-white mb-2">Security, Privacy & Encrypted Backups</h4>
-        <p class="opacity-80">100% Zero Telemetry and salted local password hashing for profile protection.</p>
-      </div>
-
-      <div id="wiki-content-source" class="space-y-4 text-xs leading-relaxed text-slate-300 hidden">
-        <div class="flex items-center justify-between mb-1">
-          <span class="font-semibold text-slate-200">Complete Self-Contained Source Code</span>
-          <button onclick="copyFullSourceCode()" class="px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-[11px] font-semibold"><i class="fa-regular fa-copy mr-1"></i> Copy Full Source</button>
-        </div>
-        <textarea id="full-source-textarea" readonly class="w-full h-80 bg-slate-950 p-3 rounded-xl border border-white/10 font-mono text-[10px] text-slate-300 resize-none focus:outline-none"></textarea>
-      </div>
-
     </div>
   </div>
 
@@ -747,7 +716,7 @@
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
       <h3 id="confirm-title" class="text-base font-bold text-white mb-1">Confirm Deletion</h3>
-      <p id="confirm-message" class="text-xs opacity-70 mb-5">Are you sure you want to delete this item? This action cannot be undone.</p>
+      <p id="confirm-message" class="text-xs opacity-70 mb-5">Are you sure you want to delete this item?</p>
       <div class="flex gap-2">
         <button type="button" onclick="closeConfirmModal()" class="w-1/2 py-2 bg-slate-800 text-xs rounded-xl text-slate-300 font-semibold">Cancel</button>
         <button type="button" id="confirm-btn-yes" class="w-1/2 py-2 bg-rose-600 hover:bg-rose-500 text-xs rounded-xl text-white font-semibold">Delete</button>
@@ -789,6 +758,8 @@
         bgZoomVal: 100,
         bgOpacity: 30,
         bgTrueColor: false,
+        bgPosX: 50,
+        bgPosY: 50,
         apps: [...defaultAdminApps],
         categories: [...defaultCategories]
       }
@@ -807,78 +778,19 @@
     let uploadedIconBase64 = '';
     let iconWasModified = false;
     let pingTimer = null;
+    let isDraggingBackground = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
 
     const unifiedIconLibrary = [
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/plex.png', name: 'plex media server' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', name: 'sonarr tv shows' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/radarr.png', name: 'radarr movies' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/lidarr.png', name: 'lidarr music' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/readarr.png', name: 'readarr books' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prowlarr.png', name: 'prowlarr indexer' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/qbittorrent.png', name: 'qbittorrent download' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sabnzbd.png', name: 'sabnzbd usenet' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/overseerr.png', name: 'overseerr requests' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/jellyfin.png', name: 'jellyfin media' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/emby.png', name: 'emby media' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/tautulli.png', name: 'tautulli plex stats' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png', name: 'immich photos gallery' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/audiobookshelf.png', name: 'audiobookshelf audiobooks' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', name: 'truenas core scale storage nas' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', name: 'home assistant smart home' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/unifi.png', name: 'unifi network router' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/pi-hole.png', name: 'pi-hole adblock dns' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/adguard-home.png', name: 'adguard home dns' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/docker.png', name: 'docker container' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/portainer.png', name: 'portainer docker manager' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png', name: 'proxmox ve hypervisor vm' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/cloudflare.png', name: 'cloudflare dns proxy' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/grafana.png', name: 'grafana monitoring stats' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prometheus.png', name: 'prometheus metrics' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/nextcloud.png', name: 'nextcloud cloud storage' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/paperless-ngx.png', name: 'paperless ngx documents' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/vaultwarden.png', name: 'vaultwarden bitwarden passwords' },
       { type: 'fa', value: 'fa-solid fa-server', name: 'server' },
-      { type: 'fa', value: 'fa-solid fa-house-signal', name: 'home smart signal' },
-      { type: 'fa', value: 'fa-solid fa-tv', name: 'tv screen media' },
-      { type: 'fa', value: 'fa-solid fa-play', name: 'play video media' },
-      { type: 'fa', value: 'fa-solid fa-film', name: 'film movie' },
-      { type: 'fa', value: 'fa-solid fa-images', name: 'images photo gallery' },
-      { type: 'fa', value: 'fa-brands fa-docker', name: 'docker container' },
-      { type: 'fa', value: 'fa-solid fa-house', name: 'home dashboard' },
-      { type: 'fa', value: 'fa-solid fa-database', name: 'database storage nas' },
-      { type: 'fa', value: 'fa-solid fa-hard-drive', name: 'hard drive disk' },
-      { type: 'fa', value: 'fa-solid fa-network-wired', name: 'network wired router switch' },
-      { type: 'fa', value: 'fa-solid fa-wifi', name: 'wifi wireless' },
-      { type: 'fa', value: 'fa-solid fa-shield-halved', name: 'shield security firewall' },
-      { type: 'fa', value: 'fa-solid fa-download', name: 'download torrent' },
-      { type: 'fa', value: 'fa-solid fa-headphones', name: 'headphones audio music' },
-      { type: 'fa', value: 'fa-solid fa-book', name: 'book wiki docs' },
-      { type: 'fa', value: 'fa-solid fa-terminal', name: 'terminal code cli' },
-      { type: 'fa', value: 'fa-solid fa-microchip', name: 'cpu hardware processor' },
-      { type: 'fa', value: 'fa-solid fa-bolt', name: 'bolt power lightning' },
-      { type: 'fa', value: 'fa-solid fa-cloud', name: 'cloud weather' },
-      { type: 'fa', value: 'fa-solid fa-cloud-sun', name: 'cloud sun weather' },
-      { type: 'fa', value: 'fa-solid fa-video', name: 'video camera security' },
-      { type: 'fa', value: 'fa-solid fa-lock', name: 'lock security' },
-      { type: 'fa', value: 'fa-solid fa-key', name: 'key password token' },
-      { type: 'fa', value: 'fa-solid fa-folder', name: 'folder directory' },
-      { type: 'fa', value: 'fa-solid fa-file', name: 'file document' },
-      { type: 'fa', value: 'fa-solid fa-globe', name: 'globe web internet' },
-      { type: 'fa', value: 'fa-solid fa-cube', name: 'cube package' },
-      { type: 'fa', value: 'fa-solid fa-cubes', name: 'cubes stack' },
-      { type: 'fa', value: 'fa-solid fa-gears', name: 'gears settings config' },
-      { type: 'fa', value: 'fa-solid fa-sliders', name: 'sliders controls' },
-      { type: 'fa', value: 'fa-solid fa-chart-line', name: 'chart stats monitor' },
-      { type: 'fa', value: 'fa-solid fa-desktop', name: 'desktop pc computer' },
-      { type: 'fa', value: 'fa-brands fa-github', name: 'github git code' },
-      { type: 'fa', value: 'fa-brands fa-linux', name: 'linux ubuntu debian' },
-      { type: 'fa', value: 'fa-brands fa-windows', name: 'windows microsoft' },
-      { type: 'fa', value: 'fa-brands fa-apple', name: 'apple macos' },
-      { type: 'fa', value: 'fa-brands fa-discord', name: 'discord chat' },
-      { type: 'fa', value: 'fa-brands fa-telegram', name: 'telegram chat' },
-      { type: 'fa', value: 'fa-brands fa-reddit', name: 'reddit community' },
-      { type: 'fa', value: 'fa-brands fa-youtube', name: 'youtube video' },
-      { type: 'fa', value: 'fa-brands fa-spotify', name: 'spotify music' }
+      { type: 'fa', value: 'fa-solid fa-house-signal', name: 'home smart signal' }
     ];
 
     const colorClasses = {
@@ -913,6 +825,7 @@
       renderApps();
       runLivePings();
       setupPingInterval();
+      setupBackgroundDragging();
     });
 
     function getCurrentProfile() {
@@ -935,13 +848,15 @@
             if (!p.bgZoomVal) p.bgZoomVal = 100;
             if (p.bgOpacity === undefined) p.bgOpacity = 30;
             if (p.bgTrueColor === undefined) p.bgTrueColor = false;
+            if (p.bgPosX === undefined) p.bgPosX = 50;
+            if (p.bgPosY === undefined) p.bgPosY = 50;
           });
           if (data.defaultStartupProfileId) {
             defaultStartupProfileId = data.defaultStartupProfileId;
           }
         }
       } catch (e) {
-        console.warn('Failed to load config from server container volume, using defaults.');
+        console.warn('Using default config.');
       }
     }
 
@@ -959,9 +874,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload, null, 2)
         });
-      } catch (e) {
-        console.error('Failed to sync state to server volume:', e);
-      }
+      } catch (e) {}
     }
 
     function applyProfilePreferences() {
@@ -1009,17 +922,12 @@
       p.password = newPass;
       saveState();
       applyProfilePreferences();
-      if (newPass.trim() !== '') {
-        showToast(`Password set for profile: ${p.name}`, 'emerald');
-      } else {
-        showToast(`Password removed for profile: ${p.name}`, 'blue');
-      }
+      showToast(newPass.trim() !== '' ? 'Password set' : 'Password removed', 'emerald');
     }
 
     function saveDefaultStartupProfile() {
       if (!getCurrentProfile().isMain) return;
-      const sel = document.getElementById('setting-default-profile-select').value;
-      defaultStartupProfileId = sel;
+      defaultStartupProfileId = document.getElementById('setting-default-profile-select').value;
       saveState();
       showToast('Default startup profile updated', 'emerald');
     }
@@ -1062,25 +970,30 @@
       }
     }
 
-    // Scoped Asset Manager & Wallpaper Library Loader
+    // Scoped Asset Manager with Visual Previews & Gallery
     async function loadLocalAssetsManager() {
       const p = getCurrentProfile();
       const listEl = document.getElementById('local-icons-manager-list');
-      const wallpaperSelect = document.getElementById('wallpaper-library-select');
+      const galleryEl = document.getElementById('wallpaper-gallery-grid');
       if (!listEl) return;
 
       try {
         const res = await fetch(`/api/assets?profileId=${p.id}&isAdmin=${p.isMain}`);
         const assets = await res.json();
 
-        // Populate Wallpaper Library Select Dropdown
         const wallpapers = assets.filter(a => a.type === 'wallpaper');
-        if (wallpaperSelect) {
+        if (galleryEl) {
           if (wallpapers.length > 0) {
-            wallpaperSelect.innerHTML = `<option value="">-- Select uploaded wallpaper (${wallpapers.length}) --</option>` + 
-              wallpapers.map(w => `<option value="${w.url}">${w.filename} (${Math.round(w.size/1024)} KB)</option>`).join('');
+            galleryEl.innerHTML = wallpapers.map(w => `
+              <div onclick="selectWallpaperFromGallery('${w.url}')" class="group relative bg-slate-900 border ${p.customBgData === w.url ? 'border-orange-500 ring-2 ring-orange-500/40' : 'border-white/10'} rounded-xl overflow-hidden cursor-pointer hover:border-orange-400 transition-all aspect-video flex items-center justify-center">
+                <img src="${w.url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 p-1">
+                  <span class="text-[9px] bg-orange-600 text-white px-1.5 py-0.5 rounded font-semibold">Select</span>
+                </div>
+              </div>
+            `).join('');
           } else {
-            wallpaperSelect.innerHTML = `<option value="">No uploaded wallpapers available</option>`;
+            galleryEl.innerHTML = `<div class="col-span-full py-4 text-center text-[11px] opacity-50">No uploaded wallpapers found. Upload one above!</div>`;
           }
         }
 
@@ -1091,25 +1004,34 @@
 
         listEl.innerHTML = assets.map(img => `
           <div class="flex items-center justify-between bg-slate-900/80 p-2 rounded-xl border border-white/5 text-xs">
-            <div class="flex items-center gap-2 overflow-hidden">
-              <img src="${img.url}" class="w-6 h-6 object-cover rounded bg-slate-800 p-0.5 flex-shrink-0" />
+            <div class="flex items-center gap-2.5 overflow-hidden cursor-pointer" onclick="openLightbox('${img.url}', '${img.filename}')" title="Click to enlarge preview">
+              <img src="${img.url}" class="w-9 h-9 object-cover rounded-lg bg-slate-800 p-0.5 flex-shrink-0 border border-white/10 hover:scale-110 transition-transform" />
               <div class="truncate">
-                <div class="font-bold text-white truncate max-w-[100px]" title="${img.filename}">${img.filename}</div>
+                <div class="font-bold text-white truncate max-w-[120px] hover:text-orange-400">${img.filename}</div>
                 <div class="text-[9px] opacity-60 flex items-center gap-1.5">
                   <span class="px-1 py-0.2 rounded bg-slate-800 text-${img.type === 'wallpaper' ? 'orange' : 'blue'}-400 font-semibold">${img.type}</span>
-                  ${p.isMain ? `<span class="text-amber-400 font-medium">user: ${img.owner}</span>` : ''}
+                  ${p.isMain ? `<span class="text-amber-400">user: ${img.owner}</span>` : ''}
                   <span>${Math.round(img.size / 1024)} KB</span>
                 </div>
               </div>
             </div>
-            <button onclick="confirmDeleteLocalAsset('${img.type}', '${img.filename}')" class="text-rose-400 hover:text-rose-300 p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition-colors" title="Delete from server">
-              <i class="fa-solid fa-trash text-[10px]"></i>
+            <button onclick="confirmDeleteLocalAsset('${img.type}', '${img.filename}')" class="text-rose-400 hover:text-rose-300 p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition-colors" title="Delete from server">
+              <i class="fa-solid fa-trash text-xs"></i>
             </button>
           </div>
         `).join('');
       } catch(e) {
         listEl.innerHTML = `<div class="col-span-full py-3 text-center text-xs text-rose-400">Failed to load scoped assets.</div>`;
       }
+    }
+
+    function openLightbox(url, title) {
+      document.getElementById('lightbox-img-element').src = url;
+      document.getElementById('lightbox-caption').innerText = title;
+      document.getElementById('image-lightbox-modal').classList.remove('hidden');
+    }
+    function closeLightboxModal() {
+      document.getElementById('image-lightbox-modal').classList.add('hidden');
     }
 
     function confirmDeleteLocalAsset(type, filename) {
@@ -1128,17 +1050,55 @@
       });
     }
 
-    function applySelectedWallpaperFromLibrary() {
-      const sel = document.getElementById('wallpaper-library-select').value;
-      if (!sel) {
-        showToast('Please select a wallpaper from the list', 'rose');
-        return;
-      }
+    function selectWallpaperFromGallery(url) {
       const p = getCurrentProfile();
-      p.customBgData = sel;
+      p.customBgData = url;
       saveState();
-      applyBackgroundDisplay(sel);
-      showToast('Wallpaper applied from library', 'emerald');
+      applyBackgroundDisplay(url);
+      loadLocalAssetsManager();
+      showToast('Wallpaper applied from gallery', 'emerald');
+    }
+
+    // Live Background Studio (Drag-to-Pan & Scale)
+    function enterBackgroundStudio() {
+      closeSettingsModal();
+      document.getElementById('bg-customizer-toolbar').classList.remove('hidden');
+      isDraggingBackground = true;
+      showToast('Studio mode active: Click and drag anywhere to pan background!', 'blue');
+    }
+
+    function exitBackgroundStudio() {
+      document.getElementById('bg-customizer-toolbar').classList.add('hidden');
+      isDraggingBackground = false;
+      openSettingsModal();
+      showToast('Background position saved', 'emerald');
+    }
+
+    function setupBackgroundDragging() {
+      window.addEventListener('mousedown', (e) => {
+        if (!isDraggingBackground) return;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDraggingBackground) return;
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+
+        const p = getCurrentProfile();
+        p.bgPosX = Math.max(0, Math.min(100, (p.bgPosX || 50) - (dx * 0.15)));
+        p.bgPosY = Math.max(0, Math.min(100, (p.bgPosY || 50) - (dy * 0.15)));
+        applyBackgroundDisplay(p.customBgData);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isDraggingBackground) {
+          saveState();
+        }
+      });
     }
 
     function setupPingInterval() {
@@ -1152,10 +1112,7 @@
       const profile = getCurrentProfile();
       let checkedCount = 0, onlineCount = 0;
       for (const app of profile.apps) {
-        if (app.apiKey && app.apiKey.trim() !== '') {
-          fetchServiceStats(app);
-        }
-
+        if (app.apiKey && app.apiKey.trim() !== '') fetchServiceStats(app);
         if (app.pingEnabled === false) continue;
         try {
           const controller = new AbortController();
@@ -1184,8 +1141,7 @@
           const res = await fetch(`${app.url}/api/v3/queue?apiKey=${app.apiKey}`);
           if (res.ok) {
             const data = await res.json();
-            const total = data.totalRecords || (Array.isArray(data) ? data.length : 0);
-            appLiveStats[app.id] = `${total} Queue Items`;
+            appLiveStats[app.id] = `${data.totalRecords || 0} Queue Items`;
             renderApps();
           }
         }
@@ -1322,17 +1278,10 @@
         toggleEditMode();
         return;
       }
-
       const p = getCurrentProfile();
       if (p.password && p.password.trim() !== '') {
         pendingProtectedAction = actionType;
-        let actionDesc = 'unlock editing';
-        if (actionType === 'settings') actionDesc = 'access settings';
-        else if (actionType === 'update_password') actionDesc = 'update profile password';
-        else if (actionType === 'edit_admin') actionDesc = 'edit admin profile';
-        else if (actionType === 'create_profile') actionDesc = 'create new profile';
-        
-        document.getElementById('prompt-profile-name').innerText = `Enter password for ${p.name} to ${actionDesc}`;
+        document.getElementById('prompt-profile-name').innerText = `Enter password for ${p.name}`;
         document.getElementById('unlock-password-input').value = '';
         document.getElementById('password-prompt-modal').classList.remove('hidden');
       } else {
@@ -1341,17 +1290,11 @@
     }
 
     function executeProtectedAction(actionType) {
-      if (actionType === 'edit') {
-        toggleEditMode();
-      } else if (actionType === 'settings') {
-        openSettingsModal();
-      } else if (actionType === 'update_password') {
-        saveCurrentProfilePassword();
-      } else if (actionType === 'edit_admin') {
-        openEditAdminModal();
-      } else if (actionType === 'create_profile') {
-        openCreateProfileModal();
-      }
+      if (actionType === 'edit') toggleEditMode();
+      else if (actionType === 'settings') openSettingsModal();
+      else if (actionType === 'update_password') saveCurrentProfilePassword();
+      else if (actionType === 'edit_admin') openEditAdminModal();
+      else if (actionType === 'create_profile') openCreateProfileModal();
     }
 
     function toggleEditMode() {
@@ -1363,14 +1306,12 @@
       if (isEditMode) {
         label.innerText = 'Unlocked';
         icon.className = 'fa-solid fa-lock-open text-emerald-400';
-        addBtn.classList.remove('hidden');
-        addBtn.classList.add('flex');
-        showToast('Dashboard unlocked for drag-and-drop & editing', 'blue');
+        addBtn.classList.remove('hidden'); addBtn.classList.add('flex');
+        showToast('Dashboard unlocked for editing', 'blue');
       } else {
         label.innerText = 'Locked';
         icon.className = 'fa-solid fa-lock text-amber-400';
-        addBtn.classList.remove('flex');
-        addBtn.classList.add('hidden');
+        addBtn.classList.remove('flex'); addBtn.classList.add('hidden');
         showToast('Dashboard locked', 'emerald');
       }
       renderApps();
@@ -1417,60 +1358,32 @@
       const container = document.getElementById('icon-grid-container');
       const q = query.toLowerCase().trim();
       const filtered = unifiedIconLibrary.filter(item => item.name.includes(q) || item.value.includes(q));
-
-      if (filtered.length === 0) {
-        container.innerHTML = `<div class="col-span-full py-8 text-center text-xs text-slate-400">No icons found matching "${query}"</div>`;
-        return;
-      }
-
-      container.innerHTML = filtered.map(item => {
-        const isUrl = item.type === 'url';
-        const displayHtml = isUrl 
-          ? `<img src="${item.value}" class="w-7 h-7 object-contain" />` 
-          : `<i class="${item.value} text-lg text-slate-200 group-hover:text-orange-400"></i>`;
-        
-        return `
-          <button type="button" onclick="selectUnifiedIcon('${item.value}')" title="${item.name}" class="p-3 bg-slate-900 hover:bg-orange-600/20 hover:border-orange-500/50 border border-white/10 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group">
-            ${displayHtml}
-            <span class="text-[9px] text-slate-400 truncate w-full text-center">${item.name.split(' ')[0]}</span>
-          </button>
-        `;
-      }).join('');
+      container.innerHTML = filtered.map(item => `
+        <button type="button" onclick="selectUnifiedIcon('${item.value}')" class="p-3 bg-slate-900 hover:bg-orange-600/20 border border-white/10 rounded-xl flex flex-col items-center justify-center gap-1.5">
+          ${item.type === 'url' ? `<img src="${item.value}" class="w-7 h-7 object-contain" />` : `<i class="${item.value} text-lg text-slate-200"></i>`}
+          <span class="text-[9px] text-slate-400 truncate w-full text-center">${item.name}</span>
+        </button>
+      `).join('');
     }
-
     function filterIconGrid(val) { renderIconGrid(val); }
+    function selectUnifiedIcon(val) { document.getElementById('app-icon-fa').value = val; iconWasModified = true; closeIconPickerModal(); }
 
-    function selectUnifiedIcon(iconVal) {
-      document.getElementById('app-icon-fa').value = iconVal;
-      iconWasModified = true;
-      closeIconPickerModal();
-      showToast(`Selected icon successfully`, 'emerald');
-    }
-
-    // Upload user icon scoped to current profile
     async function handleIconUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async function(evt) {
-        const base64 = evt.target.result;
         const p = getCurrentProfile();
-        try {
-          const res = await fetch('/api/upload-icon', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: base64, filename: file.name, profileId: p.id })
-          });
-          if (res.ok) {
-            const data = await res.json();
-            uploadedIconBase64 = data.url;
-            iconWasModified = true;
-            showToast('Icon uploaded and scoped to profile', 'emerald');
-          } else {
-            showToast('Failed to upload icon', 'rose');
-          }
-        } catch(err) {
-          showToast('Error uploading icon', 'rose');
+        const res = await fetch('/api/upload-icon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: evt.target.result, filename: file.name, profileId: p.id })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          uploadedIconBase64 = data.url;
+          iconWasModified = true;
+          showToast('Icon uploaded successfully', 'emerald');
         }
       };
       reader.readAsDataURL(file);
@@ -1480,14 +1393,9 @@
       document.getElementById('app-form').reset();
       document.getElementById('app-id').value = '';
       document.getElementById('app-api-key').value = '';
-      document.getElementById('app-custom-bg').value = '#1e293b';
-      document.getElementById('app-font-color').value = '#f1f5f9';
-      document.getElementById('app-ping-enabled').checked = true;
       uploadedIconBase64 = '';
       iconWasModified = false;
       setIconType('fa');
-      document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-square-plus text-orange-400"></i> Add New Tile';
-
       const profile = getCurrentProfile();
       document.getElementById('app-category').innerHTML = profile.categories.map(c => `<option value="${c}">${c}</option>`).join('');
 
@@ -1503,24 +1411,12 @@
           document.getElementById('app-custom-bg').value = app.customBg || '#1e293b';
           document.getElementById('app-font-color').value = app.fontColor || '#f1f5f9';
           document.getElementById('app-ping-enabled').checked = app.pingEnabled !== false;
-
-          if (app.icon && (app.icon.startsWith('/data/icons/') || app.icon.startsWith('data:image/'))) {
-            setIconType('url');
-            document.getElementById('app-icon-url-input').value = app.icon;
-          } else if (app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://'))) {
-            setIconType('url');
-            document.getElementById('app-icon-url-input').value = app.icon;
-          } else {
-            setIconType('fa');
-            document.getElementById('app-icon-fa').value = app.icon || '';
-          }
-          iconWasModified = false;
-          document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square text-amber-400"></i> Edit Tile';
+          setIconType('url');
+          document.getElementById('app-icon-url-input').value = app.icon;
         }
       }
       document.getElementById('app-modal').classList.remove('hidden');
     }
-
     function closeAppModal() { document.getElementById('app-modal').classList.add('hidden'); }
 
     async function saveApp(e) {
@@ -1532,418 +1428,102 @@
       const url = document.getElementById('app-url').value;
       const color = document.getElementById('app-color').value;
       const apiKey = document.getElementById('app-api-key').value.trim();
-      const customBgVal = document.getElementById('app-custom-bg').value;
-      const customBg = customBgVal === '#1e293b' ? '' : customBgVal;
-      const fontColorVal = document.getElementById('app-font-color').value;
-      const fontColor = fontColorVal === '#f1f5f9' ? '' : fontColorVal;
+      const customBg = document.getElementById('app-custom-bg').value === '#1e293b' ? '' : document.getElementById('app-custom-bg').value;
+      const fontColor = document.getElementById('app-font-color').value === '#f1f5f9' ? '' : document.getElementById('app-font-color').value;
       const pingEnabled = document.getElementById('app-ping-enabled').checked;
 
-      const existingApp = id ? profile.apps.find(a => a.id === id) : null;
-      let icon = existingApp ? existingApp.icon : 'fa-solid fa-globe';
-
+      let icon = id ? profile.apps.find(a => a.id === id).icon : 'fa-solid fa-globe';
       if (!id || iconWasModified) {
-        if (currentIconMode === 'favicon') {
-          try { 
-            const faviconUrl = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=128`;
-            icon = await cacheIconLocally(faviconUrl);
-          } catch(e){}
-        } else if (currentIconMode === 'fa') {
+        if (currentIconMode === 'fa') {
           icon = document.getElementById('app-icon-fa').value || 'fa-solid fa-globe';
-          if (icon.startsWith('http://') || icon.startsWith('https://')) {
-            icon = await cacheIconLocally(icon);
-          }
         } else if (currentIconMode === 'url') {
-          const rawUrl = document.getElementById('app-icon-url-input').value.trim() || '';
-          if (rawUrl) {
-            if (rawUrl.startsWith('/data/icons/')) {
-              icon = rawUrl;
-            } else {
-              icon = await cacheIconLocally(rawUrl);
-            }
-          }
+          icon = document.getElementById('app-icon-url-input').value.trim();
         } else if (currentIconMode === 'upload') {
-          icon = uploadedIconBase64 || '';
+          icon = uploadedIconBase64;
         }
       }
 
       if (id) {
         const idx = profile.apps.findIndex(a => a.id === id);
         if (idx !== -1) profile.apps[idx] = { ...profile.apps[idx], name, category, url, icon, color, apiKey, customBg, fontColor, pingEnabled };
-        showToast('Tile updated successfully', 'emerald');
       } else {
         profile.apps.unshift({ id: Date.now().toString(), name, category, url, icon, color, apiKey, customBg, fontColor, pingEnabled });
-        showToast('Tile created', 'emerald');
       }
-
       saveState();
       renderApps();
-      runLivePings();
       closeAppModal();
-    }
-
-    async function cacheIconLocally(externalUrl) {
-      if (!externalUrl || (!externalUrl.startsWith('http://') && !externalUrl.startsWith('https://'))) return externalUrl;
-      try {
-        const res = await fetch('/api/cache-icon', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: externalUrl })
-        });
-        if (!res.ok) return externalUrl;
-        const data = await res.json();
-        if (data && data.url) return data.url;
-      } catch (err) {}
-      return externalUrl;
-    }
-
-    function editApp(id) { openAppModal(id); }
-
-    function confirmDeleteApp(id) {
-      const profile = getCurrentProfile();
-      const app = profile.apps.find(a => a.id === id);
-      openConfirmModal(`Delete '${app ? app.name : 'Tile'}'?`, 'Are you sure you want to remove this tile?', () => {
-        profile.apps = profile.apps.filter(a => a.id !== id);
-        saveState();
-        renderApps();
-        showToast('Tile removed', 'rose');
-      });
-    }
-
-    function confirmDeleteCategory(cat) {
-      openConfirmModal(`Delete Category '${cat}'?`, 'Apps in this category will remain.', () => {
-        const profile = getCurrentProfile();
-        profile.categories = profile.categories.filter(c => c !== cat);
-        saveState();
-        renderCategories();
-        showToast('Category removed', 'rose');
-      });
+      showToast('Tile saved', 'emerald');
     }
 
     function openProfilesModal() {
       const profile = getCurrentProfile();
-      const isAdmin = profile.isMain;
       const list = document.getElementById('profiles-list');
       const baseUrl = window.location.origin + window.location.pathname;
 
-      list.innerHTML = profiles.map(p => {
-        const directUrl = `${baseUrl}?profile=${p.id}`;
-        return `
-          <div class="flex items-center justify-between bg-slate-900/85 p-3 rounded-xl border border-white/5 text-xs">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center overflow-hidden font-bold text-white">
-                ${p.avatar ? `<img src="${p.avatar}" class="w-full h-full object-cover">` : p.name.charAt(0)}
-              </div>
-              <div>
-                <div class="font-bold text-white flex items-center gap-1">${p.name} ${p.isMain ? '👑' : ''} ${defaultStartupProfileId === p.id ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30">Default</span>' : ''} ${p.password ? '<i class="fa-solid fa-lock text-[10px] text-amber-400" title="Password Protected"></i>' : ''}</div>
-                <div class="text-[10px] opacity-60">${p.apps.length} tiles</div>
-              </div>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <button onclick="copyText('${directUrl}')" title="Copy Direct Profile Bookmark URL" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] border border-white/10 flex items-center gap-1"><i class="fa-solid fa-link text-orange-400"></i> Direct Link</button>
-              ${currentProfileId !== p.id ? `<button onclick="switchProfile('${p.id}')" class="px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-semibold">Switch</button>` : `<span class="text-emerald-400 font-semibold px-2">Active</span>`}
-              ${isAdmin && !p.isMain ? `<button onclick="confirmDeleteProfile('${p.id}')" class="text-rose-400 p-1 hover:text-rose-300 ml-1" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>` : ''}
+      list.innerHTML = profiles.map(p => `
+        <div class="flex items-center justify-between bg-slate-900/85 p-3 rounded-xl border border-white/5 text-xs">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center font-bold text-white">${p.name.charAt(0)}</div>
+            <div>
+              <div class="font-bold text-white">${p.name} ${p.isMain ? '👑' : ''}</div>
+              <div class="text-[10px] opacity-60">${p.apps.length} tiles</div>
             </div>
           </div>
-        `;
-      }).join('');
-
-      const adminActions = document.getElementById('profiles-admin-actions');
-      if (isAdmin) {
-        adminActions.classList.remove('hidden');
-        adminActions.classList.add('flex');
-      } else {
-        adminActions.classList.remove('flex');
-        adminActions.classList.add('hidden');
-      }
-
+          <div class="flex items-center gap-1.5">
+            <button onclick="copyText('${baseUrl}?profile=${p.id}')" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-white/10">Direct Link</button>
+            ${currentProfileId !== p.id ? `<button onclick="switchProfile('${p.id}')" class="px-3 py-1 bg-orange-600 text-white rounded-lg text-xs font-semibold">Switch</button>` : `<span class="text-emerald-400 font-semibold px-2">Active</span>`}
+          </div>
+        </div>
+      `).join('');
       document.getElementById('profiles-modal').classList.remove('hidden');
     }
     function closeProfilesModal() { document.getElementById('profiles-modal').classList.add('hidden'); }
 
-    function openEditAdminModal() {
-      if (!getCurrentProfile().isMain) {
-        showToast('Unauthorized: Only Admin can edit Admin settings', 'rose');
-        return;
-      }
-      closeProfilesModal();
-      const admin = profiles.find(p => p.isMain);
-      document.getElementById('admin-name-input').value = admin.name;
-      document.getElementById('admin-pass-input').value = admin.password || '';
-      document.getElementById('admin-avatar-input').value = admin.avatar || '';
-      document.getElementById('admin-edit-modal').classList.remove('hidden');
-    }
-    function closeAdminEditModal() { document.getElementById('admin-edit-modal').classList.add('hidden'); }
-
-    let adminAvatarBase64 = '';
-    function handleAdminAvatarUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        adminAvatarBase64 = evt.target.result;
-        document.getElementById('admin-avatar-input').value = adminAvatarBase64;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function saveAdminProfile(e) {
-      e.preventDefault();
-      if (!getCurrentProfile().isMain) {
-        showToast('Unauthorized access', 'rose');
-        return;
-      }
-      const admin = profiles.find(p => p.isMain);
-      admin.name = document.getElementById('admin-name-input').value.trim() || 'Admin';
-      admin.password = document.getElementById('admin-pass-input').value;
-      admin.avatar = document.getElementById('admin-avatar-input').value || adminAvatarBase64;
-      saveState();
-      renderCurrentProfileHeader();
-      closeAdminEditModal();
-      showToast('Admin profile updated successfully', 'emerald');
-    }
-
     function switchProfile(id) {
-      const p = profiles.find(item => item.id === id);
-      if (p && p.password && p.password.trim() !== '') {
-        pendingProfileId = id;
-        pendingProtectedAction = null;
-        document.getElementById('prompt-profile-name').innerText = `Enter password for ${p.name}`;
-        document.getElementById('unlock-password-input').value = '';
-        document.getElementById('password-prompt-modal').classList.remove('hidden');
-        closeProfilesModal();
-      } else {
-        currentProfileId = id;
-        saveState();
-        applyProfilePreferences();
-        fetchWeather();
-        renderCurrentProfileHeader();
-        renderCategories();
-        renderApps();
-        runLivePings();
-        setupPingInterval();
-        closeProfilesModal();
-        showToast(`Switched to profile: ${p.name}`, 'blue');
-      }
-    }
-
-    function verifyProfilePassword(e) {
-      e.preventDefault();
-      const val = document.getElementById('unlock-password-input').value;
-      
-      if (pendingProfileId) {
-        const p = profiles.find(item => item.id === pendingProfileId);
-        if (p && p.password === val) {
-          currentProfileId = pendingProfileId;
-          pendingProfileId = null;
-          saveState();
-          applyProfilePreferences();
-          fetchWeather();
-          renderCurrentProfileHeader();
-          renderCategories();
-          renderApps();
-          runLivePings();
-          setupPingInterval();
-          document.getElementById('password-prompt-modal').classList.add('hidden');
-          showToast(`Unlocked profile: ${p.name}`, 'emerald');
-        } else {
-          showToast('Incorrect password', 'rose');
-        }
-      } else if (pendingProtectedAction) {
-        const p = getCurrentProfile();
-        if (p && p.password === val) {
-          const action = pendingProtectedAction;
-          pendingProtectedAction = null;
-          document.getElementById('password-prompt-modal').classList.add('hidden');
-          executeProtectedAction(action);
-          showToast('Password verified', 'emerald');
-        } else {
-          showToast('Incorrect password', 'rose');
-        }
-      }
-    }
-    function closePasswordPrompt() { 
-      pendingProfileId = null;
-      pendingProtectedAction = null;
-      document.getElementById('password-prompt-modal').classList.add('hidden'); 
-    }
-
-    function openCreateProfileModal() {
-      if (!getCurrentProfile().isMain) {
-        showToast('Unauthorized: Only Admin can create profiles', 'rose');
-        return;
-      }
-      closeProfilesModal();
-      document.getElementById('profile-form').reset();
-      document.getElementById('profile-edit-id').value = '';
-      document.getElementById('profile-modal-title').innerText = 'Create New User Profile';
-      document.getElementById('profile-edit-modal').classList.remove('hidden');
-    }
-    function closeProfileEditModal() { document.getElementById('profile-edit-modal').classList.add('hidden'); }
-
-    let profileAvatarBase64 = '';
-    function handleProfileAvatarUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        profileAvatarBase64 = evt.target.result;
-        document.getElementById('profile-avatar-input').value = profileAvatarBase64;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function saveProfile(e) {
-      e.preventDefault();
-      if (!getCurrentProfile().isMain) {
-        showToast('Unauthorized access', 'rose');
-        return;
-      }
-      const name = document.getElementById('profile-name-input').value.trim();
-      const password = document.getElementById('profile-pass-input').value;
-      const avatar = document.getElementById('profile-avatar-input').value || profileAvatarBase64;
-
-      const newId = 'prof_' + Date.now();
-      const cleanDefaultApps = [
-        { id: '101', name: 'Dashboard Home', category: 'Web', url: '#', icon: 'fa-solid fa-house', color: 'orange', customBg: '', fontColor: '#f1f5f9', pingEnabled: false, apiKey: '' }
-      ];
-      profiles.push({
-        id: newId,
-        name,
-        isMain: false,
-        password,
-        avatar,
-        theme: 'dark',
-        weatherZip: '28601',
-        pingIntervalSec: 60,
-        tileSpacingVal: '2',
-        customBgData: '',
-        bgScaleMode: 'cover',
-        bgZoomVal: 100,
-        bgOpacity: 30,
-        bgTrueColor: false,
-        apps: cleanDefaultApps,
-        categories: [...defaultCategories]
-      });
-      currentProfileId = newId;
+      currentProfileId = id;
       saveState();
       applyProfilePreferences();
-      fetchWeather();
       renderCurrentProfileHeader();
       renderCategories();
       renderApps();
-      runLivePings();
-      setupPingInterval();
-      closeProfileEditModal();
-      showToast(`Profile '${name}' created and activated`, 'emerald');
+      closeProfilesModal();
+      showToast('Switched profile', 'blue');
     }
 
-    function confirmDeleteProfile(id) {
-      if (!getCurrentProfile().isMain) {
-        showToast('Unauthorized access', 'rose');
-        return;
-      }
-      openConfirmModal('Delete Profile?', 'This will remove the user profile and its custom tiles.', () => {
-        profiles = profiles.filter(p => p.id !== id);
-        currentProfileId = profiles[0].id;
-        saveState();
-        applyProfilePreferences();
-        fetchWeather();
-        renderCurrentProfileHeader();
-        renderCategories();
-        renderApps();
-        runLivePings();
-        setupPingInterval();
-        closeProfilesModal();
-        showToast('Profile deleted', 'rose');
-      });
-    }
-
-    function openSettingsModal() { 
-      document.getElementById('settings-modal').classList.remove('hidden'); 
-      loadLocalAssetsManager();
-    }
+    function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); loadLocalAssetsManager(); }
     function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
-    
-    function openWikiModal() {
-      document.getElementById('full-source-textarea').value = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-      document.getElementById('wiki-modal').classList.remove('hidden');
-    }
+    function openWikiModal() { document.getElementById('wiki-modal').classList.remove('hidden'); }
     function closeWikiModal() { document.getElementById('wiki-modal').classList.add('hidden'); }
 
-    function switchWikiTab(tab) {
-      ['features', 'docker', 'security', 'source'].forEach(t => {
-        const btn = document.getElementById(`wiki-tab-${t}`);
-        const content = document.getElementById(`wiki-content-${t}`);
-        if (t === tab) {
-          btn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow-md';
-          content.classList.remove('hidden');
-        } else {
-          btn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700';
-          content.classList.add('hidden');
-        }
-      });
-    }
-
-    function copyFullSourceCode() {
-      const ta = document.getElementById('full-source-textarea');
-      ta.select();
-      document.execCommand('copy');
-      showToast('Full source code copied to clipboard!', 'emerald');
-    }
-
-    function setTheme(themeName, save = true) {
-      const p = getCurrentProfile();
-      p.theme = themeName;
+    function setTheme(name, save = true) {
+      getCurrentProfile().theme = name;
       document.body.classList.remove('theme-light', 'theme-neon');
-      if (themeName === 'light') document.body.classList.add('theme-light');
-      else if (themeName === 'neon') document.body.classList.add('theme-neon');
-      if (save) {
-        saveState();
-        showToast(`Theme switched to ${themeName.toUpperCase()}`, 'emerald');
-      }
+      if (name === 'light') document.body.classList.add('theme-light');
+      else if (name === 'neon') document.body.classList.add('theme-neon');
+      if (save) { saveState(); showToast(`Theme updated`, 'emerald'); }
     }
 
-    function saveWeatherZip(val) {
-      const p = getCurrentProfile();
-      p.weatherZip = val.trim();
-      saveState();
-      fetchWeather();
-    }
+    function saveWeatherZip(val) { getCurrentProfile().weatherZip = val.trim(); saveState(); fetchWeather(); }
+    function savePingInterval(val) { getCurrentProfile().pingIntervalSec = parseInt(val) || 60; saveState(); setupPingInterval(); }
 
-    function savePingInterval(val) {
-      const p = getCurrentProfile();
-      p.pingIntervalSec = Math.max(5, parseInt(val) || 60);
-      saveState();
-      setupPingInterval();
-      showToast(`Ping interval set to ${p.pingIntervalSec}s`, 'blue');
-    }
-
-    // Wallpaper Upload scoped to user profile
     async function handleBgUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async function(evt) {
-        const base64 = evt.target.result;
         const p = getCurrentProfile();
-        try {
-          const res = await fetch('/api/upload-wallpaper', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: base64, filename: file.name, profileId: p.id })
-          });
-          if (res.ok) {
-            const data = await res.json();
-            p.customBgData = data.url;
-            saveState();
-            applyBackgroundDisplay(p.customBgData);
-            showToast('Wallpaper uploaded & saved to server', 'emerald');
-            loadLocalAssetsManager();
-          } else {
-            showToast('Failed to upload wallpaper', 'rose');
-          }
-        } catch(err) {
-          showToast('Error uploading wallpaper', 'rose');
+        const res = await fetch('/api/upload-wallpaper', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: evt.target.result, filename: file.name, profileId: p.id })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          p.customBgData = data.url;
+          saveState();
+          applyBackgroundDisplay(p.customBgData);
+          loadLocalAssetsManager();
+          showToast('Wallpaper uploaded & applied', 'emerald');
         }
       };
       reader.readAsDataURL(file);
@@ -1955,18 +1535,12 @@
       updateBgScaleButtons(mode);
       applyBackgroundDisplay(p.customBgData);
       saveState();
-      showToast(`Wallpaper scale: ${mode.toUpperCase()}`, 'blue');
     }
 
     function updateBgScaleButtons(activeMode) {
       ['cover', 'contain', 'stretch', 'tile'].forEach(m => {
         const btn = document.getElementById(`bg-scale-${m}`);
-        if (!btn) return;
-        if (m === activeMode) {
-          btn.className = 'px-2 py-1.5 rounded-xl text-xs font-semibold border border-orange-500 bg-orange-500/20 text-orange-300';
-        } else {
-          btn.className = 'px-2 py-1.5 rounded-xl text-xs font-semibold border border-white/10 bg-slate-900 text-slate-300';
-        }
+        if (btn) btn.className = m === activeMode ? 'px-2 py-1.5 rounded-xl text-xs font-semibold border border-orange-500 bg-orange-500/20 text-orange-300' : 'px-2 py-1.5 rounded-xl text-xs font-semibold border border-white/10 bg-slate-900 text-slate-300';
       });
     }
 
@@ -1998,8 +1572,8 @@
       p.customBgData = '';
       saveState();
       document.getElementById('custom-bg-overlay').style.display = 'none';
-      document.getElementById('setting-bg-file').value = '';
-      showToast('Background wallpaper cleared', 'emerald');
+      showToast('Background cleared', 'emerald');
+      loadLocalAssetsManager();
     }
 
     function applyBackgroundDisplay(data) {
@@ -2011,202 +1585,40 @@
         
         const mode = p.bgScaleMode || 'cover';
         const zoom = p.bgZoomVal || 100;
+        const posX = p.bgPosX !== undefined ? p.bgPosX : 50;
+        const posY = p.bgPosY !== undefined ? p.bgPosY : 50;
 
+        bg.style.backgroundPosition = `${posX}% ${posY}%`;
         if (mode === 'tile') {
           bg.style.backgroundSize = `${zoom}%`;
           bg.style.backgroundRepeat = 'repeat';
-          bg.style.backgroundPosition = 'top left';
         } else if (mode === 'stretch') {
           bg.style.backgroundSize = `${zoom}% ${zoom}%`;
           bg.style.backgroundRepeat = 'no-repeat';
-          bg.style.backgroundPosition = 'center center';
         } else if (mode === 'contain') {
           bg.style.backgroundSize = `${zoom}% auto`;
           bg.style.backgroundRepeat = 'no-repeat';
-          bg.style.backgroundPosition = 'center center';
         } else {
           bg.style.backgroundSize = `${zoom}%`;
           bg.style.backgroundRepeat = 'no-repeat';
-          bg.style.backgroundPosition = 'center center';
         }
-
         bg.style.display = 'block';
-      } else { bg.style.display = 'none'; }
+      } else {
+        bg.style.display = 'none';
+      }
     }
 
     function addNewCategoryPrompt() {
       const name = prompt("Enter new category name:");
       if (name && name.trim()) {
-        const profile = getCurrentProfile();
-        const cat = name.trim();
-        if (!profile.categories.includes(cat)) {
-          profile.categories.push(cat);
+        const p = getCurrentProfile();
+        if (!p.categories.includes(name.trim())) {
+          p.categories.push(name.trim());
           saveState();
           renderCategories();
-          showToast(`Category '${cat}' added`, 'emerald');
+          showToast('Category added', 'emerald');
         }
       }
-    }
-
-    function simpleEncryptPassword(pass) {
-      if (!pass) return '';
-      let hash = 'hm_enc_v1:';
-      for (let i = 0; i < pass.length; i++) {
-        hash += (pass.charCodeAt(i) ^ 0x5A).toString(16).padStart(2, '0');
-      }
-      return hash;
-    }
-
-    function simpleDecryptPassword(enc) {
-      if (!enc) return '';
-      if (!enc.startsWith('hm_enc_v1:')) return enc;
-      try {
-        const hex = enc.replace('hm_enc_v1:', '');
-        let pass = '';
-        for (let i = 0; i < hex.length; i += 2) {
-          pass += String.fromCharCode(parseInt(hex.substr(i, 2), 16) ^ 0x5A);
-        }
-        return pass;
-      } catch(e) { return ''; }
-    }
-
-    function exportConfig() {
-      const secureProfiles = profiles.map(p => ({
-        ...p,
-        password: simpleEncryptPassword(p.password)
-      }));
-
-      const payload = {
-        version: '2.6',
-        timestamp: new Date().toISOString(),
-        currentProfileId,
-        defaultStartupProfileId,
-        profiles: secureProfiles
-      };
-
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
-      const anchor = document.createElement('a');
-      anchor.setAttribute("href", dataStr);
-      anchor.setAttribute("download", `homelink-secure-backup-${new Date().toISOString().slice(0,10)}.homelink`);
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      showToast('Secure backup exported successfully', 'emerald');
-    }
-
-    function importConfig(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        try {
-          const data = JSON.parse(evt.target.result);
-          if (data && data.profiles && Array.isArray(data.profiles)) {
-            profiles = data.profiles.map(p => ({
-              ...p,
-              password: simpleDecryptPassword(p.password)
-            }));
-            if (data.defaultStartupProfileId) defaultStartupProfileId = data.defaultStartupProfileId;
-            if (data.currentProfileId && profiles.some(p => p.id === data.currentProfileId)) {
-              currentProfileId = data.currentProfileId;
-            } else {
-              currentProfileId = profiles[0].id;
-            }
-            saveState();
-            applyProfilePreferences();
-            fetchWeather();
-            renderCurrentProfileHeader();
-            renderCategories();
-            renderApps();
-            runLivePings();
-            setupPingInterval();
-            closeSettingsModal();
-            showToast('Secure backup restored successfully', 'emerald');
-          } else {
-            showToast('Invalid backup file format', 'rose');
-          }
-        } catch(err) {
-          showToast('Failed to parse backup file', 'rose');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function importHeimdallJson(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        try {
-          const items = JSON.parse(evt.target.result);
-          if (!Array.isArray(items)) {
-            showToast('Invalid Heimdall export format', 'rose');
-            return;
-          }
-
-          const profile = getCurrentProfile();
-          let importedCount = 0;
-
-          items.forEach(item => {
-            if (!item.title || !item.url) return;
-
-            let apiKey = '';
-            if (item.description) {
-              try {
-                const descObj = JSON.parse(item.description);
-                apiKey = descObj.apikey || descObj.api_key || descObj.token || '';
-              } catch(err) {}
-            }
-
-            let color = 'orange';
-            const c = (item.colour || '').toLowerCase();
-            if (c.includes('161b1f') || c.includes('000') || c.includes('fafbfc')) color = 'orange';
-            else if (c.includes('00f') || c.includes('181')) color = 'blue';
-            else if (c.includes('e0e') || c.includes('ece')) color = 'purple';
-            else if (c.includes('55a') || c.includes('a0a')) color = 'amber';
-            else if (c.includes('d82')) color = 'emerald';
-
-            let category = 'Web';
-            const t = item.title.toLowerCase();
-            if (t.includes('sonarr') || t.includes('radarr') || t.includes('plex') || t.includes('audiobook') || t.includes('immich') || t.includes('prowlarr') || t.includes('qbittorrent') || t.includes('overseerr')) category = 'Media';
-            else if (t.includes('truenas') || t.includes('nas') || t.includes('dockge') || t.includes('termix')) category = 'Storage & NAS';
-            else if (t.includes('homeassistant') || t.includes('octoprint')) category = 'Smart Home';
-            else if (t.includes('unifi') || t.includes('wireguard')) category = 'Networking';
-
-            if (!profile.categories.includes(category)) profile.categories.push(category);
-
-            let icon = 'fa-solid fa-globe';
-            try {
-              const hostname = new URL(item.url).hostname;
-              icon = `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
-            } catch(err) {}
-
-            profile.apps.push({
-              id: 'heim_' + Math.random().toString(36).substr(2, 9),
-              name: item.title,
-              category: category,
-              url: item.url,
-              icon: icon,
-              color: color,
-              apiKey: apiKey,
-              customBg: '',
-              fontColor: '',
-              pingEnabled: true
-            });
-            importedCount++;
-          });
-
-          saveState();
-          renderCategories();
-          renderApps();
-          runLivePings();
-          closeSettingsModal();
-          showToast(`Successfully imported ${importedCount} apps from Heimdall!`, 'emerald');
-        } catch(err) {
-          showToast('Failed to parse Heimdall JSON file', 'rose');
-        }
-      };
-      reader.readAsText(file);
     }
 
     let confirmCallback = null;
@@ -2215,20 +1627,13 @@
       document.getElementById('confirm-message').innerText = msg;
       confirmCallback = cb;
       document.getElementById('confirm-modal').classList.remove('hidden');
-      document.getElementById('confirm-btn-yes').onclick = () => {
-        closeConfirmModal();
-        if (confirmCallback) confirmCallback();
-      };
+      document.getElementById('confirm-btn-yes').onclick = () => { closeConfirmModal(); if (confirmCallback) confirmCallback(); };
     }
     function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); }
 
     function onSearchInput(val) { searchQuery = val; document.getElementById('search-clear-btn').classList.toggle('hidden', !val); renderApps(); }
     function clearSearchInput() { document.getElementById('search-input').value = ''; searchQuery = ''; document.getElementById('search-clear-btn').classList.add('hidden'); renderApps(); }
-    function onSearchEngineChange(val) {
-      const input = document.getElementById('search-input');
-      input.placeholder = val === 'filter' ? 'Filter homelab tiles...' : `Search ${val.toUpperCase()}...`;
-      renderApps();
-    }
+    function onSearchEngineChange(val) { document.getElementById('search-input').placeholder = val === 'filter' ? 'Filter homelab tiles...' : `Search ${val.toUpperCase()}...`; renderApps(); }
     function handleSearch(e) {
       e.preventDefault();
       const engine = document.getElementById('search-engine').value;
@@ -2243,38 +1648,21 @@
       };
       if (urls[engine]) window.open(urls[engine], '_blank');
     }
-    function resetFilters() { searchQuery = ''; activeCategory = 'All'; document.getElementById('search-input').value = ''; document.getElementById('search-engine').value = 'filter'; renderCategories(); renderApps(); }
-
-    function resetToDefaults() {
-      openConfirmModal('Reset to Defaults?', 'This will reset profiles, tiles, and settings.', () => {
-        localStorage.clear();
-        location.reload();
-      });
-    }
+    function resetFilters() { searchQuery = ''; activeCategory = 'All'; document.getElementById('search-input').value = ''; renderCategories(); renderApps(); }
+    function resetToDefaults() { openConfirmModal('Reset?', 'Reset configuration?', () => { localStorage.clear(); location.reload(); }); }
 
     function copyText(text) {
-      const t = document.createElement('input');
-      t.value = text;
-      document.body.appendChild(t);
-      t.select();
-      document.execCommand('copy');
-      document.body.removeChild(t);
-      showToast(`Copied Direct Link to Clipboard!`, 'emerald');
+      const t = document.createElement('input'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
+      showToast('Copied to clipboard!', 'emerald');
     }
-    function copyToClipboard(id) { copyText(document.getElementById(id).innerText); }
 
     function showToast(msg, color = 'emerald') {
       const toast = document.getElementById('toast');
-      const toastMsg = document.getElementById('toast-message');
-      const toastIcon = document.getElementById('toast-icon');
-      toastMsg.innerText = msg;
-      toastIcon.className = color === 'rose' ? 'fa-solid fa-circle-xmark text-rose-400 text-lg' : color === 'blue' ? 'fa-solid fa-circle-info text-blue-400 text-lg' : 'fa-solid fa-circle-check text-emerald-400 text-lg';
+      document.getElementById('toast-message').innerText = msg;
+      document.getElementById('toast-icon').className = color === 'rose' ? 'fa-solid fa-circle-xmark text-rose-400 text-lg' : color === 'blue' ? 'fa-solid fa-circle-info text-blue-400 text-lg' : 'fa-solid fa-circle-check text-emerald-400 text-lg';
       toast.classList.remove('translate-y-20', 'opacity-0');
       toast.classList.add('translate-y-0', 'opacity-100');
-      setTimeout(() => {
-        toast.classList.remove('translate-y-0', 'opacity-100');
-        toast.classList.add('translate-y-20', 'opacity-0');
-      }, 3000);
+      setTimeout(() => { toast.classList.remove('translate-y-0', 'opacity-100'); toast.classList.add('translate-y-20', 'opacity-0'); }, 3000);
     }
   </script>
 </body>
