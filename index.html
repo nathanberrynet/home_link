@@ -20,15 +20,29 @@
       --card-bg: rgba(30, 41, 59, 0.65);
       --border-color: rgba(255, 255, 255, 0.08);
     }
-    body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; }
+    body.theme-light {
+      --bg-color: #f8fafc;
+      --text-color: #0f172a;
+      --panel-bg: rgba(255, 255, 255, 0.9);
+      --card-bg: rgba(255, 255, 255, 0.75);
+      --border-color: rgba(0, 0, 0, 0.08);
+    }
+    body.theme-neon {
+      --bg-color: #05050a;
+      --text-color: #f0fdfa;
+      --panel-bg: rgba(18, 9, 36, 0.9);
+      --card-bg: rgba(28, 15, 54, 0.7);
+      --border-color: rgba(236, 72, 153, 0.25);
+    }
+    body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; transition: background-color 0.3s ease; }
     .glass-panel { background: var(--panel-bg); backdrop-filter: blur(16px); border: 1px solid var(--border-color); }
     .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); transition: all 0.25s ease; }
     .glass-card:hover { border-color: rgba(255, 255, 255, 0.2); transform: translateY(-3px); box-shadow: 0 12px 30px -10px rgba(0,0,0,0.5); }
   </style>
 </head>
-<body class="relative selection:bg-orange-500 selection:text-white pb-12">
+<body id="main-body" class="relative selection:bg-orange-500 selection:text-white pb-12">
 
-  <div id="custom-bg-overlay" class="fixed inset-0 pointer-events-none z-0" style="display: none;"></div>
+  <div id="custom-bg-overlay" class="fixed inset-0 pointer-events-none z-0 transition-all duration-300" style="display: none;"></div>
 
   <header class="sticky top-0 z-30 glass-panel border-b border-white/10 px-4 lg:px-8 py-3 mb-6">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
@@ -66,9 +80,12 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-4 lg:px-8 z-10 relative">
-    <div class="flex items-center justify-between gap-4 mb-6">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
       <div id="category-tabs" class="flex items-center gap-1.5 overflow-x-auto w-full pb-2"></div>
+      <div id="profile-switcher-container" class="flex items-center gap-2"></div>
     </div>
+    
+    <div id="system-monitor-container" class="mb-6"></div>
     <div id="apps-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
   </main>
 
@@ -119,37 +136,130 @@
     </div>
   </div>
 
-  <!-- Settings Modal -->
+  <!-- Full Settings Modal (Restored Profiles, Passwords, Admin, Themes, System Monitor, & Wallpaper Studio Gallery) -->
   <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
-    <div class="glass-panel w-full max-w-xl rounded-2xl border border-white/10 p-6 shadow-2xl">
-      <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
-        <h3 class="text-lg font-bold">Settings & Local Assets</h3>
-        <button onclick="closeSettingsModal()" class="opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
+    <div class="glass-panel w-full max-w-2xl rounded-2xl border border-white/10 p-6 shadow-2xl max-h-[90vh] overflow-y-auto space-y-6">
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <h3 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-sliders text-orange-400"></i> Profile Preferences & Settings</h3>
+        <button onclick="closeSettingsModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="space-y-4">
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <label class="text-xs font-semibold">Local Scoped Assets Manager</label>
-            <button onclick="loadLocalAssetsManager()" class="text-xs text-orange-400 font-semibold">Refresh</button>
-          </div>
-          <div id="local-icons-manager-list" class="space-y-1.5 max-h-44 overflow-y-auto p-2 bg-slate-900/50 rounded-xl border border-white/5"></div>
+      
+      <!-- Profile Security & Password -->
+      <div class="p-4 bg-slate-900/60 rounded-xl border border-white/5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold text-orange-400 flex items-center gap-2"><i class="fa-solid fa-key"></i> Profile Security & Password</h4>
+          <span id="profile-pwd-status" class="text-[11px] opacity-70">No Password</span>
+        </div>
+        <div class="flex gap-2">
+          <input type="password" id="new-profile-password" placeholder="New password (leave blank to remove)" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+          <button onclick="updateProfilePassword()" class="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap">Update Password</button>
         </div>
       </div>
+
+      <!-- Admin Control -->
+      <div class="p-4 bg-slate-900/60 rounded-xl border border-white/5 space-y-3">
+        <h4 class="text-xs font-bold text-amber-400 flex items-center gap-2"><i class="fa-solid fa-crown"></i> Admin Control: Default Startup Profile</h4>
+        <div class="flex gap-2">
+          <select id="default-startup-profile-select" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white"></select>
+          <button onclick="setDefaultStartupProfile()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap">Set Default</button>
+        </div>
+      </div>
+
+      <!-- Visual Theme & Weather -->
+      <div class="p-4 bg-slate-900/60 rounded-xl border border-white/5 space-y-3">
+        <h4 class="text-xs font-bold text-indigo-400 flex items-center gap-2"><i class="fa-solid fa-palette"></i> Visual Theme & Weather Location</h4>
+        <div class="flex gap-2">
+          <button onclick="setTheme('dark')" class="flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-950 border border-white/10 text-slate-200">Dark</button>
+          <button onclick="setTheme('light')" class="flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-200 text-slate-900">Light</button>
+          <button onclick="setTheme('neon')" class="flex-1 py-2 rounded-xl text-xs font-semibold bg-purple-950 border border-pink-500/30 text-pink-300">Cyberpunk</button>
+        </div>
+      </div>
+
+      <!-- Host System Monitor Tile -->
+      <div class="p-4 bg-slate-900/60 rounded-xl border border-white/5 flex items-center justify-between">
+        <div>
+          <h4 class="text-xs font-bold text-orange-400 flex items-center gap-2"><i class="fa-solid fa-server"></i> Host System Monitor Tile</h4>
+          <p class="text-[11px] opacity-60">Show live server OS, CPU, RAM, and uptime card on dashboard</p>
+        </div>
+        <input type="checkbox" id="show-sys-mon-checkbox" onchange="toggleSystemMonitor(this.checked)" class="w-4 h-4 accent-orange-500 cursor-pointer">
+      </div>
+
+      <!-- Custom Background Wallpaper & Live Studio -->
+      <div class="p-4 bg-slate-900/60 rounded-xl border border-white/5 space-y-4">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold text-orange-400 flex items-center gap-2"><i class="fa-solid fa-image"></i> Custom Background Wallpaper & Live Studio</h4>
+          <button onclick="clearActiveWallpaper()" class="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg text-xs font-semibold">Clear Active</button>
+        </div>
+        
+        <div>
+          <label class="block text-[11px] opacity-70 mb-1">Upload New Wallpaper</label>
+          <input type="file" accept="image/*" onchange="handleBgUpload(event)" class="w-full text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-600 file:text-white hover:file:bg-orange-500 cursor-pointer">
+        </div>
+
+        <div>
+          <label class="block text-[11px] opacity-70 mb-1">Your Wallpaper Gallery (Click to select & preview)</label>
+          <div id="wallpaper-gallery-grid" class="grid grid-cols-4 gap-2 max-h-36 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-white/5"></div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2">
+          <button onclick="setBgScaleMode('cover')" id="scale-cover" class="py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-white border border-white/10">Cover</button>
+          <button onclick="setBgScaleMode('contain')" id="scale-contain" class="py-1.5 rounded-lg text-xs font-semibold bg-slate-950 text-slate-400 border border-white/10">Fit / Contain</button>
+          <button onclick="setBgScaleMode('stretch')" id="scale-stretch" class="py-1.5 rounded-lg text-xs font-semibold bg-slate-950 text-slate-400 border border-white/10">Stretch</button>
+          <button onclick="setBgScaleMode('repeat')" id="scale-repeat" class="py-1.5 rounded-lg text-xs font-semibold bg-slate-950 text-slate-400 border border-white/10">Tile</button>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[11px] opacity-70 mb-1">
+            <span>Custom Zoom / Scale</span>
+            <span id="zoom-val-label">100%</span>
+          </div>
+          <input type="range" min="50" max="200" value="100" id="bg-zoom-range" oninput="updateBgZoom(this.value)" class="w-full accent-orange-500 cursor-pointer">
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[11px] opacity-70 mb-1">
+            <span>Wallpaper Dimmer</span>
+            <span id="opacity-val-label">30%</span>
+          </div>
+          <input type="range" min="0" max="90" value="30" id="bg-opacity-range" oninput="updateBgOpacity(this.value)" class="w-full accent-orange-500 cursor-pointer">
+        </div>
+      </div>
+
+      <!-- Local Scoped Assets Manager -->
+      <div class="p-4 bg-slate-900/60 rounded-xl border border-white/5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold text-emerald-400 flex items-center gap-2"><i class="fa-solid fa-folder-open"></i> Local Scoped Assets Manager</h4>
+          <button onclick="loadLocalAssetsManager()" class="text-xs text-orange-400 hover:text-orange-300 font-semibold">Refresh</button>
+        </div>
+        <p class="text-[11px] opacity-60">Admin views all assets; users see their own. Swap files are automatically ignored.</p>
+        <div id="local-icons-manager-list" class="space-y-1.5 max-h-44 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-white/5"></div>
+      </div>
+
     </div>
   </div>
 
   <script>
-    let profiles = [{
-      id: 'admin',
-      name: 'Admin',
-      isMain: true,
-      apps: [
-        { id: '1', name: 'TrueNAS CORE', category: 'Storage & NAS', url: 'https://truenas.local', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', color: 'orange' },
-        { id: '2', name: 'Home Assistant', category: 'Smart Home', url: 'http://192.168.1.234:8123', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', color: 'blue' }
-      ],
-      categories: ['Media', 'Storage & NAS', 'Smart Home', 'Networking', 'Web']
-    }];
-    let currentProfileId = 'admin', activeCategory = 'All', searchQuery = '', isEditMode = false;
+    let configData = {
+      defaultStartupProfileId: 'admin',
+      profiles: [{
+        id: 'admin',
+        name: 'Admin',
+        isMain: true,
+        password: '',
+        theme: 'dark',
+        showSystemMonitor: false,
+        customBgUrl: '',
+        bgScaleMode: 'cover',
+        bgZoomVal: 100,
+        bgOpacity: 30,
+        apps: [
+          { id: '1', name: 'TrueNAS CORE', category: 'Storage & NAS', url: 'https://truenas.local', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', color: 'orange' },
+          { id: '2', name: 'Home Assistant', category: 'Smart Home', url: 'http://192.168.1.234:8123', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', color: 'blue' }
+        ],
+        categories: ['Media', 'Storage & NAS', 'Smart Home', 'Networking', 'Web']
+      }]
+    };
+    let currentProfileId = 'admin', activeCategory = 'All', searchQuery = '', isEditMode = false, hostSysStats = null;
 
     const unifiedIconLibrary = [
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/plex.png', name: 'plex' },
@@ -166,8 +276,12 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
       await loadState();
+      renderProfiles();
       renderCategories();
       renderApps();
+      renderSystemMonitor();
+      applyCustomBackground();
+      fetchHostSystemStats();
       document.getElementById('live-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     });
 
@@ -176,7 +290,8 @@
         const res = await fetch('/api/config');
         const data = await res.json();
         if (data && Array.isArray(data.profiles) && data.profiles.length > 0) {
-          profiles = data.profiles;
+          configData = data;
+          currentProfileId = configData.defaultStartupProfileId || configData.profiles[0].id;
         }
       } catch (e) {}
     }
@@ -185,12 +300,40 @@
       await fetch('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profiles, currentProfileId })
+        body: JSON.stringify(configData)
       });
     }
 
     function getCurrentProfile() {
-      return profiles.find(p => p.id === currentProfileId) || profiles[0];
+      return configData.profiles.find(p => p.id === currentProfileId) || configData.profiles[0];
+    }
+
+    function renderProfiles() {
+      const container = document.getElementById('profile-switcher-container');
+      container.innerHTML = configData.profiles.map(p => `
+        <button onclick="switchProfile('${p.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${currentProfileId === p.id ? 'bg-amber-600 text-white' : 'bg-slate-900/50 text-slate-300'}">
+          <i class="fa-solid fa-user mr-1"></i> ${p.name}
+        </button>
+      `).join('');
+      
+      const startupSelect = document.getElementById('default-startup-profile-select');
+      startupSelect.innerHTML = configData.profiles.map(p => `<option value="${p.id}" ${configData.defaultStartupProfileId === p.id ? 'selected' : ''}>${p.name}</option>`).join('');
+    }
+
+    function switchProfile(id) {
+      const p = configData.profiles.find(x => x.id === id);
+      if (p && p.password) {
+        const pwd = prompt(`Enter password for profile "${p.name}":`);
+        if (pwd !== p.password) { alert('Incorrect password'); return; }
+      }
+      currentProfileId = id;
+      activeCategory = 'All';
+      renderProfiles();
+      renderCategories();
+      renderApps();
+      renderSystemMonitor();
+      applyTheme(p.theme || 'dark');
+      applyCustomBackground();
     }
 
     function renderCategories() {
@@ -232,6 +375,42 @@
           </a>
         </div>
       `).join('');
+    }
+
+    async function fetchHostSystemStats() {
+      try {
+        const res = await fetch('/api/system-stats');
+        if (res.ok) { hostSysStats = await res.json(); renderSystemMonitor(); }
+      } catch (e) {}
+    }
+
+    function renderSystemMonitor() {
+      const p = getCurrentProfile();
+      const container = document.getElementById('system-monitor-container');
+      if (!p.showSystemMonitor || !hostSysStats) { container.innerHTML = ''; return; }
+      container.innerHTML = `
+        <div class="glass-panel p-4 rounded-2xl border border-white/10 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center text-lg"><i class="fa-solid fa-server"></i></div>
+            <div>
+              <h4 class="font-bold text-sm text-white">${hostSysStats.hostname}</h4>
+              <p class="text-xs opacity-60">${hostSysStats.osVersion} (${hostSysStats.arch})</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-6 text-xs font-semibold">
+            <div><span class="opacity-60 block">CPU Load</span><span class="text-orange-400">${hostSysStats.cpuPercent}%</span></div>
+            <div><span class="opacity-60 block">RAM Usage</span><span class="text-blue-400">${hostSysStats.ramUsedGB} GB / ${hostSysStats.ramTotalGB} GB (${hostSysStats.ramPercent}%)</span></div>
+            <div><span class="opacity-60 block">Uptime</span><span class="text-emerald-400">${hostSysStats.uptime}</span></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleSystemMonitor(val) {
+      const p = getCurrentProfile();
+      p.showSystemMonitor = val;
+      saveState();
+      renderSystemMonitor();
     }
 
     function onSearchInput(val) { searchQuery = val; renderApps(); }
@@ -285,9 +464,11 @@
 
     async function loadLocalAssetsManager() {
       const listEl = document.getElementById('local-icons-manager-list');
+      const galleryEl = document.getElementById('wallpaper-gallery-grid');
       try {
         const res = await fetch('/api/assets');
         const assets = await res.json();
+        
         listEl.innerHTML = assets.map(a => `
           <div class="flex items-center justify-between bg-slate-900 p-2 rounded-xl text-xs">
             <div class="flex items-center gap-2 truncate">
@@ -297,6 +478,17 @@
             <button onclick="deleteAsset('${a.type}', '${a.filename}')" class="text-rose-400 px-2"><i class="fa-solid fa-trash"></i></button>
           </div>
         `).join('');
+
+        const wallpapers = assets.filter(a => a.type === 'wallpaper');
+        if (wallpapers.length === 0) {
+          galleryEl.innerHTML = `<div class="col-span-4 text-[11px] text-center opacity-50 py-4">No uploaded wallpapers found.</div>`;
+        } else {
+          galleryEl.innerHTML = wallpapers.map(w => `
+            <button onclick="selectWallpaper('${w.url}')" class="relative group rounded-lg overflow-hidden border border-white/10 hover:border-orange-500 h-16">
+              <img src="${w.url}" class="w-full h-full object-cover" />
+            </button>
+          `).join('');
+        }
       } catch (e) {
         listEl.innerHTML = `<div class="text-xs text-rose-400">Failed to load assets.</div>`;
       }
@@ -307,7 +499,114 @@
       loadLocalAssetsManager();
     }
 
-    function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); loadLocalAssetsManager(); }
+    async function handleBgUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(event) {
+        await fetch('/api/upload-wallpaper', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: event.target.result, filename: file.name })
+        });
+        loadLocalAssetsManager();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function selectWallpaper(url) {
+      const p = getCurrentProfile();
+      p.customBgUrl = url;
+      saveState();
+      applyCustomBackground();
+    }
+
+    function clearActiveWallpaper() {
+      const p = getCurrentProfile();
+      p.customBgUrl = '';
+      saveState();
+      applyCustomBackground();
+    }
+
+    function setBgScaleMode(mode) {
+      const p = getCurrentProfile();
+      p.bgScaleMode = mode;
+      saveState();
+      applyCustomBackground();
+    }
+
+    function updateBgZoom(val) {
+      const p = getCurrentProfile();
+      p.bgZoomVal = val;
+      document.getElementById('zoom-val-label').innerText = `${val}%`;
+      saveState();
+      applyCustomBackground();
+    }
+
+    function updateBgOpacity(val) {
+      const p = getCurrentProfile();
+      p.bgOpacity = val;
+      document.getElementById('opacity-val-label').innerText = `${val}%`;
+      saveState();
+      applyCustomBackground();
+    }
+
+    function applyCustomBackground() {
+      const p = getCurrentProfile();
+      const overlay = document.getElementById('custom-bg-overlay');
+      if (!p.customBgUrl) {
+        overlay.style.display = 'none';
+        overlay.style.backgroundImage = '';
+        return;
+      }
+      overlay.style.display = 'block';
+      overlay.style.backgroundImage = `url('${p.customBgUrl}')`;
+      overlay.style.backgroundSize = p.bgScaleMode === 'repeat' ? 'auto' : p.bgScaleMode;
+      overlay.style.backgroundRepeat = p.bgScaleMode === 'repeat' ? 'repeat' : 'no-repeat';
+      overlay.style.backgroundPosition = 'center center';
+      overlay.style.transform = `scale(${p.bgZoomVal / 100})`;
+      overlay.style.backgroundColor = `rgba(0, 0, 0, ${p.bgOpacity / 100})`;
+      overlay.style.backgroundBlendMode = 'overlay';
+    }
+
+    function updateProfilePassword() {
+      const p = getCurrentProfile();
+      const pwd = document.getElementById('new-profile-password').value;
+      p.password = pwd;
+      saveState();
+      document.getElementById('profile-pwd-status').innerText = pwd ? 'Password Protected' : 'No Password';
+      alert('Profile password updated successfully!');
+    }
+
+    function setDefaultStartupProfile() {
+      configData.defaultStartupProfileId = document.getElementById('default-startup-profile-select').value;
+      saveState();
+      alert('Default startup profile updated!');
+    }
+
+    function setTheme(theme) {
+      const p = getCurrentProfile();
+      p.theme = theme;
+      saveState();
+      applyTheme(theme);
+    }
+
+    function applyTheme(theme) {
+      document.body.className = theme === 'light' ? 'theme-light relative selection:bg-orange-500 selection:text-white pb-12' : theme === 'neon' ? 'theme-neon relative selection:bg-orange-500 selection:text-white pb-12' : 'relative selection:bg-orange-500 selection:text-white pb-12';
+    }
+
+    function openSettingsModal() {
+      const p = getCurrentProfile();
+      document.getElementById('show-sys-mon-checkbox').checked = !!p.showSystemMonitor;
+      document.getElementById('profile-pwd-status').innerText = p.password ? 'Password Protected' : 'No Password';
+      document.getElementById('new-profile-password').value = '';
+      document.getElementById('bg-zoom-range').value = p.bgZoomVal || 100;
+      document.getElementById('zoom-val-label').innerText = `${p.bgZoomVal || 100}%`;
+      document.getElementById('bg-opacity-range').value = p.bgOpacity || 30;
+      document.getElementById('opacity-val-label').innerText = `${p.bgOpacity || 30}%`;
+      document.getElementById('settings-modal').classList.remove('hidden');
+      loadLocalAssetsManager();
+    }
     function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
   </script>
 </body>
