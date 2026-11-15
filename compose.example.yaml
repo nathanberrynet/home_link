@@ -6,19 +6,14 @@ services:
     ports:
       - 8580:8580
     working_dir: /app
-    command: >
-      sh -c "
-      apk add --no-cache git &&
-      if [ -d '.git' ]; then
+    command: |
+      sh -c " mkdir -p /app/data && apk add --no-cache git && if [ -d '.git' ]; then
         git pull origin main;
       else
         git init &&
         git remote add origin https://github.com/nathanberrynet/home_link.git &&
         git fetch origin main &&
         git reset --hard origin/main;
-      fi &&
-      npm install &&
-      node server.js
-      "
+      fi && npm install && node server.js "
     volumes:
       - ./data:/app/data

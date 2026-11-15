@@ -16,6 +16,47 @@ if (!fs.existsSync(DATA_DIR)) { fs.mkdirSync(DATA_DIR, { recursive: true }); }
 if (!fs.existsSync(ICONS_DIR)) { fs.mkdirSync(ICONS_DIR, { recursive: true }); }
 if (!fs.existsSync(WALLPAPERS_DIR)) { fs.mkdirSync(WALLPAPERS_DIR, { recursive: true }); }
 
+// Automatically bootstrap default config on fresh installs if missing
+if (!fs.existsSync(CONFIG_FILE)) {
+    const defaultInitialConfig = {
+        version: '2.6',
+        timestamp: new Date().toISOString(),
+        currentProfileId: 'admin',
+        defaultStartupProfileId: 'admin',
+        profiles: [
+            {
+                id: 'admin',
+                name: 'Admin',
+                isMain: true,
+                password: '',
+                avatar: '',
+                theme: 'dark',
+                weatherZip: '28601',
+                pingIntervalSec: 60,
+                tileSpacingVal: '2',
+                customBgData: '',
+                bgScaleMode: 'cover',
+                bgZoomVal: 100,
+                bgOpacity: 30,
+                bgTrueColor: false,
+                bgPosX: 50,
+                bgPosY: 50,
+                showSystemMonitor: false,
+                sysMonConfig: { name: '', osOverride: '' },
+                apps: [
+                    { id: '1', name: 'TrueNAS CORE', category: 'Storage & NAS', url: 'https://truenas.local', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', color: 'orange', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'generic' },
+                    { id: '2', name: 'Home Assistant', category: 'Smart Home', url: 'http://192.168.1.234:8123', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', color: 'blue', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'generic' },
+                    { id: '3', name: 'Sonarr', category: 'Media', url: 'http://sonarr.local:8989', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', color: 'cyan', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'sonarr' }
+                ],
+                categories: ['Media', 'Storage & NAS', 'Smart Home', 'Networking', 'Web']
+            }
+        ]
+    };
+    try {
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaultInitialConfig, null, 2), 'utf8');
+    } catch (err) {}
+}
+
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static(__dirname));
 app.use('/data', express.static(DATA_DIR));
