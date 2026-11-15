@@ -102,7 +102,7 @@
     }
     .status-pulse { animation: pulse-glow 2s infinite ease-in-out; }
 
-    /* Interactive Studio Transform Handles (Enlarged & Prominent) */
+    /* Interactive Studio Transform Handles */
     .studio-handle {
       position: absolute;
       width: 20px;
@@ -124,7 +124,7 @@
 
   <div id="custom-bg-overlay" class="fixed inset-0 pointer-events-none transition-all duration-300 z-0" style="display: none;"></div>
 
-  <!-- Interactive Background Studio Overlay (Drag to Move + Aspect-Ratio Locked Resize Handles) -->
+  <!-- Interactive Background Studio Overlay (Aspect Ratio Locked) -->
   <div id="bg-studio-stage" class="fixed inset-0 z-40 hidden select-none overflow-hidden bg-slate-950/40 backdrop-blur-[2px]">
     <div id="bg-studio-box" class="absolute border-2 border-dashed border-orange-500 shadow-[0_0_0_9999px_rgba(2,6,23,0.6)] cursor-move group" style="left: 10%; top: 10%; width: 80%; height: 80%;">
       <img id="bg-studio-preview-img" src="" class="w-full h-full object-fill pointer-events-none select-none opacity-90" />
@@ -136,7 +136,7 @@
         </div>
       </div>
 
-      <!-- 8 Resize Handles (Corners & Edges) -->
+      <!-- 8 Resize Handles -->
       <div data-dir="nw" class="studio-handle -top-2.5 -left-2.5 cursor-nwse-resize"></div>
       <div data-dir="n"  class="studio-handle -top-2.5 left-1/2 -translate-x-1/2 cursor-ns-resize"></div>
       <div data-dir="ne" class="studio-handle -top-2.5 -right-2.5 cursor-nesw-resize"></div>
@@ -370,6 +370,18 @@
 
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">Icon Source</label>
+          
+          <!-- Live Icon Preview Box -->
+          <div class="flex items-center gap-3 bg-slate-900/90 p-3 rounded-xl border border-orange-500/30 mb-3 shadow-inner">
+            <div id="modal-icon-preview-box" class="w-11 h-11 rounded-xl bg-orange-500/10 border border-orange-500/40 flex items-center justify-center text-2xl text-orange-400 overflow-hidden flex-shrink-0 shadow">
+              <i class="fa-solid fa-globe"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-white">Active Icon Preview</div>
+              <div class="text-[10px] text-slate-400">Updates live as you select, type, or upload</div>
+            </div>
+          </div>
+
           <div class="grid grid-cols-4 gap-1.5 mb-2">
             <button type="button" onclick="setIconType('favicon')" id="btn-icon-favicon" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-800 text-slate-300">Favicon</button>
             <button type="button" onclick="setIconType('fa')" id="btn-icon-fa" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-orange-500 bg-orange-500/20 text-orange-300">Icon Search</button>
@@ -382,7 +394,7 @@
           </div>
           <div id="icon-input-fa" class="space-y-2">
             <div class="flex gap-2">
-              <input type="text" id="app-icon-fa" oninput="markIconModified()" placeholder="fa-solid fa-server or CDN URL" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <input type="text" id="app-icon-fa" oninput="markIconModified(); updateModalIconPreview();" placeholder="fa-solid fa-server or CDN URL" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
               <button type="button" onclick="openIconPickerModal()" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap shadow-md flex items-center gap-1.5">
                 <i class="fa-solid fa-magnifying-glass"></i> Browse Icons
               </button>
@@ -390,7 +402,7 @@
             <p class="text-[10px] text-slate-400">Search FontAwesome & self-hosted homelab logos instantly.</p>
           </div>
           <div id="icon-input-url" class="hidden">
-            <input type="text" id="app-icon-url-input" oninput="markIconModified()" placeholder="/data/icons/... or https://..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <input type="text" id="app-icon-url-input" oninput="markIconModified(); updateModalIconPreview();" placeholder="/data/icons/... or https://..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
           </div>
           <div id="icon-input-upload" class="hidden">
             <input type="file" id="app-icon-file" accept="image/*" onchange="handleIconUpload(event)" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
@@ -478,7 +490,7 @@
     </div>
   </div>
 
-  <!-- Edit Admin Profile Modal (With Live Avatar Preview) -->
+  <!-- Edit Admin Profile Modal -->
   <div id="admin-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 shadow-2xl relative">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
@@ -486,7 +498,6 @@
         <button onclick="closeAdminEditModal()" class="opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form onsubmit="saveAdminProfile(event)" class="space-y-3">
-        <!-- Live Avatar / User Icon Preview -->
         <div class="flex items-center gap-3 bg-slate-900/60 p-3 rounded-xl border border-white/5">
           <div id="admin-edit-avatar-preview" class="w-12 h-12 rounded-full bg-orange-600 flex items-center justify-center text-lg font-bold text-white overflow-hidden border-2 border-orange-500/50 flex-shrink-0 shadow-md">
             A
@@ -518,7 +529,7 @@
     </div>
   </div>
 
-  <!-- Create / Edit Profile Modal (With Live Avatar Preview) -->
+  <!-- Create / Edit Profile Modal -->
   <div id="profile-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-sm rounded-2xl border border-white/10 p-6 shadow-2xl relative">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
@@ -528,7 +539,6 @@
       <form id="profile-form" onsubmit="saveProfile(event)" class="space-y-3">
         <input type="hidden" id="profile-edit-id">
         
-        <!-- Live Avatar / User Icon Preview -->
         <div class="flex items-center gap-3 bg-slate-900/60 p-3 rounded-xl border border-white/5">
           <div id="profile-edit-avatar-preview" class="w-12 h-12 rounded-full bg-orange-600 flex items-center justify-center text-lg font-bold text-white overflow-hidden border-2 border-orange-500/50 flex-shrink-0 shadow-md">
             <i class="fa-solid fa-user text-sm"></i>
@@ -714,7 +724,7 @@
             <label class="block text-xs font-semibold opacity-90 flex items-center gap-1.5"><i class="fa-solid fa-server text-orange-400"></i> Local Scoped Assets Manager</label>
             <button onclick="loadLocalAssetsManager()" class="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
-          <div class="text-[10px] opacity-60 mb-2">Click any thumbnail to preview full size. Admins can manage all assets; users see only their own.</div>
+          <div class="text-[10px] opacity-60 mb-2">Click any thumbnail to preview full size. Admin views all assets; users see their own.</div>
           <div id="local-icons-manager-list" class="space-y-1.5 max-h-44 overflow-y-auto p-2 bg-slate-900/50 rounded-xl border border-white/5">
             <!-- Populated via JS -->
           </div>
@@ -769,7 +779,7 @@
         <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="space-y-4 text-xs text-slate-300">
-        <p>HomeLink v2.6 features complete visual asset galleries, thumbnail lightbox previews, and an interactive drag-to-move & aspect-ratio locked background studio.</p>
+        <p>HomeLink v2.6 features live icon previews, role-scoped asset galleries, and an interactive drag-to-move & aspect-ratio locked background studio.</p>
       </div>
     </div>
   </div>
@@ -833,7 +843,7 @@
     let defaultStartupProfileId = 'admin';
     let pendingProfileId = null;
     let pendingProtectedAction = null;
-    let pendingSwitchProfileId = null; // Added for password checking when switching profiles
+    let pendingSwitchProfileId = null;
 
     let activeCategory = 'All';
     let searchQuery = '';
@@ -849,7 +859,7 @@
 
     // Interactive Studio State
     let studioActive = false;
-    let studioInteractionType = null; // 'move' or 'resize'
+    let studioInteractionType = null;
     let studioResizeDir = '';
     let studioStartMouse = { x: 0, y: 0 };
     let studioStartRect = { left: 0, top: 0, width: 0, height: 0 };
@@ -1043,7 +1053,7 @@
       }
     }
 
-    // Scoped Asset Manager with Visual Previews & Gallery
+    // Role-Scoped Asset Manager & Wallpaper Gallery (Admin sees all, Users see their own)
     async function loadLocalAssetsManager() {
       const p = getCurrentProfile();
       const listEl = document.getElementById('local-icons-manager-list');
@@ -1052,7 +1062,12 @@
 
       try {
         const res = await fetch(`/api/assets?profileId=${p.id}&isAdmin=${p.isMain}`);
-        const assets = await res.json();
+        let assets = await res.json();
+
+        // If regular user, restrict view to their own uploaded assets / wallpapers
+        if (!p.isMain) {
+          assets = assets.filter(a => a.owner === p.id || a.profileId === p.id || !a.owner);
+        }
 
         const wallpapers = assets.filter(a => a.type === 'wallpaper');
         if (galleryEl) {
@@ -1083,7 +1098,7 @@
                 <div class="font-bold text-white truncate max-w-[120px] hover:text-orange-400">${img.filename}</div>
                 <div class="text-[9px] opacity-60 flex items-center gap-1.5">
                   <span class="px-1 py-0.2 rounded bg-slate-800 text-${img.type === 'wallpaper' ? 'orange' : 'blue'}-400 font-semibold">${img.type}</span>
-                  ${p.isMain ? `<span class="text-amber-400">user: ${img.owner}</span>` : ''}
+                  ${p.isMain ? `<span class="text-amber-400">user: ${img.owner || 'admin'}</span>` : ''}
                   <span>${Math.round(img.size / 1024)} KB</span>
                 </div>
               </div>
@@ -1133,7 +1148,7 @@
     }
 
     // =========================================================================
-    // INTERACTIVE BACKGROUND STUDIO (Opens at current size/zoom, Aspect Ratio Locked)
+    // INTERACTIVE BACKGROUND STUDIO (Aspect Ratio Locked)
     // =========================================================================
     function enterBackgroundStudio() {
       const p = getCurrentProfile();
@@ -1290,7 +1305,6 @@
           let newWidth = studioStartRect.width;
           let newHeight = studioStartRect.height;
 
-          // Aspect ratio locked resizing from any direction
           if (studioResizeDir.includes('e')) {
             newWidth = Math.max(120, studioStartRect.width + dx);
             newHeight = newWidth / studioNaturalAspect;
@@ -1519,7 +1533,6 @@
       }
     }
 
-    // Updated to handle both profile switching passwords & current profile actions
     function verifyProfilePassword(e) {
       e.preventDefault();
       const inputVal = document.getElementById('unlock-password-input').value;
@@ -1611,9 +1624,34 @@
           if (input) input.classList.add('hidden');
         }
       });
+      updateModalIconPreview();
     }
 
     function markIconModified() { iconWasModified = true; }
+
+    // Live Icon Preview updater inside Add/Edit Service Modal
+    function updateModalIconPreview() {
+      const previewBox = document.getElementById('modal-icon-preview-box');
+      if (!previewBox) return;
+
+      let iconVal = 'fa-solid fa-globe';
+      if (currentIconMode === 'fa') {
+        iconVal = document.getElementById('app-icon-fa').value.trim() || 'fa-solid fa-globe';
+      } else if (currentIconMode === 'url') {
+        iconVal = document.getElementById('app-icon-url-input').value.trim();
+      } else if (currentIconMode === 'upload') {
+        iconVal = uploadedIconBase64;
+      } else if (currentIconMode === 'favicon') {
+        iconVal = 'fa-solid fa-globe';
+      }
+
+      const isImg = iconVal && (iconVal.startsWith('http://') || iconVal.startsWith('https://') || iconVal.startsWith('data:image/') || iconVal.startsWith('/data/'));
+      if (isImg) {
+        previewBox.innerHTML = `<img src="${iconVal}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-globe\\'></i>';" />`;
+      } else {
+        previewBox.innerHTML = `<i class="${iconVal}"></i>`;
+      }
+    }
 
     function openIconPickerModal() {
       document.getElementById('icon-search-input').value = '';
@@ -1634,7 +1672,12 @@
       `).join('');
     }
     function filterIconGrid(val) { renderIconGrid(val); }
-    function selectUnifiedIcon(val) { document.getElementById('app-icon-fa').value = val; iconWasModified = true; closeIconPickerModal(); }
+    function selectUnifiedIcon(val) { 
+      document.getElementById('app-icon-fa').value = val; 
+      iconWasModified = true; 
+      updateModalIconPreview();
+      closeIconPickerModal(); 
+    }
 
     async function handleIconUpload(e) {
       const file = e.target.files[0];
@@ -1651,6 +1694,7 @@
           const data = await res.json();
           uploadedIconBase64 = data.url;
           iconWasModified = true;
+          updateModalIconPreview();
           showToast('Icon uploaded successfully', 'emerald');
         }
       };
@@ -1683,6 +1727,7 @@
           document.getElementById('app-icon-url-input').value = app.icon;
         }
       }
+      updateModalIconPreview();
       document.getElementById('app-modal').classList.remove('hidden');
     }
     function closeAppModal() { document.getElementById('app-modal').classList.add('hidden'); }
@@ -1964,7 +2009,6 @@
       });
     }
 
-    // Profile switch password enforcement check
     function switchProfile(id) {
       const target = profiles.find(p => p.id === id);
       if (!target) return;
