@@ -102,20 +102,20 @@
     }
     .status-pulse { animation: pulse-glow 2s infinite ease-in-out; }
 
-    /* Interactive Studio Transform Handles */
+    /* Interactive Studio Transform Handles (Enlarged & Prominent) */
     .studio-handle {
       position: absolute;
-      width: 14px;
-      height: 14px;
+      width: 20px;
+      height: 20px;
       background: #f97316;
-      border: 2px solid #ffffff;
+      border: 3px solid #ffffff;
       border-radius: 9999px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.7);
       z-index: 60;
-      transition: transform 0.1s ease;
+      transition: transform 0.1s ease, background-color 0.1s ease;
     }
     .studio-handle:hover {
-      transform: scale(1.25);
+      transform: scale(1.35);
       background: #fb923c;
     }
   </style>
@@ -124,27 +124,27 @@
 
   <div id="custom-bg-overlay" class="fixed inset-0 pointer-events-none transition-all duration-300 z-0" style="display: none;"></div>
 
-  <!-- Interactive Background Studio Overlay (Drag to Move + Edge/Corner Resize Handles) -->
-  <div id="bg-studio-stage" class="fixed inset-0 z-40 hidden select-none overflow-hidden bg-slate-950/30 backdrop-blur-[1px]">
-    <div id="bg-studio-box" class="absolute border-2 border-dashed border-orange-500 shadow-[0_0_0_9999px_rgba(2,6,23,0.55)] cursor-move group" style="left: 10%; top: 10%; width: 80%; height: 80%;">
+  <!-- Interactive Background Studio Overlay (Drag to Move + Aspect-Ratio Locked Resize Handles) -->
+  <div id="bg-studio-stage" class="fixed inset-0 z-40 hidden select-none overflow-hidden bg-slate-950/40 backdrop-blur-[2px]">
+    <div id="bg-studio-box" class="absolute border-2 border-dashed border-orange-500 shadow-[0_0_0_9999px_rgba(2,6,23,0.6)] cursor-move group" style="left: 10%; top: 10%; width: 80%; height: 80%;">
       <img id="bg-studio-preview-img" src="" class="w-full h-full object-fill pointer-events-none select-none opacity-90" />
       
       <!-- Center Move Badge -->
       <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div class="bg-slate-950/80 border border-orange-500/40 text-white px-3 py-1.5 rounded-full text-[11px] font-semibold shadow-lg flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-          <i class="fa-solid fa-up-down-left-right text-orange-400"></i> Drag to Move • Pull Edges/Corners to Resize
+        <div class="bg-slate-950/90 border border-orange-500/50 text-white px-3.5 py-2 rounded-full text-xs font-bold shadow-2xl flex items-center gap-2.5 opacity-90 group-hover:opacity-100 transition-opacity">
+          <i class="fa-solid fa-up-down-left-right text-orange-400"></i> Drag to Move • Pull Edges/Corners (Aspect Ratio Locked)
         </div>
       </div>
 
       <!-- 8 Resize Handles (Corners & Edges) -->
-      <div data-dir="nw" class="studio-handle -top-2 -left-2 cursor-nwse-resize"></div>
-      <div data-dir="n"  class="studio-handle -top-2 left-1/2 -translate-x-1/2 cursor-ns-resize"></div>
-      <div data-dir="ne" class="studio-handle -top-2 -right-2 cursor-nesw-resize"></div>
-      <div data-dir="e"  class="studio-handle top-1/2 -translate-y-1/2 -right-2 cursor-ew-resize"></div>
-      <div data-dir="se" class="studio-handle -bottom-2 -right-2 cursor-nwse-resize"></div>
-      <div data-dir="s"  class="studio-handle -bottom-2 left-1/2 -translate-x-1/2 cursor-ns-resize"></div>
-      <div data-dir="sw" class="studio-handle -bottom-2 -left-2 cursor-nesw-resize"></div>
-      <div data-dir="w"  class="studio-handle top-1/2 -translate-y-1/2 -left-2 cursor-ew-resize"></div>
+      <div data-dir="nw" class="studio-handle -top-2.5 -left-2.5 cursor-nwse-resize"></div>
+      <div data-dir="n"  class="studio-handle -top-2.5 left-1/2 -translate-x-1/2 cursor-ns-resize"></div>
+      <div data-dir="ne" class="studio-handle -top-2.5 -right-2.5 cursor-nesw-resize"></div>
+      <div data-dir="e"  class="studio-handle top-1/2 -translate-y-1/2 -right-2.5 cursor-ew-resize"></div>
+      <div data-dir="se" class="studio-handle -bottom-2.5 -right-2.5 cursor-nwse-resize"></div>
+      <div data-dir="s"  class="studio-handle -bottom-2.5 left-1/2 -translate-x-1/2 cursor-ns-resize"></div>
+      <div data-dir="sw" class="studio-handle -bottom-2.5 -left-2.5 cursor-nesw-resize"></div>
+      <div data-dir="w"  class="studio-handle top-1/2 -translate-y-1/2 -left-2.5 cursor-ew-resize"></div>
     </div>
   </div>
 
@@ -769,7 +769,7 @@
         <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="space-y-4 text-xs text-slate-300">
-        <p>HomeLink v2.6 features complete visual asset galleries, thumbnail lightbox previews, and an interactive drag-to-move & edge-resize background studio.</p>
+        <p>HomeLink v2.6 features complete visual asset galleries, thumbnail lightbox previews, and an interactive drag-to-move & aspect-ratio locked background studio.</p>
       </div>
     </div>
   </div>
@@ -833,6 +833,7 @@
     let defaultStartupProfileId = 'admin';
     let pendingProfileId = null;
     let pendingProtectedAction = null;
+    let pendingSwitchProfileId = null; // Added for password checking when switching profiles
 
     let activeCategory = 'All';
     let searchQuery = '';
@@ -852,6 +853,7 @@
     let studioResizeDir = '';
     let studioStartMouse = { x: 0, y: 0 };
     let studioStartRect = { left: 0, top: 0, width: 0, height: 0 };
+    let studioNaturalAspect = 16 / 9;
 
     const unifiedIconLibrary = [
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/plex.png', name: 'plex media server' },
@@ -1131,7 +1133,7 @@
     }
 
     // =========================================================================
-    // INTERACTIVE BACKGROUND STUDIO (Click & Drag to Move + Edge/Corner Resize)
+    // INTERACTIVE BACKGROUND STUDIO (Opens at current size/zoom, Aspect Ratio Locked)
     // =========================================================================
     function enterBackgroundStudio() {
       const p = getCurrentProfile();
@@ -1142,7 +1144,6 @@
       closeSettingsModal();
       studioActive = true;
 
-      // Dim dashboard tiles slightly so user can clearly see and position the wallpaper
       document.getElementById('main-dashboard-content').style.opacity = '0.25';
       document.getElementById('main-dashboard-content').style.pointerEvents = 'none';
       document.getElementById('custom-bg-overlay').style.display = 'none';
@@ -1155,24 +1156,36 @@
       stage.classList.remove('hidden');
       document.getElementById('bg-customizer-toolbar').classList.remove('hidden');
 
-      // Calculate initial bounding box from current zoom & posX/posY
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const zoom = (p.bgZoomVal || 100) / 100;
-      const posX = (p.bgPosX !== undefined ? p.bgPosX : 50) / 100;
-      const posY = (p.bgPosY !== undefined ? p.bgPosY : 50) / 100;
+      const imgObj = new Image();
+      imgObj.src = p.customBgData;
+      
+      const setupBoxDimensions = () => {
+        studioNaturalAspect = imgObj.naturalWidth && imgObj.naturalHeight ? (imgObj.naturalWidth / imgObj.naturalHeight) : (16 / 9);
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const zoom = (p.bgZoomVal || 100) / 100;
+        const posX = (p.bgPosX !== undefined ? p.bgPosX : 50) / 100;
+        const posY = (p.bgPosY !== undefined ? p.bgPosY : 50) / 100;
 
-      const boxW = Math.max(150, vw * zoom);
-      const boxH = Math.max(150, vh * zoom);
-      const boxLeft = (vw - boxW) * posX;
-      const boxTop = (vh - boxH) * posY;
+        const boxW = Math.max(150, vw * zoom);
+        const boxH = boxW / studioNaturalAspect;
+        const boxLeft = (vw - boxW) * posX;
+        const boxTop = (vh - boxH) * posY;
 
-      box.style.width = `${boxW}px`;
-      box.style.height = `${boxH}px`;
-      box.style.left = `${boxLeft}px`;
-      box.style.top = `${boxTop}px`;
+        box.style.width = `${boxW}px`;
+        box.style.height = `${boxH}px`;
+        box.style.left = `${boxLeft}px`;
+        box.style.top = `${boxTop}px`;
 
-      updateStudioReadout();
+        updateStudioReadout();
+      };
+
+      if (imgObj.complete) {
+        setupBoxDimensions();
+      } else {
+        imgObj.onload = setupBoxDimensions;
+        imgObj.onerror = setupBoxDimensions;
+      }
     }
 
     function resetStudioTransform() {
@@ -1181,9 +1194,14 @@
       p.bgPosX = 50;
       p.bgPosY = 50;
 
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
       const box = document.getElementById('bg-studio-box');
-      box.style.width = `${window.innerWidth}px`;
-      box.style.height = `${window.innerHeight}px`;
+      const boxW = vw;
+      const boxH = boxW / studioNaturalAspect;
+
+      box.style.width = `${boxW}px`;
+      box.style.height = `${boxH}px`;
       box.style.left = `0px`;
       box.style.top = `0px`;
       updateStudioReadout();
@@ -1272,24 +1290,26 @@
           let newWidth = studioStartRect.width;
           let newHeight = studioStartRect.height;
 
+          // Aspect ratio locked resizing from any direction
           if (studioResizeDir.includes('e')) {
             newWidth = Math.max(120, studioStartRect.width + dx);
-          }
-          if (studioResizeDir.includes('s')) {
-            newHeight = Math.max(120, studioStartRect.height + dy);
-          }
-          if (studioResizeDir.includes('w')) {
+            newHeight = newWidth / studioNaturalAspect;
+          } else if (studioResizeDir.includes('w')) {
             const proposedW = studioStartRect.width - dx;
             if (proposedW >= 120) {
               newWidth = proposedW;
-              newLeft = studioStartRect.left + dx;
+              newHeight = newWidth / studioNaturalAspect;
+              newLeft = studioStartRect.left + (studioStartRect.width - newWidth);
             }
-          }
-          if (studioResizeDir.includes('n')) {
+          } else if (studioResizeDir.includes('s')) {
+            newHeight = Math.max(120, studioStartRect.height + dy);
+            newWidth = newHeight * studioNaturalAspect;
+          } else if (studioResizeDir.includes('n')) {
             const proposedH = studioStartRect.height - dy;
             if (proposedH >= 120) {
               newHeight = proposedH;
-              newTop = studioStartRect.top + dy;
+              newWidth = newHeight * studioNaturalAspect;
+              newTop = studioStartRect.top + (studioStartRect.height - newHeight);
             }
           }
 
@@ -1490,6 +1510,7 @@
       const p = getCurrentProfile();
       if (p.password && p.password.trim() !== '') {
         pendingProtectedAction = actionType;
+        pendingSwitchProfileId = null;
         document.getElementById('prompt-profile-name').innerText = `Enter password for ${p.name}`;
         document.getElementById('unlock-password-input').value = '';
         document.getElementById('password-prompt-modal').classList.remove('hidden');
@@ -1498,28 +1519,42 @@
       }
     }
 
+    // Updated to handle both profile switching passwords & current profile actions
     function verifyProfilePassword(e) {
       e.preventDefault();
-      const p = getCurrentProfile();
       const inputVal = document.getElementById('unlock-password-input').value;
       
-      if (inputVal === p.password) {
-        const action = pendingProtectedAction;
-        document.getElementById('password-prompt-modal').classList.add('hidden');
-        pendingProtectedAction = null;
-        if (action) {
-          executeProtectedAction(action);
+      if (pendingSwitchProfileId) {
+        const target = profiles.find(p => p.id === pendingSwitchProfileId);
+        if (target && inputVal === target.password) {
+          const idToSwitch = pendingSwitchProfileId;
+          pendingSwitchProfileId = null;
+          document.getElementById('password-prompt-modal').classList.add('hidden');
+          executeSwitchProfile(idToSwitch);
+        } else {
+          showToast('Incorrect password', 'rose');
+          document.getElementById('unlock-password-input').value = '';
+          document.getElementById('unlock-password-input').focus();
         }
       } else {
-        showToast('Incorrect password', 'rose');
-        document.getElementById('unlock-password-input').value = '';
-        document.getElementById('unlock-password-input').focus();
+        const p = getCurrentProfile();
+        if (inputVal === p.password) {
+          const action = pendingProtectedAction;
+          document.getElementById('password-prompt-modal').classList.add('hidden');
+          pendingProtectedAction = null;
+          if (action) executeProtectedAction(action);
+        } else {
+          showToast('Incorrect password', 'rose');
+          document.getElementById('unlock-password-input').value = '';
+          document.getElementById('unlock-password-input').focus();
+        }
       }
     }
 
     function closePasswordPrompt() {
       document.getElementById('password-prompt-modal').classList.add('hidden');
       pendingProtectedAction = null;
+      pendingSwitchProfileId = null;
     }
 
     function executeProtectedAction(actionType) {
@@ -1730,7 +1765,7 @@
               ${p.avatar ? `<img src="${p.avatar}" class="w-full h-full object-cover">` : p.name.charAt(0)}
             </div>
             <div>
-              <div class="font-bold text-white">${p.name} ${p.isMain ? '👑' : ''}</div>
+              <div class="font-bold text-white">${p.name} ${p.isMain ? '👑' : ''} ${p.password ? '🔒' : ''}</div>
               <div class="text-[10px] opacity-60">${p.apps.length} tiles</div>
             </div>
           </div>
@@ -1929,7 +1964,23 @@
       });
     }
 
+    // Profile switch password enforcement check
     function switchProfile(id) {
+      const target = profiles.find(p => p.id === id);
+      if (!target) return;
+      
+      if (target.password && target.password.trim() !== '') {
+        pendingSwitchProfileId = id;
+        document.getElementById('prompt-profile-name').innerText = `Enter password for ${target.name}`;
+        document.getElementById('unlock-password-input').value = '';
+        document.getElementById('password-prompt-modal').classList.remove('hidden');
+        closeProfilesModal();
+      } else {
+        executeSwitchProfile(id);
+      }
+    }
+
+    function executeSwitchProfile(id) {
       currentProfileId = id;
       saveState();
       applyProfilePreferences();
