@@ -839,7 +839,7 @@
             <label class="block text-xs font-semibold opacity-90 flex items-center gap-1.5"><i class="fa-solid fa-server text-orange-400"></i> Local Scoped Assets Manager <span id="asset-scope-indicator" class="text-[10px] text-orange-300 font-mono font-normal"></span></label>
             <button onclick="loadLocalAssetsManager()" class="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
-          <div class="text-[10px] opacity-60 mb-2">Non-admin profiles only display assets owned by your profile. Admins view everything.</div>
+          <div class="text-[10px] opacity-60 mb-2">Non-admin profiles display your profile assets & unassigned icons. Admins view everything.</div>
           <div id="local-icons-manager-list" class="space-y-1.5 max-h-44 overflow-y-auto p-2 bg-slate-900/50 rounded-xl border border-white/5">
             <!-- Populated via JS -->
           </div>
@@ -885,7 +885,7 @@
     </div>
   </div>
 
-  <!-- Wiki & Guide Modal -->
+  <!-- Wiki & Guide Modal with Cool Tabs -->
   <div id="wiki-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-4xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
       <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
@@ -894,9 +894,74 @@
         </h3>
         <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="overflow-y-auto space-y-4 text-xs text-slate-300 pr-2 max-h-[60vh]">
-        <h4 class="font-bold text-sm text-white">Homelab Architecture & Local Assets</h4>
-        <p>HomeLink v2.6 stores all custom icons and wallpaper uploads in your local <code class="text-orange-300 font-mono">data/</code> directory. All assets are fully cached and work offline with zero external cloud telemetry.</p>
+
+      <!-- Wiki Tabs Header -->
+      <div class="flex items-center gap-2 border-b border-white/10 pb-3 mb-4 overflow-x-auto">
+        <button onclick="switchWikiTab('arch')" id="wiki-tab-arch" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow transition-all whitespace-nowrap">Architecture</button>
+        <button onclick="switchWikiTab('api')" id="wiki-tab-api" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">API Integrations</button>
+        <button onclick="switchWikiTab('profiles')" id="wiki-tab-profiles" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">Profiles & Security</button>
+        <button onclick="switchWikiTab('backup')" id="wiki-tab-backup" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">Backup & Imports</button>
+      </div>
+
+      <!-- Wiki Tab Content Panels -->
+      <div class="overflow-y-auto space-y-4 text-xs text-slate-300 pr-2 max-h-[55vh]">
+        
+        <!-- Tab 1: Architecture -->
+        <div id="wiki-panel-arch" class="space-y-3">
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-server text-orange-400"></i> Local-First Homelab Architecture</h4>
+          <p>HomeLink v2.6 is engineered for zero external telemetry and offline autonomy. All dashboard configurations, custom icons, and background wallpapers are stored directly in your local <code class="text-orange-300 font-mono">data/</code> directory.</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">Key Features:</div>
+            <ul class="list-disc pl-4 space-y-1 opacity-80">
+              <li>Server-side asset caching with local fallback.</li>
+              <li>Real-time background health polling for homelab services.</li>
+              <li>Live System Monitor tile tracking CPU, RAM, and OS metrics.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 2: API Integrations -->
+        <div id="wiki-panel-api" class="space-y-3 hidden">
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-plug text-cyan-400"></i> Service API Badges & Status</h4>
+          <p>You can connect your service tiles (Sonarr, Radarr, Prowlarr, qBittorrent, Immich) to display live queue statistics and transfer speeds directly on the dashboard card.</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">Configuration Steps:</div>
+            <ol class="list-decimal pl-4 space-y-1 opacity-80">
+              <li>Click <b>Unlock Editing Mode</b> in the top right.</li>
+              <li>Click the edit pencil on any service tile.</li>
+              <li>Select your API Service Type and paste your API Key.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Tab 3: Profiles & Security -->
+        <div id="wiki-panel-profiles" class="space-y-3 hidden">
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-users text-amber-400"></i> Multi-User Profiles & Direct URLs</h4>
+          <p>HomeLink supports isolated user profiles with individual tile layouts, themes, and scoped asset management.</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">Security Highlights:</div>
+            <ul class="list-disc pl-4 space-y-1 opacity-80">
+              <li>Set optional PIN/passwords per profile in Settings.</li>
+              <li>Generate direct profile switching links to bookmark on different devices.</li>
+              <li>Non-admin profiles are strictly scoped to their own uploaded icons and wallpapers.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 4: Backup & Imports -->
+        <div id="wiki-panel-backup" class="space-y-3 hidden">
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-file-import text-purple-400"></i> Migrating from Heimdall & Homepage</h4>
+          <p>Easily import your existing homelab dashboards without manual re-entry.</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">Supported Formats:</div>
+            <ul class="list-disc pl-4 space-y-1 opacity-80">
+              <li><b>Heimdall:</b> Upload your Heimdall JSON backup export.</li>
+              <li><b>Homepage:</b> Upload your <code class="text-orange-300 font-mono">services.yaml</code> or JSON configuration.</li>
+              <li><b>HomeLink Backup:</b> Full JSON export/import for complete server migration.</li>
+            </ul>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -994,16 +1059,57 @@
 
     let draggedCategoryName = null;
 
+    // Comprehensive Unified Icon Library (Plex, Homelab services & FontAwesome)
     const unifiedIconLibrary = [
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/plex.png', name: 'plex media server' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', name: 'sonarr tv shows' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/radarr.png', name: 'radarr movies' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/lidarr.png', name: 'lidarr music' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/readarr.png', name: 'readarr books' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/bazarr.png', name: 'bazarr subtitles' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prowlarr.png', name: 'prowlarr indexers' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/overseerr.png', name: 'overseerr requests' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/jellyfin.png', name: 'jellyfin media' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/emby.png', name: 'emby media' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/tautulli.png', name: 'tautulli plex stats' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/qbittorrent.png', name: 'qbittorrent torrents' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sabnzbd.png', name: 'sabnzbd usenet' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png', name: 'immich photos backup' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', name: 'truenas core scale storage nas' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', name: 'home assistant smart home' },
       { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/unifi.png', name: 'unifi network router' },
-      { type: 'fa', value: 'fa-solid fa-server', name: 'server' },
-      { type: 'fa', value: 'fa-solid fa-house-signal', name: 'home smart signal' }
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png', name: 'proxmox VE hypervisor' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/portainer.png', name: 'portainer docker' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/grafana.png', name: 'grafana metrics' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prometheus.png', name: 'prometheus monitoring' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/pihole.png', name: 'pihole adblock dns' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/adguard-home.png', name: 'adguard home dns' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/nextcloud.png', name: 'nextcloud cloud storage' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/vaultwarden.png', name: 'vaultwarden bitwarden passwords' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/syncthing.png', name: 'syncthing file sync' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/uptime-kuma.png', name: 'uptime kuma status' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/wireguard.png', name: 'wireguard vpn' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/tailscale.png', name: 'tailscale vpn' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/cloudflare.png', name: 'cloudflare dns proxy' },
+      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/docker.png', name: 'docker container' },
+      { type: 'fa', value: 'fa-solid fa-server', name: 'server hosting' },
+      { type: 'fa', value: 'fa-solid fa-house-signal', name: 'home smart signal' },
+      { type: 'fa', value: 'fa-solid fa-database', name: 'database storage' },
+      { type: 'fa', value: 'fa-solid fa-network-wired', name: 'network router switch' },
+      { type: 'fa', value: 'fa-solid fa-microchip', name: 'cpu hardware' },
+      { type: 'fa', value: 'fa-solid fa-terminal', name: 'terminal bash cli' },
+      { type: 'fa', value: 'fa-solid fa-folder-open', name: 'files storage media' },
+      { type: 'fa', value: 'fa-solid fa-shield-halved', name: 'security firewall' },
+      { type: 'fa', value: 'fa-solid fa-cloud', name: 'cloud services' },
+      { type: 'fa', value: 'fa-solid fa-lock', name: 'lock security' },
+      { type: 'fa', value: 'fa-solid fa-key', name: 'key authentication' },
+      { type: 'fa', value: 'fa-solid fa-users', name: 'users profiles' },
+      { type: 'fa', value: 'fa-solid fa-sliders', name: 'settings preferences' },
+      { type: 'fa', value: 'fa-solid fa-globe', name: 'globe website internet' },
+      { type: 'fa', value: 'fa-solid fa-film', name: 'movies video entertainment' },
+      { type: 'fa', value: 'fa-solid fa-tv', name: 'television display' },
+      { type: 'fa', value: 'fa-solid fa-music', name: 'music audio stream' },
+      { type: 'fa', value: 'fa-solid fa-book', name: 'book docs wiki' }
     ];
 
     const colorClasses = {
@@ -1251,9 +1357,9 @@
           assets = [];
         }
 
-        // Strict role-based scoping: Non-admin users only see their own assets (owner matches profile id or filename tagged with profile id)
+        // Fixed scoping: Non-admin users see their own assets OR unassigned/global assets so they don't disappear
         if (!p.isMain) {
-          assets = assets.filter(a => a.owner === p.id || (a.filename && a.filename.includes(p.id)));
+          assets = assets.filter(a => !a.owner || a.owner === p.id || (a.filename && a.filename.includes(p.id)));
         }
 
         if (p.customBgData && !assets.some(a => a.url === p.customBgData)) {
@@ -2372,7 +2478,6 @@
               }
             });
           } else {
-            // Basic line-by-line parser for Homepage services.yaml
             let currentCat = 'Web';
             const lines = content.split('\n');
             let currentAppName = null;
@@ -2446,9 +2551,24 @@
       reader.readAsText(file);
     }
 
+    // ================= WIKI TABS NAVIGATION =================
+    function switchWikiTab(tabKey) {
+      ['arch', 'api', 'profiles', 'backup'].forEach(k => {
+        const btn = document.getElementById(`wiki-tab-${k}`);
+        const panel = document.getElementById(`wiki-panel-${k}`);
+        if (k === tabKey) {
+          if (btn) btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow transition-all whitespace-nowrap';
+          if (panel) panel.classList.remove('hidden');
+        } else {
+          if (btn) btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap';
+          if (panel) panel.classList.add('hidden');
+        }
+      });
+    }
+
     function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); loadLocalAssetsManager(); }
     function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
-    function openWikiModal() { document.getElementById('wiki-modal').classList.remove('hidden'); }
+    function openWikiModal() { document.getElementById('wiki-modal').classList.remove('hidden'); switchWikiTab('arch'); }
     function closeWikiModal() { document.getElementById('wiki-modal').classList.add('hidden'); }
 
     function setTheme(name, save = true) {
