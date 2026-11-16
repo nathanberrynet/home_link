@@ -80,7 +80,6 @@ app.get('/api/assets', (req, res) => {
 app.delete('/api/assets/:type/:filename', (req, res) => {
     try {
         const filename = req.params.filename;
-        // Search recursively to delete
         const allAssets = getAssetsRecursive(DATA_DIR);
         const target = allAssets.find(a => a.filename === filename);
         if (target && fs.existsSync(path.join(DATA_DIR, target.url.replace('/data/', '')))) {

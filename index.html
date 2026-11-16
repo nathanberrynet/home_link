@@ -488,6 +488,13 @@
           <label class="block text-xs font-semibold opacity-90 mb-1">OS Type / Version Override</label>
           <input type="text" id="sysmon-os-input" placeholder="e.g. Ubuntu 24.04 LTS" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
         </div>
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Category Assignment</label>
+          <select id="sysmon-category-input" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+            <option value="">(Default / System standalone)</option>
+            <!-- Populated via JS -->
+          </select>
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold opacity-90 mb-1">Refresh Interval (Seconds)</label>
@@ -1019,7 +1026,7 @@
         bgPosX: 50,
         bgPosY: 50,
         showSystemMonitor: false,
-        sysMonConfig: { name: '', osOverride: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 },
+        sysMonConfig: { name: '', osOverride: '', category: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 },
         apps: [...defaultAdminApps],
         categories: [...defaultCategories]
       }
@@ -1028,6 +1035,7 @@
     let defaultStartupProfileId = 'admin';
     let pendingProtectedAction = null;
     let pendingSwitchProfileId = null;
+    let isProfileUnlocked = false;
 
     let activeCategory = 'All';
     let searchQuery = '';
@@ -1175,7 +1183,8 @@
             if (p.bgPosX === undefined) p.bgPosX = 50;
             if (p.bgPosY === undefined) p.bgPosY = 50;
             if (p.showSystemMonitor === undefined) p.showSystemMonitor = false;
-            if (!p.sysMonConfig) p.sysMonConfig = { name: '', osOverride: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 };
+            if (!p.sysMonConfig) p.sysMonConfig = { name: '', osOverride: '', category: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 };
+            if (p.sysMonConfig.category === undefined) p.sysMonConfig.category = '';
           });
           if (data.defaultStartupProfileId) defaultStartupProfileId = data.defaultStartupProfileId;
           if (banner) banner.classList.add('hidden');
@@ -1357,7 +1366,6 @@
           assets = [];
         }
 
-        // Fixed scoping: Non-admin users see their own assets OR unassigned/global assets so they don't disappear
         if (!p.isMain) {
           assets = assets.filter(a => !a.owner || a.owner === p.id || (a.filename && a.filename.includes(p.id)));
         }
@@ -1702,6 +1710,11 @@
       document.getElementById('sysmon-custom-bg-input').value = cfg.customBg || '#1e293b';
       document.getElementById('sysmon-font-color-input').value = cfg.fontColor || '#f1f5f9';
       document.getElementById('sysmon-icon-fa').value = cfg.icon || 'fa-solid fa-server';
+      
+      const catSelect = document.getElementById('sysmon-category-input');
+      catSelect.innerHTML = `<option value="">(Default / System standalone)</option>` + p.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+      catSelect.value = cfg.category || '';
+
       updateSysMonModalIconPreview();
       document.getElementById('sysmon-modal').classList.remove('hidden');
     }
@@ -1713,6 +1726,7 @@
       if (!p.sysMonConfig) p.sysMonConfig = {};
       p.sysMonConfig.name = document.getElementById('sysmon-name-input').value.trim();
       p.sysMonConfig.osOverride = document.getElementById('sysmon-os-input').value.trim();
+      p.sysMonConfig.category = document.getElementById('sysmon-category-input').value;
       p.sysMonConfig.refreshInterval = parseInt(document.getElementById('sysmon-refresh-input').value) || 3;
       p.sysMonConfig.color = document.getElementById('sysmon-color-input').value;
       p.sysMonConfig.customBg = document.getElementById('sysmon-custom-bg-input').value === '#1e293b' ? '' : document.getElementById('sysmon-custom-bg-input').value;
@@ -1793,7 +1807,9 @@
         return matchesCat && matchesSearch;
       });
 
-      const showSysTile = !!profile.showSystemMonitor && (activeCategory === 'All' || !searchQuery);
+      const sysCat = profile.sysMonConfig?.category || '';
+      const showSysTile = !!profile.showSystemMonitor && (!searchQuery && (activeCategory === 'All' || (sysCat ? sysCat === activeCategory : true)));
+
       if (filtered.length === 0 && !showSysTile) {
         container.innerHTML = '';
         emptyState.classList.remove('hidden');
@@ -1839,8 +1855,7 @@
         `;
       };
 
-      let sysTileHtml = '';
-      if (showSysTile) {
+      const renderSysTileHtml = () => {
         const s = hostSysStats;
         const cpuPct = s ? s.cpuPercent : 0;
         const ramPct = s ? s.ramPercent : 0;
@@ -1851,7 +1866,7 @@
         const sysIcon = profile.sysMonConfig?.icon || 'fa-solid fa-server';
         const sysTheme = colorClasses[profile.sysMonConfig?.color || 'orange'] || colorClasses.orange;
 
-        sysTileHtml = `
+        return `
           <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative ${sysTheme.hoverGlow}">
             ${isEditMode ? `<div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10"><button onclick="openSysMonModal()" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button></div>` : ''}
             <div>
@@ -1884,18 +1899,18 @@
             </div>
           </div>
         `;
-      }
+      };
 
       if (profile.groupByCategory && activeCategory === 'All' && !searchQuery) {
         let sectionsHtml = '';
-        if (showSysTile) {
+        if (showSysTile && !sysCat) {
           sectionsHtml += `
             <div class="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
               <div class="flex items-center gap-2 pb-2 border-b border-white/10 text-xs font-bold text-orange-400 uppercase tracking-wider">
                 <i class="fa-solid fa-server"></i> System Monitor
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                ${sysTileHtml}
+                ${renderSysTileHtml()}
               </div>
             </div>
           `;
@@ -1903,7 +1918,8 @@
 
         profile.categories.forEach(cat => {
           const catApps = filtered.filter(a => a.category === cat);
-          if (catApps.length > 0 || isEditMode) {
+          const isSysCatMatch = showSysTile && sysCat === cat;
+          if (catApps.length > 0 || isSysCatMatch || isEditMode) {
             const dragAttrs = isEditMode ? `draggable="true" ondragstart="onCategoryDragStart(event, '${cat}')" ondragover="event.preventDefault()" ondrop="onCategoryDrop(event, '${cat}')"` : '';
             const dragCursor = isEditMode ? 'cursor-grab active:cursor-grabbing hover:border-orange-500/50' : '';
             sectionsHtml += `
@@ -1912,11 +1928,12 @@
                   <div class="flex items-center gap-2">
                     ${isEditMode ? '<i class="fa-solid fa-grip-vertical text-orange-400"></i>' : ''}
                     <span>${cat}</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">${catApps.length}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">${catApps.length + (isSysCatMatch ? 1 : 0)}</span>
                   </div>
                   <button onclick="setCategory('${cat}')" class="text-[10px] text-orange-400 hover:underline">View Only</button>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  ${isSysCatMatch ? renderSysTileHtml() : ''}
                   ${catApps.map(app => renderTileHtml(app)).join('')}
                 </div>
               </div>
@@ -1927,7 +1944,9 @@
       } else {
         container.innerHTML = `
           <div id="apps-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            ${sysTileHtml} ${filtered.map(app => renderTileHtml(app)).join('')}
+            ${showSysTile && !sysCat ? renderSysTileHtml() : ''} 
+            ${showSysTile && sysCat && (activeCategory === sysCat || activeCategory === 'All') ? renderSysTileHtml() : ''}
+            ${filtered.map(app => renderTileHtml(app)).join('')}
           </div>
         `;
       }
@@ -1951,7 +1970,7 @@
     function requestAuthForAction(actionType) {
       if (actionType === 'edit' && isEditMode) { toggleEditMode(); return; }
       const p = getCurrentProfile();
-      if (p.password && p.password.trim() !== '') {
+      if (p.password && p.password.trim() !== '' && !isProfileUnlocked) {
         pendingProtectedAction = actionType;
         pendingSwitchProfileId = null;
         document.getElementById('prompt-profile-name').innerText = `Enter password for ${p.name}`;
@@ -1987,6 +2006,7 @@
           const targetId = pendingSwitchProfileId;
           document.getElementById('password-prompt-modal').classList.add('hidden');
           pendingSwitchProfileId = null;
+          isProfileUnlocked = true;
           executeSwitchProfile(targetId);
         } else {
           showToast('Incorrect password', 'rose');
@@ -2000,6 +2020,7 @@
         const action = pendingProtectedAction;
         document.getElementById('password-prompt-modal').classList.add('hidden');
         pendingProtectedAction = null;
+        isProfileUnlocked = true;
         if (action) executeProtectedAction(action);
       } else {
         showToast('Incorrect password', 'rose');
@@ -2024,6 +2045,7 @@
 
     function toggleEditMode() {
       isEditMode = !isEditMode;
+      if (!isEditMode) isProfileUnlocked = false; // Lock locks it back
       document.getElementById('edit-mode-label').innerText = isEditMode ? 'Unlocked' : 'Locked';
       document.getElementById('edit-mode-icon').className = isEditMode ? 'fa-solid fa-lock-open text-emerald-400' : 'fa-solid fa-lock text-amber-400';
       const addBtn = document.getElementById('btn-add-link-header');
@@ -2343,7 +2365,7 @@
         bgPosX: 50,
         bgPosY: 50,
         showSystemMonitor: false,
-        sysMonConfig: { name: '', osOverride: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 },
+        sysMonConfig: { name: '', osOverride: '', category: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 },
         apps: [...defaultAdminApps],
         categories: [...defaultCategories]
       });
@@ -2384,6 +2406,7 @@
 
     function executeSwitchProfile(id) {
       currentProfileId = id;
+      isProfileUnlocked = false; // Switch profile requires unlocking again if passworded
       saveState();
       applyProfilePreferences();
       renderCurrentProfileHeader();
@@ -2659,7 +2682,20 @@
         const mode = p.bgScaleMode || 'cover';
         const zoom = p.bgZoomVal || 100;
         bg.style.backgroundPosition = `${p.bgPosX ?? 50}% ${p.bgPosY ?? 50}%`;
-        bg.style.backgroundSize = mode === 'tile' ? `${zoom}%` : `${zoom}%`;
+        bg.style.backgroundRepeat = (mode === 'tile') ? 'repeat' : 'no-repeat';
+        
+        if (mode === 'cover') {
+          bg.style.backgroundSize = zoom === 100 ? 'cover' : `${zoom}%`;
+        } else if (mode === 'contain') {
+          bg.style.backgroundSize = zoom === 100 ? 'contain' : `${zoom}%`;
+        } else if (mode === 'stretch') {
+          bg.style.backgroundSize = '100% 100%';
+        } else if (mode === 'tile') {
+          bg.style.backgroundSize = `${zoom}%`;
+        } else {
+          bg.style.backgroundSize = 'cover';
+        }
+
         bg.style.display = 'block';
       } else {
         bg.style.display = 'none';
