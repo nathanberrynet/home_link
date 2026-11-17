@@ -288,7 +288,7 @@
   <!-- Main Container -->
   <main id="main-dashboard-content" class="max-w-7xl mx-auto px-4 lg:px-8 z-10 relative transition-opacity duration-200">
 
-    <!-- Category Filter Bar & Quick Stats (Group view toggle moved to the left) -->
+    <!-- Category Filter Bar & Quick Stats -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
       <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-none">
         <button 
@@ -319,7 +319,7 @@
 
     <!-- App Tiles Grid / Grouped Sections Container -->
     <div id="dashboard-view-container" class="space-y-6">
-      <div id="apps-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div id="apps-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
         <!-- Dynamically populated -->
       </div>
     </div>
@@ -405,7 +405,7 @@
             </div>
             <div>
               <div class="text-xs font-bold text-white">Active Icon Preview</div>
-              <div class="text-[10px] text-slate-400">Updates live as you select, type, or upload</div>
+              <div id="modal-icon-cache-status" class="text-[10px] text-slate-400">Updates live • Selected web icons auto-cache offline</div>
             </div>
           </div>
 
@@ -421,12 +421,12 @@
           </div>
           <div id="icon-input-fa" class="space-y-2">
             <div class="flex gap-2">
-              <input type="text" id="app-icon-fa" oninput="markIconModified(); updateModalIconPreview();" placeholder="fa-solid fa-server or CDN URL" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <input type="text" id="app-icon-fa" oninput="markIconModified(); updateModalIconPreview();" placeholder="fa-solid fa-server or /data/cached_icons/..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
               <button type="button" onclick="openIconPickerModal('app')" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap shadow-md flex items-center gap-1.5">
-                <i class="fa-solid fa-magnifying-glass"></i> Browse Icons
+                <i class="fa-solid fa-magnifying-glass"></i> Browse 2,500+
               </button>
             </div>
-            <p class="text-[10px] text-slate-400">Search FontAwesome & self-hosted homelab logos instantly.</p>
+            <p class="text-[10px] text-slate-400">Search 2,500+ homelab logos & FontAwesome icons (auto-cached locally for offline use).</p>
           </div>
           <div id="icon-input-url" class="hidden">
             <input type="text" id="app-icon-url-input" oninput="markIconModified(); updateModalIconPreview();" placeholder="/data/icons/... or https://..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
@@ -551,7 +551,7 @@
           <div id="sysmon-icon-input-fa" class="space-y-2">
             <div class="flex gap-2">
               <input type="text" id="sysmon-icon-fa" oninput="markSysMonIconModified(); updateSysMonModalIconPreview();" placeholder="fa-solid fa-server" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
-              <button type="button" onclick="openIconPickerModal('sysmon')" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap shadow-md">Browse</button>
+              <button type="button" onclick="openIconPickerModal('sysmon')" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap shadow-md">Browse 2,500+</button>
             </div>
           </div>
         </div>
@@ -564,19 +564,27 @@
     </div>
   </div>
 
-  <!-- Icon Search Modal -->
+  <!-- Icon Search Modal (2,500+ Dashboard Icons + FontAwesome + Auto-Caching) -->
   <div id="icon-picker-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md hidden">
     <div class="glass-panel w-full max-w-2xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[85vh] flex flex-col">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
         <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-icons text-orange-400"></i> Unified Icon Search
+          <i class="fa-solid fa-icons text-orange-400"></i> Unified Icon Search <span id="icon-library-count-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-mono">Loading...</span>
         </h3>
-        <button onclick="closeIconPickerModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="loadFullIconManifest(true)" title="Refresh 2,500+ Icon Index from GitHub" class="text-xs text-slate-400 hover:text-orange-400 px-2 py-1 rounded-lg bg-slate-900 border border-white/10">
+            <i class="fa-solid fa-rotate"></i>
+          </button>
+          <button onclick="closeIconPickerModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
+        </div>
       </div>
-      <div class="mb-4">
+      <div class="mb-3">
         <div class="relative">
-          <input type="text" id="icon-search-input" placeholder="Search icons (plex, sonarr, server, truenas)..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 pl-9 text-xs text-white focus:outline-none" oninput="filterIconGrid(this.value)">
+          <input type="text" id="icon-search-input" placeholder="Search 2,500+ icons (plex, sonarr, immich, truenas, unifi, tailscale)..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 pl-9 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500" oninput="filterIconGrid(this.value)">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+        </div>
+        <div class="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1.5">
+          <i class="fa-solid fa-hard-drive text-emerald-400"></i> Clicking any web icon automatically caches it locally on your server for 100% offline use.
         </div>
       </div>
       <div id="icon-grid-container" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5 overflow-y-auto max-h-[50vh] p-1 pr-2"></div>
@@ -754,17 +762,27 @@
           </div>
         </div>
 
-        <!-- Universal Tile Shape Preference -->
-        <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5 space-y-2">
-          <div class="text-xs font-semibold text-white flex items-center gap-1.5">
-            <i class="fa-solid fa-shapes text-orange-400"></i> Tile Shape Preference (Universal)
+        <!-- Universal Tile Shape & Transparency Preferences -->
+        <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5 space-y-3">
+          <div>
+            <div class="text-xs font-semibold text-white flex items-center gap-1.5">
+              <i class="fa-solid fa-shapes text-orange-400"></i> Tile Shape & Background Opacity (Universal)
+            </div>
+            <div class="text-[10px] opacity-60">Mobile defaults to compact square tiles, desktop defaults to rectangle. Adjust card opacity below.</div>
           </div>
-          <div class="text-[10px] opacity-60">Mobile defaults to square tiles, desktop defaults to rectangle. You can override or force a universal shape here.</div>
           <select id="setting-tile-shape" onchange="saveTileShapePreference(this.value)" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-            <option value="auto">Auto (Square on Mobile, Rectangle on Desktop)</option>
-            <option value="square">Force Square (All Devices)</option>
+            <option value="auto">Auto (Compact Square on Mobile, Rectangle on Desktop)</option>
+            <option value="square">Force Compact Square (All Devices)</option>
             <option value="rectangle">Force Rectangle (All Devices)</option>
           </select>
+
+          <div class="pt-1">
+            <div class="flex justify-between text-[11px] mb-1">
+              <span class="text-slate-300">Tile Background Opacity</span>
+              <span id="tile-opacity-label" class="font-mono text-orange-400">65%</span>
+            </div>
+            <input type="range" id="setting-tile-opacity" min="0" max="100" value="65" oninput="updateTileOpacity(this.value)" class="w-full accent-orange-500">
+          </div>
         </div>
 
         <div class="pt-4 border-t border-white/10 space-y-3">
@@ -930,11 +948,11 @@
         <!-- Tab 1: Architecture -->
         <div id="wiki-panel-arch" class="space-y-3">
           <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-server text-orange-400"></i> Local-First Homelab Architecture</h4>
-          <p>HomeLink v2.6 is engineered for zero external telemetry and offline autonomy. All dashboard configurations, custom icons, and background wallpapers are stored directly in your local <code class="text-orange-300 font-mono">data/</code> directory.</p>
+          <p>HomeLink v2.6 is engineered for zero external telemetry and offline autonomy. All dashboard configurations, custom icons, cached logos, and background wallpapers are stored directly in your local <code class="text-orange-300 font-mono">data/</code> directory.</p>
           <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
             <div class="font-bold text-white">Key Features:</div>
             <ul class="list-disc pl-4 space-y-1 opacity-80">
-              <li>Server-side asset caching with local fallback.</li>
+              <li>Server-side asset & 2,500+ icon caching with local fallback.</li>
               <li>Real-time background health polling for homelab services.</li>
               <li>Live System Monitor tile tracking CPU, RAM, and OS metrics.</li>
             </ul>
@@ -1013,9 +1031,9 @@
   <!-- Application Script -->
   <script>
     const defaultAdminApps = [
-      { id: '1', name: 'TrueNAS CORE', category: 'Storage & NAS', url: 'https://truenas.local', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', color: 'orange', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'generic' },
-      { id: '2', name: 'Home Assistant', category: 'Smart Home', url: 'http://192.168.1.234:8123', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', color: 'blue', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'generic' },
-      { id: '3', name: 'Sonarr', category: 'Media', url: 'http://sonarr.local:8989', icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', color: 'cyan', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'sonarr' }
+      { id: '1', name: 'TrueNAS CORE', category: 'Storage & NAS', url: 'https://truenas.local', icon: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/truenas.png', color: 'orange', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'generic' },
+      { id: '2', name: 'Home Assistant', category: 'Smart Home', url: 'http://192.168.1.234:8123', icon: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/home-assistant.png', color: 'blue', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'generic' },
+      { id: '3', name: 'Sonarr', category: 'Media', url: 'http://sonarr.local:8989', icon: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/sonarr.png', color: 'cyan', customBg: '', fontColor: '#f1f5f9', pingEnabled: true, apiKey: '', serviceType: 'sonarr' }
     ];
 
     const defaultCategories = ['Media', 'Storage & NAS', 'Smart Home', 'Networking', 'Web'];
@@ -1031,7 +1049,8 @@
         weatherZip: '28601',
         pingIntervalSec: 60,
         tileSpacingVal: '2',
-        tileShape: 'auto', // 'auto', 'square', 'rectangle'
+        tileShape: 'auto',
+        tileOpacity: 65,
         groupByCategory: false,
         customBgData: '',
         bgScaleMode: 'cover',
@@ -1082,39 +1101,8 @@
 
     let draggedCategoryName = null;
 
-    // Comprehensive Unified Icon Library (Plex, Homelab services & FontAwesome)
-    const unifiedIconLibrary = [
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/plex.png', name: 'plex media server' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png', name: 'sonarr tv shows' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/radarr.png', name: 'radarr movies' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/lidarr.png', name: 'lidarr music' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/readarr.png', name: 'readarr books' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/bazarr.png', name: 'bazarr subtitles' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prowlarr.png', name: 'prowlarr indexers' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/overseerr.png', name: 'overseerr requests' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/jellyfin.png', name: 'jellyfin media' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/emby.png', name: 'emby media' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/tautulli.png', name: 'tautulli plex stats' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/qbittorrent.png', name: 'qbittorrent torrents' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sabnzbd.png', name: 'sabnzbd usenet' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png', name: 'immich photos backup' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png', name: 'truenas core scale storage nas' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/home-assistant.png', name: 'home assistant smart home' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/unifi.png', name: 'unifi network router' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png', name: 'proxmox VE hypervisor' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/portainer.png', name: 'portainer docker' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/grafana.png', name: 'grafana metrics' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prometheus.png', name: 'prometheus monitoring' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/pihole.png', name: 'pihole adblock dns' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/adguard-home.png', name: 'adguard home dns' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/nextcloud.png', name: 'nextcloud cloud storage' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/vaultwarden.png', name: 'vaultwarden bitwarden passwords' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/syncthing.png', name: 'syncthing file sync' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/uptime-kuma.png', name: 'uptime kuma status' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/wireguard.png', name: 'wireguard vpn' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/tailscale.png', name: 'tailscale vpn' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/cloudflare.png', name: 'cloudflare dns proxy' },
-      { type: 'url', value: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/docker.png', name: 'docker container' },
+    // Built-in FontAwesome + fallback icons, dynamically merged with 2,500+ dashboard-icons manifest
+    const builtinFontAwesomeIcons = [
       { type: 'fa', value: 'fa-solid fa-server', name: 'server hosting' },
       { type: 'fa', value: 'fa-solid fa-house-signal', name: 'home smart signal' },
       { type: 'fa', value: 'fa-solid fa-database', name: 'database storage' },
@@ -1132,8 +1120,16 @@
       { type: 'fa', value: 'fa-solid fa-film', name: 'movies video entertainment' },
       { type: 'fa', value: 'fa-solid fa-tv', name: 'television display' },
       { type: 'fa', value: 'fa-solid fa-music', name: 'music audio stream' },
-      { type: 'fa', value: 'fa-solid fa-book', name: 'book docs wiki' }
+      { type: 'fa', value: 'fa-solid fa-book', name: 'book docs wiki' },
+      { type: 'fa', value: 'fa-solid fa-camera', name: 'camera photos' },
+      { type: 'fa', value: 'fa-solid fa-download', name: 'download torrent' },
+      { type: 'fa', value: 'fa-solid fa-wifi', name: 'wifi wireless' },
+      { type: 'fa', value: 'fa-solid fa-hard-drive', name: 'hard drive disk' },
+      { type: 'fa', value: 'fa-solid fa-robot', name: 'robot automation ai' },
+      { type: 'fa', value: 'fa-solid fa-code', name: 'code git dev' }
     ];
+
+    let fullIconLibrary = [...builtinFontAwesomeIcons];
 
     const colorClasses = {
       orange: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400', hoverGlow: 'hover:border-orange-500/50' },
@@ -1169,10 +1165,36 @@
       setupPingInterval();
       setupSysMonPolling();
       initInteractiveStudioListeners();
+      loadFullIconManifest(false);
     });
 
     function getCurrentProfile() {
       return profiles.find(p => p.id === currentProfileId) || profiles[0];
+    }
+
+    async function loadFullIconManifest(forceRefresh = false) {
+      const badge = document.getElementById('icon-library-count-badge');
+      if (badge) badge.innerText = 'Syncing...';
+      try {
+        const res = await fetch(`/api/icons-manifest${forceRefresh ? '?refresh=true' : ''}`);
+        if (res.ok) {
+          const remoteIcons = await res.json();
+          const mappedRemote = remoteIcons.map(item => ({
+            type: 'url',
+            value: item.url,
+            slug: item.slug,
+            name: item.name
+          }));
+          fullIconLibrary = [...mappedRemote, ...builtinFontAwesomeIcons];
+          if (badge) badge.innerText = `${fullIconLibrary.length.toLocaleString()} Icons`;
+          if (!document.getElementById('icon-picker-modal').classList.contains('hidden')) {
+            renderIconGrid(document.getElementById('icon-search-input').value || '');
+          }
+          if (forceRefresh) showToast(`Synced ${remoteIcons.length.toLocaleString()} homelab icons`, 'emerald');
+        }
+      } catch (e) {
+        if (badge) badge.innerText = `${fullIconLibrary.length} Icons`;
+      }
     }
 
     async function loadState() {
@@ -1190,6 +1212,7 @@
             if (!p.pingIntervalSec) p.pingIntervalSec = 60;
             if (!p.tileSpacingVal) p.tileSpacingVal = '2';
             if (!p.tileShape) p.tileShape = 'auto';
+            if (p.tileOpacity === undefined) p.tileOpacity = 65;
             if (p.groupByCategory === undefined) p.groupByCategory = false;
             if (p.customBgData === undefined) p.customBgData = '';
             if (!p.bgScaleMode) p.bgScaleMode = 'cover';
@@ -1228,6 +1251,29 @@
       } catch (e) {}
     }
 
+    function applyTileOpacity(opacityPct, themeName) {
+      const alpha = Math.max(0, Math.min(100, opacityPct)) / 100;
+      const hoverAlpha = Math.min(1, alpha + 0.2);
+      if (themeName === 'light') {
+        document.documentElement.style.setProperty('--card-bg', `rgba(255, 255, 255, ${alpha})`);
+        document.documentElement.style.setProperty('--card-hover', `rgba(255, 255, 255, ${hoverAlpha})`);
+      } else if (themeName === 'neon') {
+        document.documentElement.style.setProperty('--card-bg', `rgba(28, 15, 54, ${alpha})`);
+        document.documentElement.style.setProperty('--card-hover', `rgba(45, 22, 87, ${hoverAlpha})`);
+      } else {
+        document.documentElement.style.setProperty('--card-bg', `rgba(30, 41, 59, ${alpha})`);
+        document.documentElement.style.setProperty('--card-hover', `rgba(30, 41, 59, ${hoverAlpha})`);
+      }
+    }
+
+    function updateTileOpacity(val) {
+      const p = getCurrentProfile();
+      p.tileOpacity = parseInt(val);
+      document.getElementById('tile-opacity-label').innerText = `${p.tileOpacity}%`;
+      applyTileOpacity(p.tileOpacity, p.theme || 'dark');
+      saveState();
+    }
+
     function applyProfilePreferences() {
       const p = getCurrentProfile();
       setTheme(p.theme || 'dark', false);
@@ -1235,6 +1281,12 @@
       document.getElementById('setting-ping-interval').value = p.pingIntervalSec || 60;
       document.getElementById('setting-tile-spacing').value = p.tileSpacingVal || '2';
       document.getElementById('setting-tile-shape').value = p.tileShape || 'auto';
+      
+      const tileOp = p.tileOpacity !== undefined ? p.tileOpacity : 65;
+      document.getElementById('setting-tile-opacity').value = tileOp;
+      document.getElementById('tile-opacity-label').innerText = `${tileOp}%`;
+      applyTileOpacity(tileOp, p.theme || 'dark');
+
       applyTileSpacing(p.tileSpacingVal || '2', false);
       document.getElementById('setting-bg-opacity').value = p.bgOpacity !== undefined ? p.bgOpacity : 30;
       document.getElementById('bg-opacity-label').innerText = `${p.bgOpacity !== undefined ? p.bgOpacity : 30}%`;
@@ -1622,7 +1674,6 @@
       }, (p.sysMonConfig?.refreshInterval || 3) * 1000);
     }
 
-    // Optimized Non-Blocking Fast Ping Runner for Mobile & Desktop
     async function runLivePings() {
       const profile = getCurrentProfile();
       if (profile.showSystemMonitor) fetchHostSystemStats();
@@ -1638,7 +1689,6 @@
 
       let onlineCount = 0;
 
-      // Fire all pings concurrently with a fast 2-second timeout to prevent mobile lag
       const pingPromises = appsToPing.map(async (app) => {
         if (app.apiKey && app.apiKey.trim() !== '') {
           fetchServiceStats(app);
@@ -1841,16 +1891,23 @@
       }
       emptyState.classList.add('hidden'); emptyState.classList.remove('flex');
 
-      // Determine Tile Shape CSS Class based on universal setting (defaults to square on mobile, rectangle on desktop)
       const shapeSetting = profile.tileShape || 'auto';
+      const isForcedSquare = shapeSetting === 'square';
+      const isAutoSquare = shapeSetting === 'auto';
+
       let tileShapeClass = '';
-      if (shapeSetting === 'square') {
-        tileShapeClass = 'aspect-square';
+      let gridColsClass = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
+
+      if (isForcedSquare) {
+        tileShapeClass = 'aspect-square p-2.5 sm:p-3';
+        gridColsClass = 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7';
       } else if (shapeSetting === 'rectangle') {
-        tileShapeClass = '';
+        tileShapeClass = 'p-3.5';
+        gridColsClass = 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
       } else {
-        // Auto: square on mobile (sm: and below), rectangle on desktop
-        tileShapeClass = 'aspect-square sm:aspect-auto';
+        // Auto: Compact square on mobile (<640px), standard rectangle on desktop
+        tileShapeClass = 'aspect-square sm:aspect-auto p-2.5 sm:p-3.5';
+        gridColsClass = 'grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
       }
 
       const renderTileHtml = (app) => {
@@ -1860,30 +1917,34 @@
         let statusDotHtml = '';
         if (app.pingEnabled !== false) {
           let dotClass = pingStatus === true ? 'bg-emerald-500 status-pulse' : pingStatus === false ? 'bg-rose-500' : 'bg-slate-500';
-          statusDotHtml = `<span class="w-2.5 h-2.5 rounded-full ${dotClass}"></span>`;
+          statusDotHtml = `<span class="w-2 h-2 rounded-full ${dotClass}"></span>`;
         }
 
+        const customBgStyle = app.customBg ? `background-color: ${app.customBg};` : '';
+        const customFontStyle = app.fontColor ? `color: ${app.fontColor};` : '';
+        const compactCenterClass = isForcedSquare ? 'items-center text-center' : isAutoSquare ? 'items-center text-center sm:items-start sm:text-left' : '';
+
         return `
-          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative group ${theme.hoverGlow} ${tileShapeClass}" draggable="${isEditMode}" ondragstart="onDragStart(event, '${app.id}')" ondragover="event.preventDefault()" ondrop="onDrop(event, '${app.id}')">
+          <div style="${customBgStyle} ${customFontStyle}" class="glass-card rounded-2xl flex flex-col justify-between relative group ${theme.hoverGlow} ${tileShapeClass}" draggable="${isEditMode}" ondragstart="onDragStart(event, '${app.id}')" ondragover="event.preventDefault()" ondrop="onDrop(event, '${app.id}')">
             ${isEditMode ? `
-              <div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10">
-                <span class="cursor-grab px-1 text-slate-400"><i class="fa-solid fa-grip-vertical"></i></span>
-                <button onclick="openAppModal('${app.id}')" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
-                <button onclick="confirmDeleteApp('${app.id}')" class="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
+              <div class="absolute top-1.5 right-1.5 flex items-center gap-1 z-20 bg-slate-950/85 p-1 rounded-xl border border-white/10">
+                <span class="cursor-grab px-0.5 text-slate-400 text-[10px]"><i class="fa-solid fa-grip-vertical"></i></span>
+                <button onclick="openAppModal('${app.id}')" class="w-5 h-5 rounded-lg bg-amber-500/20 text-amber-400 text-[9px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                <button onclick="confirmDeleteApp('${app.id}')" class="w-5 h-5 rounded-lg bg-rose-500/20 text-rose-400 text-[9px] flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
               </div>
             ` : ''}
-            <a href="${app.url}" target="_blank" rel="noopener noreferrer" class="block flex-1 flex flex-col justify-between">
-              <div class="flex items-start justify-between gap-3 mb-3">
-                <div class="w-12 h-12 rounded-xl ${theme.bg} ${theme.border} border flex items-center justify-center text-2xl ${theme.text} overflow-hidden shadow-inner flex-shrink-0">
+            <a href="${app.url}" target="_blank" rel="noopener noreferrer" class="flex-1 flex flex-col justify-between ${compactCenterClass} overflow-hidden">
+              <div class="w-full flex items-start ${isForcedSquare ? 'justify-center' : isAutoSquare ? 'justify-center sm:justify-between' : 'justify-between'} gap-2 mb-1.5">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${theme.bg} ${theme.border} border flex items-center justify-center text-lg sm:text-xl ${theme.text} overflow-hidden shadow-inner flex-shrink-0">
                   ${isImage ? `<img src="${app.icon}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.src='https://placehold.co/40x40/1e293b/ffffff?text=App';" />` : `<i class="${app.icon || 'fa-solid fa-globe'}"></i>`}
                 </div>
-                <div class="flex items-center gap-2 ${isEditMode ? 'opacity-20' : ''}">
+                <div class="${isForcedSquare ? 'absolute top-2.5 right-2.5' : isAutoSquare ? 'absolute top-2.5 right-2.5 sm:static' : ''} flex items-center gap-1.5 ${isEditMode ? 'opacity-20' : ''}">
                   ${statusDotHtml}
                 </div>
               </div>
-              <div>
-                <h4 class="font-bold text-sm group-hover:text-orange-400 transition-colors flex items-center gap-1.5 truncate">${app.name}</h4>
-                <p class="text-[11px] opacity-60 font-medium truncate mt-0.5 sm:mt-1">${app.url}</p>
+              <div class="w-full overflow-hidden">
+                <h4 class="font-bold text-xs sm:text-sm group-hover:text-orange-400 transition-colors truncate">${app.name}</h4>
+                <p class="${isForcedSquare ? 'hidden' : isAutoSquare ? 'hidden sm:block' : 'block'} text-[10px] opacity-60 font-medium truncate mt-0.5">${app.url}</p>
               </div>
             </a>
           </div>
@@ -1902,39 +1963,42 @@
         const sysTheme = colorClasses[profile.sysMonConfig?.color || 'orange'] || colorClasses.orange;
 
         return `
-          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative ${sysTheme.hoverGlow} ${tileShapeClass}">
-            ${isEditMode ? `<div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10"><button onclick="openSysMonModal()" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button></div>` : ''}
-            <div>
-              <div class="flex items-start justify-between gap-2 mb-2.5">
-                <div class="flex items-center gap-2.5 overflow-hidden">
-                  <div class="w-10 h-10 rounded-xl ${sysTheme.bg} ${sysTheme.border} border flex items-center justify-center text-lg ${sysTheme.text} flex-shrink-0">
+          <div class="glass-card rounded-2xl flex flex-col justify-between relative ${sysTheme.hoverGlow} ${tileShapeClass}">
+            ${isEditMode ? `<div class="absolute top-1.5 right-1.5 flex items-center gap-1 z-20 bg-slate-950/85 p-1 rounded-xl border border-white/10"><button onclick="openSysMonModal()" class="w-5 h-5 rounded-lg bg-amber-500/20 text-amber-400 text-[9px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button></div>` : ''}
+            <div class="h-full flex flex-col justify-between">
+              <div class="flex items-start justify-between gap-1.5 mb-1.5">
+                <div class="flex items-center gap-2 overflow-hidden">
+                  <div class="w-8 h-8 rounded-xl ${sysTheme.bg} ${sysTheme.border} border flex items-center justify-center text-sm ${sysTheme.text} flex-shrink-0">
                     <i class="${sysIcon}"></i>
                   </div>
                   <div class="overflow-hidden">
-                    <h4 class="font-bold text-sm truncate">${customName}</h4>
-                    <p class="text-[10px] text-slate-400 truncate">${customOs}</p>
+                    <h4 class="font-bold text-xs truncate">${customName}</h4>
+                    <p class="text-[9px] text-slate-400 truncate hidden sm:block">${customOs}</p>
                   </div>
                 </div>
-                <span class="w-2.5 h-2.5 rounded-full ${s ? 'bg-emerald-500 status-pulse' : 'bg-slate-500'} mt-1 flex-shrink-0"></span>
+                <span class="w-2 h-2 rounded-full ${s ? 'bg-emerald-500 status-pulse' : 'bg-slate-500'} mt-1 flex-shrink-0"></span>
               </div>
-              <div class="space-y-1.5 sm:space-y-2 mt-2 sm:mt-3">
+              <div class="space-y-1.5">
                 <div>
-                  <div class="flex justify-between text-[10px] font-semibold mb-1">
+                  <div class="flex justify-between text-[9px] font-semibold mb-0.5">
                     <span class="text-slate-300">CPU</span><span class="text-white font-mono">${s ? cpuPct + '%' : '--%'}</span>
                   </div>
-                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div class="${cpuColor} h-full" style="width: ${cpuPct}%"></div></div>
+                  <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden"><div class="${cpuColor} h-full" style="width: ${cpuPct}%"></div></div>
                 </div>
                 <div>
-                  <div class="flex justify-between text-[10px] font-semibold mb-1">
+                  <div class="flex justify-between text-[9px] font-semibold mb-0.5">
                     <span class="text-slate-300">RAM</span><span class="text-white font-mono">${s ? ramPct + '%' : '--%'}</span>
                   </div>
-                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div class="${ramColor} h-full" style="width: ${ramPct}%"></div></div>
+                  <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden"><div class="${ramColor} h-full" style="width: ${ramPct}%"></div></div>
                 </div>
               </div>
             </div>
           </div>
         `;
       };
+
+      const gapVal = profile.tileSpacingVal || '2';
+      const gapClass = gapVal === '1' ? 'gap-2' : gapVal === '2' ? 'gap-3' : 'gap-5';
 
       if (profile.groupByCategory && activeCategory === 'All' && !searchQuery) {
         let sectionsHtml = '';
@@ -1944,7 +2008,7 @@
               <div class="flex items-center gap-2 pb-2 border-b border-white/10 text-xs font-bold text-orange-400 uppercase tracking-wider">
                 <i class="fa-solid fa-server"></i> System Monitor
               </div>
-              <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div class="grid ${gridColsClass} ${gapClass}">
                 ${renderSysTileHtml()}
               </div>
             </div>
@@ -1967,7 +2031,7 @@
                   </div>
                   <button onclick="setCategory('${cat}')" class="text-[10px] text-orange-400 hover:underline">View Only</button>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div class="grid ${gridColsClass} ${gapClass}">
                   ${isSysCatMatch ? renderSysTileHtml() : ''}
                   ${catApps.map(app => renderTileHtml(app)).join('')}
                 </div>
@@ -1978,7 +2042,7 @@
         container.innerHTML = sectionsHtml;
       } else {
         container.innerHTML = `
-          <div id="apps-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div id="apps-grid" class="grid ${gridColsClass} ${gapClass}">
             ${showSysTile && !sysCat ? renderSysTileHtml() : ''} 
             ${showSysTile && sysCat && (activeCategory === sysCat || activeCategory === 'All') ? renderSysTileHtml() : ''}
             ${filtered.map(app => renderTileHtml(app)).join('')}
@@ -2094,7 +2158,7 @@
       const container = document.getElementById('dashboard-view-container');
       const label = document.getElementById('tile-spacing-label');
       const grids = container.querySelectorAll('.grid');
-      const gapClass = val === '1' ? 'gap-2' : val === '2' ? 'gap-4' : 'gap-6';
+      const gapClass = val === '1' ? 'gap-2' : val === '2' ? 'gap-3' : 'gap-5';
       label.innerText = val === '1' ? 'Tight' : val === '2' ? 'Standard' : 'Spacious';
       grids.forEach(g => {
         g.className = g.className.replace(/gap-\d/, gapClass);
@@ -2145,23 +2209,47 @@
     function renderIconGrid(query) {
       const container = document.getElementById('icon-grid-container');
       const q = query.toLowerCase().trim();
-      const filtered = unifiedIconLibrary.filter(item => item.name.includes(q) || item.value.includes(q));
-      container.innerHTML = filtered.map(item => `
-        <button type="button" onclick="selectUnifiedIcon('${item.value}')" class="p-3 bg-slate-900 hover:bg-orange-600/20 border border-white/10 rounded-xl flex flex-col items-center justify-center gap-1.5">
-          ${item.type === 'url' ? `<img src="${item.value}" class="w-7 h-7 object-contain" />` : `<i class="${item.value} text-lg text-slate-200"></i>`}
+      const filtered = fullIconLibrary.filter(item => item.name.includes(q) || item.value.toLowerCase().includes(q));
+      // Limit initial render to 160 icons for instant UI response; typing narrows down all 2,500+
+      const displaySet = filtered.slice(0, 160);
+      container.innerHTML = displaySet.map(item => `
+        <button type="button" onclick="selectUnifiedIcon('${item.value}', '${item.slug || ''}')" class="p-2.5 bg-slate-900 hover:bg-orange-600/20 border border-white/10 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-colors">
+          ${item.type === 'url' ? `<img src="${item.value}" loading="lazy" class="w-7 h-7 object-contain" />` : `<i class="${item.value} text-lg text-slate-200"></i>`}
           <span class="text-[9px] text-slate-400 truncate w-full text-center">${item.name}</span>
         </button>
-      `).join('');
+      `).join('') + (filtered.length > 160 ? `<div class="col-span-full text-center text-[10px] text-slate-400 py-2">Showing top 160 of ${filtered.length} matches — keep typing to narrow results</div>` : '');
     }
     function filterIconGrid(val) { renderIconGrid(val); }
 
-    function selectUnifiedIcon(val) {
+    async function selectUnifiedIcon(val, slug = '') {
+      let finalIconPath = val;
+
+      // Auto-cache remote dashboard-icons locally to /data/cached_icons/
+      if (val.startsWith('http://') || val.startsWith('https://')) {
+        showToast('Caching icon offline...', 'blue');
+        try {
+          const res = await fetch('/api/cache-icon', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: val, slug })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.url) {
+              finalIconPath = data.url;
+              showToast('Icon cached locally for offline use!', 'emerald');
+            }
+          }
+        } catch (e) {}
+      }
+
       if (iconPickerTarget === 'sysmon') {
-        document.getElementById('sysmon-icon-fa').value = val;
+        document.getElementById('sysmon-icon-fa').value = finalIconPath;
         sysMonIconWasModified = true;
         updateSysMonModalIconPreview();
       } else {
-        document.getElementById('app-icon-fa').value = val;
+        setIconType('fa');
+        document.getElementById('app-icon-fa').value = finalIconPath;
         iconWasModified = true;
         updateModalIconPreview();
       }
@@ -2392,6 +2480,7 @@
         pingIntervalSec: 60,
         tileSpacingVal: '2',
         tileShape: 'auto',
+        tileOpacity: 65,
         groupByCategory: false,
         customBgData: '',
         bgScaleMode: 'cover',
@@ -2423,21 +2512,6 @@
         openProfilesModal();
         showToast('Profile deleted', 'emerald');
       });
-    }
-
-    function switchProfile(id) {
-      const target = profiles.find(p => p.id === id);
-      if (!target) return;
-      if (target.password && target.password.trim() !== '') {
-        pendingSwitchProfileId = id;
-        pendingProtectedAction = null;
-        document.getElementById('prompt-profile-name').innerText = `Enter password for ${target.name}`;
-        document.getElementById('unlock-password-input').value = '';
-        document.getElementById('password-prompt-modal').classList.remove('hidden');
-        closeProfilesModal();
-      } else {
-        executeSwitchProfile(id);
-      }
     }
 
     function executeSwitchProfile(id) {
@@ -2473,7 +2547,7 @@
                 name: name,
                 category: cat,
                 url: url,
-                icon: item.icon ? (item.icon.startsWith('http') ? item.icon : `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${item.icon}.png`) : 'fa-solid fa-globe',
+                icon: item.icon ? (item.icon.startsWith('http') ? item.icon : `https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/${item.icon}.png`) : 'fa-solid fa-globe',
                 color: 'orange',
                 customBg: '',
                 fontColor: '#f1f5f9',
@@ -2522,7 +2596,7 @@
                       name: name,
                       category: catName,
                       url: url,
-                      icon: details.icon ? (details.icon.startsWith('http') ? details.icon : `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${details.icon}.png`) : 'fa-solid fa-globe',
+                      icon: details.icon ? (details.icon.startsWith('http') ? details.icon : `https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/${details.icon}.png`) : 'fa-solid fa-globe',
                       color: 'orange',
                       customBg: '',
                       fontColor: '#f1f5f9',
@@ -2553,7 +2627,7 @@
                     name: currentAppName,
                     category: currentCat,
                     url: currentUrl,
-                    icon: currentIcon ? (currentIcon.startsWith('http') ? currentIcon : `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${currentIcon}.png`) : 'fa-solid fa-globe',
+                    icon: currentIcon ? (currentIcon.startsWith('http') ? currentIcon : `https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/${currentIcon}.png`) : 'fa-solid fa-globe',
                     color: 'orange',
                     customBg: '',
                     fontColor: '#f1f5f9',
@@ -2585,7 +2659,7 @@
                 name: currentAppName,
                 category: currentCat,
                 url: currentUrl,
-                icon: currentIcon ? (currentIcon.startsWith('http') ? currentIcon : `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${currentIcon}.png`) : 'fa-solid fa-globe',
+                icon: currentIcon ? (currentIcon.startsWith('http') ? currentIcon : `https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/${currentIcon}.png`) : 'fa-solid fa-globe',
                 color: 'orange',
                 customBg: '',
                 fontColor: '#f1f5f9',
@@ -2629,10 +2703,12 @@
     function closeWikiModal() { document.getElementById('wiki-modal').classList.add('hidden'); }
 
     function setTheme(name, save = true) {
-      getCurrentProfile().theme = name;
+      const p = getCurrentProfile();
+      p.theme = name;
       document.body.classList.remove('theme-light', 'theme-neon');
       if (name === 'light') document.body.classList.add('theme-light');
       else if (name === 'neon') document.body.classList.add('theme-neon');
+      applyTileOpacity(p.tileOpacity !== undefined ? p.tileOpacity : 65, name);
       if (save) { saveState(); showToast('Theme updated', 'emerald'); }
     }
 

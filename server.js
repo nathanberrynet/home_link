@@ -6,15 +6,19 @@ const os = require('os');
 const app = express();
 const PORT = process.env.PORT || 8580;
 const DATA_DIR = path.join(__dirname, 'data');
+const CACHED_ICONS_DIR = path.join(DATA_DIR, 'cached_icons');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
+const ICONS_MANIFEST_FILE = path.join(DATA_DIR, 'icons-manifest.json');
 
-if (!fs.existsSync(DATA_DIR)) {
-    try {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-    } catch (err) {
-        console.error('[HomeLink Error] Failed to create data directory:', err.message);
+[DATA_DIR, CACHED_ICONS_DIR].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        try {
+            fs.mkdirSync(dir, { recursive: true });
+        } catch (err) {
+            console.error(`[HomeLink Error] Failed to create directory ${dir}:`, err.message);
+        }
     }
-}
+});
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -41,12 +45,87 @@ app.post('/api/config', (req, res) => {
     }
 });
 
+// Fetch & cache the full 2,500+ homarr-labs/dashboard-icons index locally
+app.get('/api/icons-manifest', async (req, res) => {
+    try {
+        const forceRefresh = req.query.refresh === 'true';
+        if (!forceRefresh && fs.existsSync(ICONS_MANIFEST_FILE)) {
+            const stat = fs.statSync(ICONS_MANIFEST_FILE);
+            const ageHours = (Date.now() - stat.mtimeMs) / (1000 * 60 * 60);
+            if (ageHours < 168) { // Cache for 7 days
+                return res.json(JSON.parse(fs.readFileSync(ICONS_MANIFEST_FILE, 'utf8')));
+            }
+        }
+
+        const response = await fetch('https://api.github.com/repos/homarr-labs/dashboard-icons/git/trees/main?recursive=1', {
+            headers: { 'User-Agent': 'HomeLink-Dashboard' }
+        });
+        if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
+        const data = await response.json();
+
+        const icons = [];
+        const seen = new Set();
+        if (data && Array.isArray(data.tree)) {
+            data.tree.forEach(entry => {
+                if (entry.path && entry.path.startsWith('png/') && entry.path.endsWith('.png')) {
+                    const slug = entry.path.replace('png/', '').replace('.png', '');
+                    if (!seen.has(slug)) {
+                        seen.add(slug);
+                        icons.push({
+                            name: slug.replace(/-/g, ' '),
+                            slug: slug,
+                            url: `https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/${slug}.png`
+                        });
+                    }
+                }
+            });
+        }
+
+        fs.writeFileSync(ICONS_MANIFEST_FILE, JSON.stringify(icons), 'utf8');
+        res.json(icons);
+    } catch (err) {
+        if (fs.existsSync(ICONS_MANIFEST_FILE)) {
+            return res.json(JSON.parse(fs.readFileSync(ICONS_MANIFEST_FILE, 'utf8')));
+        }
+        res.status(500).json({ error: 'Failed to fetch icons manifest', details: err.message });
+    }
+});
+
+// Proxy-download and locally cache selected remote icons for 100% offline capability
+app.post('/api/cache-icon', async (req, res) => {
+    const { url, slug } = req.body;
+    if (!url || !url.startsWith('http')) {
+        return res.status(400).json({ error: 'Valid remote URL required' });
+    }
+    try {
+        const cleanSlug = (slug || path.basename(new URL(url).pathname).replace(/\.[^/.]+$/, '')).replace(/[^a-zA-Z0-9_-]/g, '_');
+        const ext = path.extname(new URL(url).pathname) || '.png';
+        const localFilename = `${cleanSlug}${ext}`;
+        const localFilePath = path.join(CACHED_ICONS_DIR, localFilename);
+        const publicUrl = `/data/cached_icons/${localFilename}`;
+
+        if (fs.existsSync(localFilePath)) {
+            return res.json({ url: publicUrl, cached: true });
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const arrayBuffer = await response.arrayBuffer();
+        fs.writeFileSync(localFilePath, Buffer.from(arrayBuffer));
+
+        res.json({ url: publicUrl, cached: false });
+    } catch (err) {
+        // Fallback to remote URL if offline during selection
+        res.json({ url, fallback: true, error: err.message });
+    }
+});
+
 function getAssetsRecursive(dir, baseDir = dir) {
     let results = [];
     if (!fs.existsSync(dir)) return results;
     const list = fs.readdirSync(dir);
     list.forEach(file => {
-        if (file === 'config.json' || file.startsWith('.') || file.endsWith('.swp') || file.endsWith('~') || file.includes('.swp.')) return;
+        if (file === 'config.json' || file === 'icons-manifest.json' || file.startsWith('.') || file.endsWith('.swp') || file.endsWith('~') || file.includes('.swp.')) return;
         const filePath = path.join(dir, file);
         const stat = fs.statSync(filePath);
         if (stat && stat.isDirectory()) {
