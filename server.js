@@ -41,7 +41,6 @@ app.post('/api/config', (req, res) => {
     }
 });
 
-// Recursive asset scanner to catch files in root data/ or any subfolders
 function getAssetsRecursive(dir, baseDir = dir) {
     let results = [];
     if (!fs.existsSync(dir)) return results;

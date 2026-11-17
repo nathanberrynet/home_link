@@ -288,20 +288,21 @@
   <!-- Main Container -->
   <main id="main-dashboard-content" class="max-w-7xl mx-auto px-4 lg:px-8 z-10 relative transition-opacity duration-200">
 
-    <!-- Category Filter Bar & Quick Stats -->
+    <!-- Category Filter Bar & Quick Stats (Group view toggle moved to the left) -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
       <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-none">
-        <div id="category-tabs" class="flex items-center gap-1.5">
-          <!-- Rendered via JS -->
-        </div>
         <button 
           id="btn-group-toggle"
           onclick="toggleGroupCategoryView()"
           title="Toggle Grouped Category Sections View"
-          class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-slate-900/50 text-slate-300 border border-white/5 hover:bg-slate-800 transition-all flex items-center gap-1.5">
+          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-slate-900/50 text-slate-300 border border-white/5 hover:bg-slate-800 transition-all flex items-center gap-1.5 flex-shrink-0">
           <i class="fa-solid fa-layer-group text-orange-400"></i>
           <span id="group-toggle-label">Group View</span>
         </button>
+
+        <div id="category-tabs" class="flex items-center gap-1.5">
+          <!-- Rendered via JS -->
+        </div>
       </div>
 
       <div class="flex items-center gap-3 text-xs opacity-80 bg-slate-900/40 px-3 py-1.5 rounded-xl border border-white/5 w-full sm:w-auto justify-between sm:justify-end">
@@ -318,7 +319,7 @@
 
     <!-- App Tiles Grid / Grouped Sections Container -->
     <div id="dashboard-view-container" class="space-y-6">
-      <div id="apps-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div id="apps-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         <!-- Dynamically populated -->
       </div>
     </div>
@@ -753,6 +754,19 @@
           </div>
         </div>
 
+        <!-- Universal Tile Shape Preference -->
+        <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5 space-y-2">
+          <div class="text-xs font-semibold text-white flex items-center gap-1.5">
+            <i class="fa-solid fa-shapes text-orange-400"></i> Tile Shape Preference (Universal)
+          </div>
+          <div class="text-[10px] opacity-60">Mobile defaults to square tiles, desktop defaults to rectangle. You can override or force a universal shape here.</div>
+          <select id="setting-tile-shape" onchange="saveTileShapePreference(this.value)" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+            <option value="auto">Auto (Square on Mobile, Rectangle on Desktop)</option>
+            <option value="square">Force Square (All Devices)</option>
+            <option value="rectangle">Force Rectangle (All Devices)</option>
+          </select>
+        </div>
+
         <div class="pt-4 border-t border-white/10 space-y-3">
           <div class="flex items-center justify-between bg-slate-900/50 p-3.5 rounded-xl border border-white/5">
             <div>
@@ -1017,6 +1031,7 @@
         weatherZip: '28601',
         pingIntervalSec: 60,
         tileSpacingVal: '2',
+        tileShape: 'auto', // 'auto', 'square', 'rectangle'
         groupByCategory: false,
         customBgData: '',
         bgScaleMode: 'cover',
@@ -1174,6 +1189,7 @@
             if (!p.weatherZip) p.weatherZip = '28601';
             if (!p.pingIntervalSec) p.pingIntervalSec = 60;
             if (!p.tileSpacingVal) p.tileSpacingVal = '2';
+            if (!p.tileShape) p.tileShape = 'auto';
             if (p.groupByCategory === undefined) p.groupByCategory = false;
             if (p.customBgData === undefined) p.customBgData = '';
             if (!p.bgScaleMode) p.bgScaleMode = 'cover';
@@ -1218,6 +1234,7 @@
       document.getElementById('setting-weather-zip').value = p.weatherZip || '28601';
       document.getElementById('setting-ping-interval').value = p.pingIntervalSec || 60;
       document.getElementById('setting-tile-spacing').value = p.tileSpacingVal || '2';
+      document.getElementById('setting-tile-shape').value = p.tileShape || 'auto';
       applyTileSpacing(p.tileSpacingVal || '2', false);
       document.getElementById('setting-bg-opacity').value = p.bgOpacity !== undefined ? p.bgOpacity : 30;
       document.getElementById('bg-opacity-label').innerText = `${p.bgOpacity !== undefined ? p.bgOpacity : 30}%`;
@@ -1259,6 +1276,13 @@
       }
     }
 
+    function saveTileShapePreference(val) {
+      getCurrentProfile().tileShape = val;
+      saveState();
+      renderApps();
+      showToast('Tile shape preference updated', 'emerald');
+    }
+
     function toggleGroupCategorySetting(checked) {
       const p = getCurrentProfile();
       p.groupByCategory = checked;
@@ -1283,27 +1307,12 @@
       const btn = document.getElementById('btn-group-toggle');
       const label = document.getElementById('group-toggle-label');
       if (p.groupByCategory) {
-        btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-orange-600 text-white border border-orange-500 shadow-md transition-all flex items-center gap-1.5';
+        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-orange-600 text-white border border-orange-500 shadow-md transition-all flex items-center gap-1.5 flex-shrink-0';
         label.innerText = 'Grouped';
       } else {
-        btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-slate-900/50 text-slate-300 border border-white/5 hover:bg-slate-800 transition-all flex items-center gap-1.5';
+        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-slate-900/50 text-slate-300 border border-white/5 hover:bg-slate-800 transition-all flex items-center gap-1.5 flex-shrink-0';
         label.innerText = 'Group View';
       }
-    }
-
-    function saveCurrentProfilePassword() {
-      const p = getCurrentProfile();
-      p.password = document.getElementById('setting-profile-new-pass').value;
-      saveState();
-      applyProfilePreferences();
-      showToast(p.password.trim() !== '' ? 'Password set' : 'Password removed', 'emerald');
-    }
-
-    function saveDefaultStartupProfile() {
-      if (!getCurrentProfile().isMain) return;
-      defaultStartupProfileId = document.getElementById('setting-default-profile-select').value;
-      saveState();
-      showToast('Default startup profile updated', 'emerald');
     }
 
     function initClock() {
@@ -1613,17 +1622,30 @@
       }, (p.sysMonConfig?.refreshInterval || 3) * 1000);
     }
 
+    // Optimized Non-Blocking Fast Ping Runner for Mobile & Desktop
     async function runLivePings() {
       const profile = getCurrentProfile();
-      let checkedCount = 0, onlineCount = 0;
       if (profile.showSystemMonitor) fetchHostSystemStats();
 
-      for (const app of profile.apps) {
-        if (app.apiKey && app.apiKey.trim() !== '') fetchServiceStats(app);
-        if (app.pingEnabled === false) continue;
+      const appsToPing = profile.apps.filter(a => a.pingEnabled !== false);
+      if (appsToPing.length === 0) {
+        const countEl = document.getElementById('services-online-count');
+        const dotEl = document.getElementById('overall-status-dot');
+        if (countEl) countEl.innerText = `0/0 Online`;
+        if (dotEl) dotEl.className = 'w-2.5 h-2.5 rounded-full bg-slate-500';
+        return;
+      }
+
+      let onlineCount = 0;
+
+      // Fire all pings concurrently with a fast 2-second timeout to prevent mobile lag
+      const pingPromises = appsToPing.map(async (app) => {
+        if (app.apiKey && app.apiKey.trim() !== '') {
+          fetchServiceStats(app);
+        }
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3500);
+          const timeoutId = setTimeout(() => controller.abort(), 2000);
           await fetch(app.url, { mode: 'no-cors', cache: 'no-cache', signal: controller.signal });
           clearTimeout(timeoutId);
           appPingStatuses[app.id] = true;
@@ -1631,12 +1653,13 @@
         } catch (err) {
           appPingStatuses[app.id] = false;
         }
-        checkedCount++;
-      }
+      });
+
+      await Promise.all(pingPromises);
+
       const countEl = document.getElementById('services-online-count');
       const dotEl = document.getElementById('overall-status-dot');
-      const activePingCount = profile.apps.filter(a => a.pingEnabled !== false).length;
-      if (countEl) countEl.innerText = `${onlineCount}/${activePingCount} Online`;
+      if (countEl) countEl.innerText = `${onlineCount}/${appsToPing.length} Online`;
       if (dotEl) dotEl.className = onlineCount > 0 ? 'w-2.5 h-2.5 rounded-full bg-emerald-500 status-pulse' : 'w-2.5 h-2.5 rounded-full bg-rose-500';
       renderApps();
     }
@@ -1759,7 +1782,7 @@
         const dragAttrs = isDraggable ? `draggable="true" ondragstart="onCategoryDragStart(event, '${cat}')" ondragover="event.preventDefault()" ondrop="onCategoryDrop(event, '${cat}')" title="Drag to reorder category"` : '';
         const cursorClass = isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer';
         return `
-          <button ${dragAttrs} onclick="setCategory('${cat}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${cursorClass} ${activeCategory === cat ? 'bg-orange-600 text-white border-orange-500 shadow-md' : 'bg-slate-900/50 text-slate-300 border-white/5 hover:bg-slate-800'}">
+          <button ${dragAttrs} onclick="setCategory('${cat}')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${cursorClass} flex-shrink-0 ${activeCategory === cat ? 'bg-orange-600 text-white border-orange-500 shadow-md' : 'bg-slate-900/50 text-slate-300 border-white/5 hover:bg-slate-800'}">
             ${isDraggable ? '<i class="fa-solid fa-grip-vertical mr-1 opacity-60"></i>' : ''}${cat}
           </button>
         `;
@@ -1818,6 +1841,18 @@
       }
       emptyState.classList.add('hidden'); emptyState.classList.remove('flex');
 
+      // Determine Tile Shape CSS Class based on universal setting (defaults to square on mobile, rectangle on desktop)
+      const shapeSetting = profile.tileShape || 'auto';
+      let tileShapeClass = '';
+      if (shapeSetting === 'square') {
+        tileShapeClass = 'aspect-square';
+      } else if (shapeSetting === 'rectangle') {
+        tileShapeClass = '';
+      } else {
+        // Auto: square on mobile (sm: and below), rectangle on desktop
+        tileShapeClass = 'aspect-square sm:aspect-auto';
+      }
+
       const renderTileHtml = (app) => {
         const theme = colorClasses[app.color] || colorClasses.orange;
         const isImage = app.icon && (app.icon.startsWith('http://') || app.icon.startsWith('https://') || app.icon.startsWith('data:image/') || app.icon.startsWith('/data/'));
@@ -1829,7 +1864,7 @@
         }
 
         return `
-          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative group ${theme.hoverGlow}" draggable="${isEditMode}" ondragstart="onDragStart(event, '${app.id}')" ondragover="event.preventDefault()" ondrop="onDrop(event, '${app.id}')">
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative group ${theme.hoverGlow} ${tileShapeClass}" draggable="${isEditMode}" ondragstart="onDragStart(event, '${app.id}')" ondragover="event.preventDefault()" ondrop="onDrop(event, '${app.id}')">
             ${isEditMode ? `
               <div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10">
                 <span class="cursor-grab px-1 text-slate-400"><i class="fa-solid fa-grip-vertical"></i></span>
@@ -1837,9 +1872,9 @@
                 <button onclick="confirmDeleteApp('${app.id}')" class="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
               </div>
             ` : ''}
-            <a href="${app.url}" target="_blank" rel="noopener noreferrer" class="block flex-1">
+            <a href="${app.url}" target="_blank" rel="noopener noreferrer" class="block flex-1 flex flex-col justify-between">
               <div class="flex items-start justify-between gap-3 mb-3">
-                <div class="w-12 h-12 rounded-xl ${theme.bg} ${theme.border} border flex items-center justify-center text-2xl ${theme.text} overflow-hidden shadow-inner">
+                <div class="w-12 h-12 rounded-xl ${theme.bg} ${theme.border} border flex items-center justify-center text-2xl ${theme.text} overflow-hidden shadow-inner flex-shrink-0">
                   ${isImage ? `<img src="${app.icon}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.src='https://placehold.co/40x40/1e293b/ffffff?text=App';" />` : `<i class="${app.icon || 'fa-solid fa-globe'}"></i>`}
                 </div>
                 <div class="flex items-center gap-2 ${isEditMode ? 'opacity-20' : ''}">
@@ -1847,8 +1882,8 @@
                 </div>
               </div>
               <div>
-                <h4 class="font-bold text-sm group-hover:text-orange-400 transition-colors flex items-center gap-1.5">${app.name}</h4>
-                <p class="text-[11px] opacity-60 font-medium truncate mt-1">${app.url}</p>
+                <h4 class="font-bold text-sm group-hover:text-orange-400 transition-colors flex items-center gap-1.5 truncate">${app.name}</h4>
+                <p class="text-[11px] opacity-60 font-medium truncate mt-0.5 sm:mt-1">${app.url}</p>
               </div>
             </a>
           </div>
@@ -1867,12 +1902,12 @@
         const sysTheme = colorClasses[profile.sysMonConfig?.color || 'orange'] || colorClasses.orange;
 
         return `
-          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative ${sysTheme.hoverGlow}">
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative ${sysTheme.hoverGlow} ${tileShapeClass}">
             ${isEditMode ? `<div class="absolute top-2 right-2 flex items-center gap-1 z-20 bg-slate-950/80 p-1 rounded-xl border border-white/10"><button onclick="openSysMonModal()" class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button></div>` : ''}
             <div>
               <div class="flex items-start justify-between gap-2 mb-2.5">
                 <div class="flex items-center gap-2.5 overflow-hidden">
-                  <div class="w-10 h-10 rounded-xl ${sysTheme.bg} ${sysTheme.border} border flex items-center justify-center text-lg ${sysTheme.text}">
+                  <div class="w-10 h-10 rounded-xl ${sysTheme.bg} ${sysTheme.border} border flex items-center justify-center text-lg ${sysTheme.text} flex-shrink-0">
                     <i class="${sysIcon}"></i>
                   </div>
                   <div class="overflow-hidden">
@@ -1880,9 +1915,9 @@
                     <p class="text-[10px] text-slate-400 truncate">${customOs}</p>
                   </div>
                 </div>
-                <span class="w-2.5 h-2.5 rounded-full ${s ? 'bg-emerald-500 status-pulse' : 'bg-slate-500'} mt-1"></span>
+                <span class="w-2.5 h-2.5 rounded-full ${s ? 'bg-emerald-500 status-pulse' : 'bg-slate-500'} mt-1 flex-shrink-0"></span>
               </div>
-              <div class="space-y-2 mt-3">
+              <div class="space-y-1.5 sm:space-y-2 mt-2 sm:mt-3">
                 <div>
                   <div class="flex justify-between text-[10px] font-semibold mb-1">
                     <span class="text-slate-300">CPU</span><span class="text-white font-mono">${s ? cpuPct + '%' : '--%'}</span>
@@ -1909,7 +1944,7 @@
               <div class="flex items-center gap-2 pb-2 border-b border-white/10 text-xs font-bold text-orange-400 uppercase tracking-wider">
                 <i class="fa-solid fa-server"></i> System Monitor
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 ${renderSysTileHtml()}
               </div>
             </div>
@@ -1932,7 +1967,7 @@
                   </div>
                   <button onclick="setCategory('${cat}')" class="text-[10px] text-orange-400 hover:underline">View Only</button>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   ${isSysCatMatch ? renderSysTileHtml() : ''}
                   ${catApps.map(app => renderTileHtml(app)).join('')}
                 </div>
@@ -1943,7 +1978,7 @@
         container.innerHTML = sectionsHtml;
       } else {
         container.innerHTML = `
-          <div id="apps-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div id="apps-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             ${showSysTile && !sysCat ? renderSysTileHtml() : ''} 
             ${showSysTile && sysCat && (activeCategory === sysCat || activeCategory === 'All') ? renderSysTileHtml() : ''}
             ${filtered.map(app => renderTileHtml(app)).join('')}
@@ -2045,7 +2080,7 @@
 
     function toggleEditMode() {
       isEditMode = !isEditMode;
-      if (!isEditMode) isProfileUnlocked = false; // Lock locks it back
+      if (!isEditMode) isProfileUnlocked = false;
       document.getElementById('edit-mode-label').innerText = isEditMode ? 'Unlocked' : 'Locked';
       document.getElementById('edit-mode-icon').className = isEditMode ? 'fa-solid fa-lock-open text-emerald-400' : 'fa-solid fa-lock text-amber-400';
       const addBtn = document.getElementById('btn-add-link-header');
@@ -2356,6 +2391,7 @@
         weatherZip: '28601',
         pingIntervalSec: 60,
         tileSpacingVal: '2',
+        tileShape: 'auto',
         groupByCategory: false,
         customBgData: '',
         bgScaleMode: 'cover',
@@ -2406,7 +2442,7 @@
 
     function executeSwitchProfile(id) {
       currentProfileId = id;
-      isProfileUnlocked = false; // Switch profile requires unlocking again if passworded
+      isProfileUnlocked = false;
       saveState();
       applyProfilePreferences();
       renderCurrentProfileHeader();
@@ -2416,7 +2452,6 @@
       showToast('Switched profile', 'blue');
     }
 
-    // ================= HEIMDALL & HOMEPAGE CONFIG IMPORTS =================
     function importHeimdallConfig(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -2574,7 +2609,6 @@
       reader.readAsText(file);
     }
 
-    // ================= WIKI TABS NAVIGATION =================
     function switchWikiTab(tabKey) {
       ['arch', 'api', 'profiles', 'backup'].forEach(k => {
         const btn = document.getElementById(`wiki-tab-${k}`);
