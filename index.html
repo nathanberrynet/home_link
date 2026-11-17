@@ -172,7 +172,7 @@
           </div>
           <div>
             <h1 class="font-bold text-lg leading-tight tracking-tight flex items-center gap-2">
-              HomeLink <span class="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30">v2.7</span>
+              HomeLink <span class="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30">v2.8</span>
             </h1>
             <p id="live-date" class="text-xs opacity-70 font-medium">Loading date...</p>
           </div>
@@ -374,19 +374,21 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold opacity-90 mb-1">API Service Type</label>
-            <select id="app-service-type" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-              <option value="sonarr">Sonarr / Radarr (Queue)</option>
-              <option value="prowlarr">Prowlarr (Queue/Index)</option>
+            <select id="app-service-type" onchange="updateApiKeyHelperText()" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+              <option value="sonarr">Sonarr (Queue)</option>
+              <option value="radarr">Radarr (Queue)</option>
+              <option value="prowlarr">Prowlarr (Synced Apps)</option>
               <option value="qbittorrent">qBittorrent (Transfer Speed)</option>
               <option value="immich">Immich (Photos & Videos Count)</option>
               <option value="generic">Generic API</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold opacity-90 mb-1">Optional API Key</label>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Optional API Key / Auth</label>
             <input type="password" id="app-api-key" placeholder="API key..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
           </div>
         </div>
+        <p id="api-key-helper-text" class="text-[10px] text-slate-400 -mt-2">Paste your Sonarr API key from Settings → General → Security.</p>
 
         <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-white/5">
           <div>
@@ -924,79 +926,147 @@
     </div>
   </div>
 
-  <!-- Wiki & Guide Modal with Cool Tabs -->
+  <!-- Wiki & Guide Modal with Comprehensive Tabs -->
   <div id="wiki-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-4xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
       <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
         <h3 class="text-lg font-bold flex items-center gap-2">
-          <i class="fa-solid fa-book-open text-orange-400 text-xl"></i> HomeLink Wiki & System Guide
+          <i class="fa-solid fa-book-open text-orange-400 text-xl"></i> HomeLink Wiki & System Guide <span class="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-mono">v2.8</span>
         </h3>
         <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <!-- Wiki Tabs Header -->
       <div class="flex items-center gap-2 border-b border-white/10 pb-3 mb-4 overflow-x-auto">
-        <button onclick="switchWikiTab('arch')" id="wiki-tab-arch" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow transition-all whitespace-nowrap">Architecture</button>
-        <button onclick="switchWikiTab('api')" id="wiki-tab-api" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">API Integrations</button>
-        <button onclick="switchWikiTab('profiles')" id="wiki-tab-profiles" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">Profiles & Security</button>
-        <button onclick="switchWikiTab('backup')" id="wiki-tab-backup" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">Backup & Imports</button>
+        <button onclick="switchWikiTab('arch')" id="wiki-tab-arch" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow transition-all whitespace-nowrap"><i class="fa-solid fa-server mr-1"></i> Architecture & Telemetry</button>
+        <button onclick="switchWikiTab('api')" id="wiki-tab-api" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap"><i class="fa-solid fa-plug mr-1"></i> API Integrations</button>
+        <button onclick="switchWikiTab('studio')" id="wiki-tab-studio" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Studio & Customization</button>
+        <button onclick="switchWikiTab('profiles')" id="wiki-tab-profiles" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap"><i class="fa-solid fa-users mr-1"></i> Profiles & Security</button>
+        <button onclick="switchWikiTab('backup')" id="wiki-tab-backup" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap"><i class="fa-solid fa-file-import mr-1"></i> Backup & Imports</button>
       </div>
 
       <!-- Wiki Tab Content Panels -->
-      <div class="overflow-y-auto space-y-4 text-xs text-slate-300 pr-2 max-h-[55vh]">
+      <div class="overflow-y-auto space-y-4 text-xs text-slate-300 pr-2 max-h-[60vh]">
         
-        <!-- Tab 1: Architecture -->
+        <!-- Tab 1: Architecture & Telemetry -->
         <div id="wiki-panel-arch" class="space-y-3">
-          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-server text-orange-400"></i> Local-First Homelab Architecture</h4>
-          <p>HomeLink v2.7 is engineered for zero external telemetry and offline autonomy. All dashboard configurations, custom icons, cached logos, and background wallpapers are stored directly in your local <code class="text-orange-300 font-mono">data/</code> directory.</p>
-          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
-            <div class="font-bold text-white">Key Features:</div>
-            <ul class="list-disc pl-4 space-y-1 opacity-80">
-              <li>Server-side asset & 2,500+ icon caching with local fallback.</li>
-              <li>Real-time background health polling for homelab services.</li>
-              <li>Live System Monitor tile tracking CPU, RAM, and OS metrics.</li>
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-shield-halved text-orange-400"></i> Local-First Architecture & Zero-Telemetry Guarantee</h4>
+          <p>HomeLink v2.8 is engineered for strict data privacy, zero external tracking, and 100% offline resilience. Your dashboard remains fully functional even during complete WAN/internet outages.</p>
+          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-2">
+            <div class="font-bold text-white">Telemetry & Network Transparency:</div>
+            <ul class="list-disc pl-4 space-y-1.5 opacity-85">
+              <li><b>Zero Analytics or Phoning Home:</b> HomeLink sends zero usage metrics, crash logs, or telemetry to any third-party servers.</li>
+              <li><b>Local Asset & Icon Caching (<code class="text-orange-300 font-mono">data/cached_icons/</code>):</b> When you select any of the 2,500+ homelab icons in the Unified Icon Picker, the Node.js backend automatically downloads and stores the PNG locally on your server so tiles render instantaneously offline.</li>
+              <li><b>Persistent JSON Storage (<code class="text-orange-300 font-mono">data/config.json</code>):</b> All profiles, tiles, categories, and theme settings reside in a single human-readable file mapped to your Docker volume.</li>
+              <li><b>Optional Outbound Calls:</b> Outbound network requests occur <i>only</i> when you manually refresh the GitHub icon manifest, look up Open-Meteo weather for your ZIP/city, or execute a web search from the top search bar.</li>
+            </ul>
+          </div>
+          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">Core System Features:</div>
+            <ul class="list-disc pl-4 space-y-1 opacity-85">
+              <li><b>Background Service Health Pings:</b> Concurrent, non-blocking reachability checks with live green/red status dots and an aggregate online counter.</li>
+              <li><b>Host System Monitor Tile:</b> Real-time CPU utilization, RAM usage, hostname, OS release, and uptime metrics polled directly from <code class="text-orange-300 font-mono">/api/system-stats</code>.</li>
+              <li><b>Smart Multi-Engine Search Bar:</b> Instantly filter local tiles in real time or dispatch queries to Google, YouTube, DuckDuckGo, GitHub, or Reddit.</li>
             </ul>
           </div>
         </div>
 
         <!-- Tab 2: API Integrations -->
         <div id="wiki-panel-api" class="space-y-3 hidden">
-          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-plug text-cyan-400"></i> Service API Badges & Status</h4>
-          <p>You can connect your service tiles (Sonarr, Radarr, Prowlarr, qBittorrent, Immich) to display live queue statistics and transfer speeds directly on the dashboard card.</p>
-          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
-            <div class="font-bold text-white">Configuration Steps:</div>
-            <ol class="list-decimal pl-4 space-y-1 opacity-80">
-              <li>Click <b>Unlock Editing Mode</b> in the top right.</li>
-              <li>Click the edit pencil on any service tile.</li>
-              <li>Select your API Service Type and paste your API Key.</li>
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-plug text-cyan-400"></i> Live Service API Badges & Telemetry Setup</h4>
+          <p>HomeLink proxies API calls server-side (<code class="text-orange-300 font-mono">/api/proxy-stats</code>) to bypass browser CORS restrictions and keep your API keys out of public client requests. Live metrics appear as an interactive badge directly on each service tile.</p>
+          
+          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">How to Enable an API Badge:</div>
+            <ol class="list-decimal pl-4 space-y-1 opacity-85">
+              <li>Click the <b>Locked</b> button in the top-right header to unlock Editing Mode.</li>
+              <li>Click the amber <b>Edit (Pencil)</b> icon on any tile (or click <b>+ Add Link</b>).</li>
+              <li>Select the matching <b>API Service Type</b> from the dropdown and enter your API Key or credentials.</li>
+              <li>Click <b>Save Tile</b>—the live status badge will populate automatically on the next poll cycle.</li>
             </ol>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1">
+              <div class="font-bold text-cyan-300 flex items-center justify-between">
+                <span>Sonarr & Radarr</span>
+                <span class="text-[10px] font-mono bg-cyan-500/10 px-2 py-0.5 rounded text-cyan-300">X in queue</span>
+              </div>
+              <p class="opacity-80">Queries <code class="text-orange-300 font-mono">/api/v3/queue</code>. Copy your 32-character API Key from <b>Settings → General → Security</b> inside Sonarr or Radarr.</p>
+            </div>
+
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1">
+              <div class="font-bold text-purple-300 flex items-center justify-between">
+                <span>Prowlarr</span>
+                <span class="text-[10px] font-mono bg-purple-500/10 px-2 py-0.5 rounded text-purple-300">X apps synced</span>
+              </div>
+              <p class="opacity-80">Queries <code class="text-orange-300 font-mono">/api/v1/applications</code>. Copy your API Key from <b>Settings → General → Security</b> in Prowlarr.</p>
+            </div>
+
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1">
+              <div class="font-bold text-emerald-300 flex items-center justify-between">
+                <span>Immich</span>
+                <span class="text-[10px] font-mono bg-emerald-500/10 px-2 py-0.5 rounded text-emerald-300">Photos & Videos</span>
+              </div>
+              <p class="opacity-80">Queries <code class="text-orange-300 font-mono">/api/server/statistics</code> via <code class="text-orange-300 font-mono">x-api-key</code>. Generate a key in Immich under <b>Account Settings → API Keys</b> (requires <code class="text-orange-300 font-mono">server.statistics</code> or admin permission).</p>
+            </div>
+
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1">
+              <div class="font-bold text-amber-300 flex items-center justify-between">
+                <span>qBittorrent</span>
+                <span class="text-[10px] font-mono bg-amber-500/10 px-2 py-0.5 rounded text-amber-300">↓ DL ↑ UL</span>
+              </div>
+              <p class="opacity-80">Authenticates via WebUI API (<code class="text-orange-300 font-mono">/api/v2/transfer/info</code>). Enter credentials as <code class="text-orange-300 font-mono">username:password</code> (e.g., <code class="text-orange-300 font-mono">admin:secretpass</code>) or just your password if your username is <code class="text-orange-300 font-mono">admin</code>.</p>
+            </div>
           </div>
         </div>
 
-        <!-- Tab 3: Profiles & Security -->
-        <div id="wiki-panel-profiles" class="space-y-3 hidden">
-          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-users text-amber-400"></i> Multi-User Profiles & Direct URLs</h4>
-          <p>HomeLink supports isolated user profiles with individual tile layouts, themes, and scoped asset management.</p>
-          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
-            <div class="font-bold text-white">Security Highlights:</div>
-            <ul class="list-disc pl-4 space-y-1 opacity-80">
-              <li>Set optional PIN/passwords per profile in Settings.</li>
-              <li>Generate direct profile switching links to bookmark on different devices.</li>
-              <li>Non-admin profiles are strictly scoped to their own uploaded icons and wallpapers.</li>
+        <!-- Tab 3: Studio & Customization -->
+        <div id="wiki-panel-studio" class="space-y-3 hidden">
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-orange-400"></i> Interactive Background Studio & Visual Controls</h4>
+          <p>Tailor every profile's layout, wallpaper alignment, tile geometry, and color palette with live visual feedback.</p>
+          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-2">
+            <div class="font-bold text-white">Interactive Background Studio:</div>
+            <ul class="list-disc pl-4 space-y-1.5 opacity-85">
+              <li><b>Live Pan & Resize:</b> Upload any wallpaper in <b>Settings → Custom Background Wallpaper</b>, then click <b>Live Pan & Resize</b> to drag the image freely across your viewport or pull the corner/edge handles (with locked aspect ratio) to frame it cleanly.</li>
+              <li><b>Wallpaper Gallery & Dimmer:</b> Switch instantly between uploaded wallpapers in your gallery, toggle <b>True-Color Mode</b> for 100% vibrancy, or dial in the Wallpaper Dimmer slider for crisp text contrast.</li>
+            </ul>
+          </div>
+          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-2">
+            <div class="font-bold text-white">Layout, Tiles & Drag-and-Drop Organization:</div>
+            <ul class="list-disc pl-4 space-y-1.5 opacity-85">
+              <li><b>Universal Tile Shapes & Opacity:</b> Choose <i>Auto</i> (compact square icons on phones, full detail rectangles on desktop), <i>Force Compact Square</i>, or <i>Force Rectangle</i>, and adjust card glass transparency from 0% to 100%.</li>
+              <li><b>Group View & Drag Reordering:</b> Toggle <b>Group View</b> in the category bar to organize tiles into distinct category cards. Unlock Editing Mode to drag-and-drop tiles or reorder category tabs directly.</li>
+              <li><b>Local Scoped Assets Manager:</b> Browse, inspect in a full-screen lightbox, or delete uploaded icons and wallpapers directly from your server's <code class="text-orange-300 font-mono">data/</code> folder.</li>
             </ul>
           </div>
         </div>
 
-        <!-- Tab 4: Backup & Imports -->
+        <!-- Tab 4: Profiles & Security -->
+        <div id="wiki-panel-profiles" class="space-y-3 hidden">
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-users text-amber-400"></i> Multi-User Profiles, Locks & Direct URLs</h4>
+          <p>HomeLink supports isolated user profiles with individual tile layouts, themes, wallpapers, and scoped asset management.</p>
+          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">Security & Access Controls:</div>
+            <ul class="list-disc pl-4 space-y-1.5 opacity-85">
+              <li><b>Edit Lock & Password Protection:</b> Set an optional PIN or password per profile in Settings. Protected profiles require authentication both when switching into the profile and when unlocking Editing Mode or Settings.</li>
+              <li><b>Direct Profile Bookmarks:</b> Open the <b>Profiles</b> menu in the header and click <b>Direct Link</b> next to any user to copy a direct URL (<code class="text-orange-300 font-mono">?profile=user_...</code>) for bookmarking on family tablets, phones, or kiosks.</li>
+              <li><b>Default Startup Profile:</b> Admins can designate which profile loads automatically when visiting the root HomeLink URL without query parameters.</li>
+              <li><b>Asset Scoping:</b> Non-admin profiles are scoped to their own uploaded wallpapers and unassigned icons, while the Admin profile has full visibility across all server assets.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 5: Backup & Imports -->
         <div id="wiki-panel-backup" class="space-y-3 hidden">
-          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-file-import text-purple-400"></i> Migrating from Heimdall & Homepage</h4>
-          <p>Easily import your existing homelab dashboards without manual re-entry.</p>
-          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
-            <div class="font-bold text-white">Supported Formats:</div>
-            <ul class="list-disc pl-4 space-y-1 opacity-80">
-              <li><b>Heimdall:</b> Upload your Heimdall JSON backup export.</li>
-              <li><b>Homepage:</b> Upload your <code class="text-orange-300 font-mono">services.yaml</code> or JSON configuration.</li>
-              <li><b>HomeLink Backup:</b> Full JSON export/import for complete server migration.</li>
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-file-import text-purple-400"></i> Backup, Restore & Dashboard Importers</h4>
+          <p>Migrate your existing homelab dashboards in seconds or maintain versioned JSON snapshots of your entire multi-profile setup.</p>
+          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">Supported Formats (Settings → Backup, Migration & Imports):</div>
+            <ul class="list-disc pl-4 space-y-1.5 opacity-85">
+              <li><b>HomeLink Backup (<code class="text-orange-300 font-mono">.json</code>):</b> Exports all profiles, categories, custom colors, API keys, and layout settings into a portable JSON file for instant restoration or server migration.</li>
+              <li><b>Heimdall Importer (<code class="text-orange-300 font-mono">.json</code>):</b> Upload a Heimdall JSON export to automatically import service titles, URLs, tags as categories, and matching dashboard icons.</li>
+              <li><b>Homepage Importer (<code class="text-orange-300 font-mono">services.yaml</code> / <code class="text-orange-300 font-mono">.json</code>):</b> Upload your Homepage YAML or JSON service configuration to automatically create categories and populate matching service tiles.</li>
             </ul>
           </div>
         </div>
@@ -1236,7 +1306,7 @@
 
     async function saveState() {
       const payload = {
-        version: '2.6',
+        version: '2.8',
         timestamp: new Date().toISOString(),
         currentProfileId,
         defaultStartupProfileId,
@@ -1679,6 +1749,12 @@
       if (profile.showSystemMonitor) fetchHostSystemStats();
 
       const appsToPing = profile.apps.filter(a => a.pingEnabled !== false);
+      const appsWithApi = profile.apps.filter(a => a.apiKey && a.apiKey.trim() !== '');
+
+      appsWithApi.forEach(app => {
+        fetchServiceStats(app);
+      });
+
       if (appsToPing.length === 0) {
         const countEl = document.getElementById('services-online-count');
         const dotEl = document.getElementById('overall-status-dot');
@@ -1690,9 +1766,6 @@
       let onlineCount = 0;
 
       const pingPromises = appsToPing.map(async (app) => {
-        if (app.apiKey && app.apiKey.trim() !== '') {
-          fetchServiceStats(app);
-        }
         try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 2000);
@@ -1920,6 +1993,16 @@
           statusDotHtml = `<span class="w-2 h-2 rounded-full ${dotClass}"></span>`;
         }
 
+        const badgeText = app.apiKey && app.apiKey.trim() !== '' ? (appLiveStats[app.id] || 'Fetching...') : '';
+        const isBadgeOffline = badgeText === 'API Offline';
+        const badgeHtml = badgeText ? `
+          <div class="mt-1.5 ${isForcedSquare ? 'hidden' : isAutoSquare ? 'hidden sm:block' : 'block'}">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border ${isBadgeOffline ? 'bg-rose-500/10 text-rose-300 border-rose-500/20' : `${theme.bg} ${theme.text} ${theme.border}`}">
+              ${badgeText}
+            </span>
+          </div>
+        ` : '';
+
         const customBgStyle = app.customBg ? `background-color: ${app.customBg};` : '';
         const customFontStyle = app.fontColor ? `color: ${app.fontColor};` : '';
         const compactCenterClass = isForcedSquare ? 'items-center text-center' : isAutoSquare ? 'items-center text-center sm:items-start sm:text-left' : '';
@@ -1945,6 +2028,7 @@
               <div class="w-full overflow-hidden">
                 <h4 class="font-bold text-xs sm:text-sm group-hover:text-orange-400 transition-colors truncate">${app.name}</h4>
                 <p class="${isForcedSquare ? 'hidden' : isAutoSquare ? 'hidden sm:block' : 'block'} text-[10px] opacity-60 font-medium truncate mt-0.5">${app.url}</p>
+                ${badgeHtml}
               </div>
             </a>
           </div>
@@ -2186,12 +2270,38 @@
     }
     function markIconModified() { iconWasModified = true; }
 
+    function updateApiKeyHelperText() {
+      const serviceType = document.getElementById('app-service-type').value;
+      const helperEl = document.getElementById('api-key-helper-text');
+      const keyInput = document.getElementById('app-api-key');
+      if (!helperEl || !keyInput) return;
+
+      const helpers = {
+        sonarr: { text: 'Paste your Sonarr API key from Settings → General → Security.', placeholder: '32-char Sonarr API key...' },
+        radarr: { text: 'Paste your Radarr API key from Settings → General → Security.', placeholder: '32-char Radarr API key...' },
+        prowlarr: { text: 'Paste your Prowlarr API key from Settings → General → Security.', placeholder: '32-char Prowlarr API key...' },
+        qbittorrent: { text: 'Enter username:password (e.g. admin:yourpassword) or password alone if username is admin.', placeholder: 'admin:password' },
+        immich: { text: 'Paste your Immich API key from Account Settings → API Keys.', placeholder: 'Immich API key...' },
+        generic: { text: 'Optional bearer/query key for basic reachability badge.', placeholder: 'API key...' }
+      };
+
+      const cfg = helpers[serviceType] || helpers.generic;
+      helperEl.innerText = cfg.text;
+      keyInput.placeholder = cfg.placeholder;
+    }
+
     function updateModalIconPreview() {
       const previewBox = document.getElementById('modal-icon-preview-box');
       if (!previewBox) return;
       let iconVal = document.getElementById('app-icon-fa').value.trim() || 'fa-solid fa-globe';
       if (currentIconMode === 'url') iconVal = document.getElementById('app-icon-url-input').value.trim();
       if (currentIconMode === 'upload') iconVal = uploadedIconBase64;
+      if (currentIconMode === 'favicon') {
+        const rawUrl = document.getElementById('app-url').value.trim();
+        try {
+          if (rawUrl) iconVal = `${new URL(rawUrl).origin}/favicon.ico`;
+        } catch(e) {}
+      }
 
       const isImg = iconVal.startsWith('http://') || iconVal.startsWith('https://') || iconVal.startsWith('data:image/') || iconVal.startsWith('/data/');
       if (isImg) previewBox.innerHTML = `<img src="${iconVal}" class="w-full h-full object-contain p-1 rounded-xl" />`;
@@ -2280,6 +2390,9 @@
     function openAppModal(id = null) {
       document.getElementById('app-form').reset();
       document.getElementById('app-id').value = '';
+      document.getElementById('modal-title').innerHTML = id
+        ? '<i class="fa-solid fa-pen-to-square text-orange-400"></i> Edit Service Tile'
+        : '<i class="fa-solid fa-square-plus text-orange-400"></i> Add New Tile';
       uploadedIconBase64 = '';
       iconWasModified = false;
       setIconType('fa');
@@ -2303,6 +2416,7 @@
           document.getElementById('app-icon-url-input').value = app.icon;
         }
       }
+      updateApiKeyHelperText();
       updateModalIconPreview();
       document.getElementById('app-modal').classList.remove('hidden');
     }
@@ -2327,13 +2441,23 @@
         if (currentIconMode === 'fa') icon = document.getElementById('app-icon-fa').value || 'fa-solid fa-globe';
         else if (currentIconMode === 'url') icon = document.getElementById('app-icon-url-input').value.trim();
         else if (currentIconMode === 'upload') icon = uploadedIconBase64;
+        else if (currentIconMode === 'favicon') {
+          try {
+            icon = `${new URL(url).origin}/favicon.ico`;
+          } catch(err) {
+            icon = 'fa-solid fa-globe';
+          }
+        }
       }
 
       if (id) {
         const idx = profile.apps.findIndex(a => a.id === id);
         if (idx !== -1) profile.apps[idx] = { ...profile.apps[idx], name, category, url, icon, color, apiKey, serviceType, customBg, fontColor, pingEnabled };
+        if (apiKey) fetchServiceStats(profile.apps[idx]);
       } else {
-        profile.apps.unshift({ id: Date.now().toString(), name, category, url, icon, color, apiKey, serviceType, customBg, fontColor, pingEnabled });
+        const newApp = { id: Date.now().toString(), name, category, url, icon, color, apiKey, serviceType, customBg, fontColor, pingEnabled };
+        profile.apps.unshift(newApp);
+        if (apiKey) fetchServiceStats(newApp);
       }
       saveState();
       renderApps();
@@ -2403,13 +2527,18 @@
       document.getElementById('admin-pass-input').value = p.password || '';
       document.getElementById('admin-avatar-input').value = p.avatar || '';
       uploadedAdminAvatarBase64 = p.avatar || '';
+      updateAdminAvatarPreview();
       document.getElementById('admin-edit-modal').classList.remove('hidden');
     }
     function closeAdminEditModal() { document.getElementById('admin-edit-modal').classList.add('hidden'); }
 
     function updateAdminAvatarPreview() {
       const nameVal = document.getElementById('admin-name-input').value.trim() || 'Admin';
+      const avatarVal = document.getElementById('admin-avatar-input').value.trim();
+      const previewEl = document.getElementById('admin-edit-avatar-preview');
       document.getElementById('admin-edit-name-preview').innerText = `${nameVal} 👑`;
+      if (avatarVal) previewEl.innerHTML = `<img src="${avatarVal}" class="w-full h-full object-cover">`;
+      else previewEl.innerText = nameVal.charAt(0).toUpperCase();
     }
 
     function handleAdminAvatarUpload(e) {
@@ -2446,9 +2575,19 @@
       document.getElementById('profile-name-input').value = '';
       document.getElementById('profile-pass-input').value = '';
       document.getElementById('profile-avatar-input').value = '';
+      updateProfileAvatarPreview();
       document.getElementById('profile-edit-modal').classList.remove('hidden');
     }
     function closeProfileEditModal() { document.getElementById('profile-edit-modal').classList.add('hidden'); }
+
+    function updateProfileAvatarPreview() {
+      const nameVal = document.getElementById('profile-name-input').value.trim() || 'New User';
+      const avatarVal = document.getElementById('profile-avatar-input').value.trim();
+      const previewEl = document.getElementById('profile-edit-avatar-preview');
+      document.getElementById('profile-edit-name-preview').innerText = nameVal;
+      if (avatarVal) previewEl.innerHTML = `<img src="${avatarVal}" class="w-full h-full object-cover">`;
+      else previewEl.innerHTML = `<i class="fa-solid fa-user text-sm"></i>`;
+    }
 
     function handleProfileAvatarUpload(e) {
       const file = e.target.files[0];
@@ -2456,6 +2595,7 @@
       const reader = new FileReader();
       reader.onload = function(evt) {
         document.getElementById('profile-avatar-input').value = evt.target.result;
+        updateProfileAvatarPreview();
         showToast('Profile avatar loaded', 'emerald');
       };
       reader.readAsDataURL(file);
@@ -2500,6 +2640,23 @@
       showToast('Profile created successfully', 'emerald');
     }
 
+    function saveCurrentProfilePassword() {
+      const p = getCurrentProfile();
+      const newPass = document.getElementById('setting-profile-new-pass').value;
+      p.password = newPass || '';
+      saveState();
+      applyProfilePreferences();
+      showToast(p.password ? 'Profile password updated' : 'Profile password removed', 'emerald');
+    }
+
+    function saveDefaultStartupProfile() {
+      const sel = document.getElementById('setting-default-profile-select');
+      if (!sel) return;
+      defaultStartupProfileId = sel.value;
+      saveState();
+      showToast('Default startup profile saved', 'emerald');
+    }
+
     function confirmDeleteProfile(id) {
       openConfirmModal('Delete Profile?', 'Are you sure you want to delete this profile?', () => {
         profiles = profiles.filter(p => p.id !== id);
@@ -2522,8 +2679,42 @@
       renderCurrentProfileHeader();
       renderCategories();
       renderApps();
+      runLivePings();
       closeProfilesModal();
       showToast('Switched profile', 'blue');
+    }
+
+    function importConfig(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data && Array.isArray(data.profiles)) {
+            profiles = data.profiles;
+            if (data.currentProfileId && profiles.some(p => p.id === data.currentProfileId)) {
+              currentProfileId = data.currentProfileId;
+            }
+            if (data.defaultStartupProfileId) {
+              defaultStartupProfileId = data.defaultStartupProfileId;
+            }
+            saveState();
+            applyProfilePreferences();
+            renderCurrentProfileHeader();
+            renderCategories();
+            renderApps();
+            runLivePings();
+            closeSettingsModal();
+            showToast('HomeLink configuration restored!', 'emerald');
+          } else {
+            showToast('Invalid HomeLink backup format', 'rose');
+          }
+        } catch(err) {
+          showToast('Failed to parse backup JSON', 'rose');
+        }
+      };
+      reader.readAsText(file);
     }
 
     function importHeimdallConfig(e) {
@@ -2675,7 +2866,7 @@
           renderCategories();
           renderApps();
           closeSettingsModal();
-          showToast(`Successfully imported items from Homepage!`, 'emerald');
+          showToast(`Successfully imported ${importedCount} items from Homepage!`, 'emerald');
         } catch(err) {
           showToast('Failed to parse Homepage config file', 'rose');
         }
@@ -2684,7 +2875,7 @@
     }
 
     function switchWikiTab(tabKey) {
-      ['arch', 'api', 'profiles', 'backup'].forEach(k => {
+      ['arch', 'api', 'studio', 'profiles', 'backup'].forEach(k => {
         const btn = document.getElementById(`wiki-tab-${k}`);
         const panel = document.getElementById(`wiki-panel-${k}`);
         if (k === tabKey) {
@@ -2857,11 +3048,11 @@
     function resetToDefaults() { openConfirmModal('Reset?', 'Reset configuration?', () => { localStorage.clear(); location.reload(); }); }
 
     function exportConfig() {
-      const payload = { version: '2.6', timestamp: new Date().toISOString(), currentProfileId, defaultStartupProfileId, profiles };
+      const payload = { version: '2.8', timestamp: new Date().toISOString(), currentProfileId, defaultStartupProfileId, profiles };
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `homelink-backup-${new Date().toISOString().slice(0, 10)}.json`);
+      downloadAnchor.setAttribute("download", `homelink-v2.8-backup-${new Date().toISOString().slice(0, 10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();

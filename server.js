@@ -239,23 +239,116 @@ app.get('/api/system-stats', (req, res) => {
     }
 });
 
+function formatBytesPerSec(bytes) {
+    if (!bytes || bytes <= 0) return '0 B/s';
+    const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
 app.get('/api/proxy-stats', async (req, res) => {
     const { targetUrl, apiKey, serviceType } = req.query;
     if (!targetUrl || !apiKey) return res.status(400).json({ error: 'Missing targetUrl or apiKey' });
+
+    const baseUrl = targetUrl.replace(/\/$/, '');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
     try {
-        let apiUrl = targetUrl.replace(/\/$/, '');
-        if (serviceType === 'sonarr' || serviceType === 'radarr') apiUrl += `/api/v3/queue?apikey=${apiKey}`;
-        else if (serviceType === 'prowlarr') apiUrl += `/api/v1/applications?apikey=${apiKey}`;
-        else return res.json({ badge: 'Connected' });
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        const count = Array.isArray(data) ? data.length : (data.totalRecords || 0);
-        res.json({ badge: `${count} in queue` });
+        if (serviceType === 'sonarr' || serviceType === 'radarr') {
+            const response = await fetch(`${baseUrl}/api/v3/queue?apikey=${encodeURIComponent(apiKey)}`, {
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const count = Array.isArray(data) ? data.length : (data.totalRecords || 0);
+            return res.json({ badge: `${count} in queue` });
+        }
+
+        if (serviceType === 'prowlarr') {
+            const response = await fetch(`${baseUrl}/api/v1/applications?apikey=${encodeURIComponent(apiKey)}`, {
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const count = Array.isArray(data) ? data.length : 0;
+            return res.json({ badge: `${count} apps synced` });
+        }
+
+        if (serviceType === 'immich') {
+            // Try modern Immich v1.118+ endpoint first, then fallback to legacy endpoint
+            let response = await fetch(`${baseUrl}/api/server/statistics`, {
+                headers: { 'x-api-key': apiKey, 'Accept': 'application/json' },
+                signal: controller.signal
+            });
+            if (response.status === 404) {
+                response = await fetch(`${baseUrl}/api/server-info/statistics`, {
+                    headers: { 'x-api-key': apiKey, 'Accept': 'application/json' },
+                    signal: controller.signal
+                });
+            }
+            clearTimeout(timeout);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const photos = (data.photos || 0).toLocaleString();
+            const videos = (data.videos || 0).toLocaleString();
+            return res.json({ badge: `${photos} photos • ${videos} videos` });
+        }
+
+        if (serviceType === 'qbittorrent') {
+            // Supports "username:password" or just "password" (defaults to "admin")
+            let username = 'admin';
+            let password = apiKey;
+            const colonIdx = apiKey.indexOf(':');
+            if (colonIdx > 0) {
+                username = apiKey.slice(0, colonIdx);
+                password = apiKey.slice(colonIdx + 1);
+            }
+
+            const loginRes = await fetch(`${baseUrl}/api/v2/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Referer': baseUrl
+                },
+                body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+                signal: controller.signal
+            });
+
+            if (!loginRes.ok) {
+                clearTimeout(timeout);
+                throw new Error(`Auth HTTP ${loginRes.status}`);
+            }
+
+            const setCookie = loginRes.headers.get('set-cookie') || '';
+            const sidMatch = setCookie.match(/SID=([^;]+)/);
+            const headers = { 'Referer': baseUrl };
+            if (sidMatch) {
+                headers['Cookie'] = `SID=${sidMatch[1]}`;
+            }
+
+            const transferRes = await fetch(`${baseUrl}/api/v2/transfer/info`, {
+                headers,
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+            if (!transferRes.ok) throw new Error(`Transfer HTTP ${transferRes.status}`);
+            const info = await transferRes.json();
+            const dl = formatBytesPerSec(info.dl_info_speed || 0);
+            const ul = formatBytesPerSec(info.up_info_speed || 0);
+            return res.json({ badge: `↓ ${dl} ↑ ${ul}` });
+        }
+
+        clearTimeout(timeout);
+        return res.json({ badge: 'Connected' });
     } catch (err) {
-        res.status(500).json({ badge: 'API Offline' });
+        clearTimeout(timeout);
+        res.status(500).json({ badge: 'API Offline', error: err.message });
     }
 });
 
 app.listen(PORT, () => {
-    console.log(`[HomeLink] Server running on port ${PORT}`);
+    console.log(`[HomeLink v2.8] Server running on port ${PORT}`);
 });
