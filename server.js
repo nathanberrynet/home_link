@@ -258,7 +258,9 @@ async function getQbitSessionCookie(baseUrl, secret) {
         const res = await fetch(`${baseUrl}/api/v2/auth/login`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Origin': baseUrl,
+                'Referer': `${baseUrl}/`
             },
             body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
         });
@@ -320,7 +322,10 @@ app.get('/api/proxy-stats', async (req, res) => {
         }
 
         if (isQbit) {
-            const headers = {};
+            const headers = {
+                'Origin': baseUrl,
+                'Referer': `${baseUrl}/`
+            };
             let transferRes = await fetch(`${baseUrl}/api/v2/transfer/info`, { headers });
             let torrentsRes = await fetch(`${baseUrl}/api/v2/torrents/info`, { headers });
 
