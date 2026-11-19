@@ -356,66 +356,6 @@ app.get('/api/proxy-stats', async (req, res) => {
     }
 });
 
-// Docker / Server-side Bandwidth & Latency probe
-app.get('/api/speedtest', async (req, res) => {
-    const pingStart = Date.now();
-    try {
-        await fetch('https://1.1.1.1/cdn-cgi/trace', { signal: AbortSignal.timeout(4000) });
-    } catch {}
-    const pingMs = Math.max(1, Date.now() - pingStart);
-
-    const dlUrl = 'https://speed.cloudflare.com/__down?bytes=25000000';
-    let downloadMbps = 0;
-    try {
-        const dlStart = performance.now();
-        const dlRes = await fetch(dlUrl, { signal: AbortSignal.timeout(15000) });
-        if (!dlRes.ok) throw new Error(`Download HTTP ${dlRes.status}`);
-        const buf = await dlRes.arrayBuffer();
-        const elapsedSec = Math.max(0.05, (performance.now() - dlStart) / 1000);
-        const bits = buf.byteLength * 8;
-        downloadMbps = Number(((bits / elapsedSec) / 1e6).toFixed(1));
-    } catch (err) {
-        return res.status(502).json({ error: `Speed test download failed: ${err.message}` });
-    }
-
-    let uploadMbps = 0;
-    try {
-        const payload = Buffer.alloc(5 * 1024 * 1024, 'x');
-        const ulStart = performance.now();
-        const ulRes = await fetch('https://speed.cloudflare.com/__up', {
-            method: 'POST',
-            body: payload,
-            signal: AbortSignal.timeout(15000)
-        });
-        if (!ulRes.ok) throw new Error(`Upload HTTP ${ulRes.status}`);
-        await ulRes.arrayBuffer();
-        const elapsedSec = Math.max(0.05, (performance.now() - ulStart) / 1000);
-        const bits = payload.byteLength * 8;
-        uploadMbps = Number(((bits / elapsedSec) / 1e6).toFixed(1));
-    } catch {
-        uploadMbps = 0;
-    }
-
-    res.json({
-        timestamp: new Date().toISOString(),
-        pingMs,
-        downloadMbps,
-        uploadMbps
-    });
-});
-
-// Local LAN fallback endpoints for Client Browser Speed Test
-app.get('/api/client-speedtest/down', (req, res) => {
-    const bytes = Math.min(25 * 1024 * 1024, Math.max(1024, parseInt(req.query.bytes) || (10 * 1024 * 1024)));
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Cache-Control', 'no-store');
-    res.send(Buffer.alloc(bytes, 'a'));
-});
-
-app.post('/api/client-speedtest/up', express.raw({ type: '*/*', limit: '25mb' }), (req, res) => {
-    res.json({ received: req.body ? req.body.length : 0 });
-});
-
 app.listen(PORT, () => {
     console.log(`[HomeLink] Server running on port ${PORT}`);
 });
