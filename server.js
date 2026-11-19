@@ -26,13 +26,13 @@ app.use(express.static(__dirname));
 
 app.get('/api/config', (req, res) => {
     if (fs.existsSync(CONFIG_FILE)) {
-        try { 
-            res.json(JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'))); 
-        } catch (err) { 
-            res.status(500).json({ error: 'Failed to parse config' }); 
+        try {
+            res.json(JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')));
+        } catch (err) {
+            res.status(500).json({ error: 'Failed to parse config' });
         }
-    } else { 
-        res.json({ categories: [], profiles: [] }); 
+    } else {
+        res.json({ categories: [], profiles: [] });
     }
 });
 
@@ -41,7 +41,7 @@ app.post('/api/config', (req, res) => {
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(req.body, null, 2), 'utf8');
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to save config' }); 
+        res.status(500).json({ error: 'Failed to save config' });
     }
 });
 
@@ -52,7 +52,7 @@ app.get('/api/icons-manifest', async (req, res) => {
         if (!forceRefresh && fs.existsSync(ICONS_MANIFEST_FILE)) {
             const stat = fs.statSync(ICONS_MANIFEST_FILE);
             const ageHours = (Date.now() - stat.mtimeMs) / (1000 * 60 * 60);
-            if (ageHours < 168) { // Cache for 7 days
+            if (ageHours < 168) {
                 return res.json(JSON.parse(fs.readFileSync(ICONS_MANIFEST_FILE, 'utf8')));
             }
         }
@@ -115,7 +115,6 @@ app.post('/api/cache-icon', async (req, res) => {
 
         res.json({ url: publicUrl, cached: false });
     } catch (err) {
-        // Fallback to remote URL if offline during selection
         res.json({ url, fallback: true, error: err.message });
     }
 });
@@ -215,21 +214,21 @@ app.get('/api/system-stats', (req, res) => {
         try {
             const uptimeSec = os.uptime();
             uptimeStr = `${Math.floor(uptimeSec / 3600)}h ${Math.floor((uptimeSec % 3600) / 60)}m`;
-        } catch(e) {}
+        } catch (e) {}
         let osVer = `${os.type()} ${os.release()}`;
         try {
             if (fs.existsSync('/etc/os-release')) {
                 const match = fs.readFileSync('/etc/os-release', 'utf8').match(/PRETTY_NAME="([^"]+)"/);
                 if (match && match[1]) osVer = match[1];
             }
-        } catch(e) {}
+        } catch (e) {}
         res.json({
             hostname: os.hostname(),
             osVersion: osVer,
             cpuCores: cpus.length,
             cpuPercent: isNaN(cpuUsage) ? 0 : cpuUsage,
-            ramTotalGB: (totalMem / (1024**3)).toFixed(1),
-            ramUsedGB: (usedMem / (1024**3)).toFixed(1),
+            ramTotalGB: (totalMem / (1024 ** 3)).toFixed(1),
+            ramUsedGB: (usedMem / (1024 ** 3)).toFixed(1),
             ramPercent: Math.round((usedMem / totalMem) * 100),
             uptime: uptimeStr,
             arch: os.arch()
@@ -239,116 +238,145 @@ app.get('/api/system-stats', (req, res) => {
     }
 });
 
-function formatBytesPerSec(bytes) {
-    if (!bytes || bytes <= 0) return '0 B/s';
-    const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
-    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-    return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+function formatSpeed(bytesPerSec) {
+    if (!bytesPerSec || bytesPerSec <= 0) return '0 B/s';
+    if (bytesPerSec >= 1024 * 1024) return `${(bytesPerSec / (1024 * 1024)).toFixed(1)} MB/s`;
+    if (bytesPerSec >= 1024) return `${(bytesPerSec / 1024).toFixed(0)} KB/s`;
+    return `${Math.round(bytesPerSec)} B/s`;
+}
+
+async function getQbitSessionCookie(baseUrl, secret) {
+    if (!secret || !secret.includes(':')) return '';
+    const idx = secret.indexOf(':');
+    const username = secret.slice(0, idx);
+    const password = secret.slice(idx + 1);
+    try {
+        const res = await fetch(`${baseUrl}/api/v2/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Referer': baseUrl
+            },
+            body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+        });
+        const setCookie = res.headers.get('set-cookie') || '';
+        const sidMatch = setCookie.match(/SID=[^;]+/);
+        return sidMatch ? sidMatch[0] : '';
+    } catch {
+        return '';
+    }
 }
 
 app.get('/api/proxy-stats', async (req, res) => {
     const { targetUrl, apiKey, serviceType } = req.query;
-    if (!targetUrl || !apiKey) return res.status(400).json({ error: 'Missing targetUrl or apiKey' });
-
+    if (!targetUrl) return res.status(400).json({ error: 'Missing targetUrl' });
     const baseUrl = targetUrl.replace(/\/$/, '');
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
 
     try {
         if (serviceType === 'sonarr' || serviceType === 'radarr') {
-            const response = await fetch(`${baseUrl}/api/v3/queue?apikey=${encodeURIComponent(apiKey)}`, {
-                signal: controller.signal
-            });
-            clearTimeout(timeout);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const response = await fetch(`${baseUrl}/api/v3/queue?apikey=${encodeURIComponent(apiKey || '')}`);
             const data = await response.json();
             const count = Array.isArray(data) ? data.length : (data.totalRecords || 0);
             return res.json({ badge: `${count} in queue` });
         }
 
         if (serviceType === 'prowlarr') {
-            const response = await fetch(`${baseUrl}/api/v1/applications?apikey=${encodeURIComponent(apiKey)}`, {
-                signal: controller.signal
-            });
-            clearTimeout(timeout);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const response = await fetch(`${baseUrl}/api/v1/applications?apikey=${encodeURIComponent(apiKey || '')}`);
             const data = await response.json();
             const count = Array.isArray(data) ? data.length : 0;
-            return res.json({ badge: `${count} apps synced` });
-        }
-
-        if (serviceType === 'immich') {
-            // Try modern Immich v1.118+ endpoint first, then fallback to legacy endpoint
-            let response = await fetch(`${baseUrl}/api/server/statistics`, {
-                headers: { 'x-api-key': apiKey, 'Accept': 'application/json' },
-                signal: controller.signal
-            });
-            if (response.status === 404) {
-                response = await fetch(`${baseUrl}/api/server-info/statistics`, {
-                    headers: { 'x-api-key': apiKey, 'Accept': 'application/json' },
-                    signal: controller.signal
-                });
-            }
-            clearTimeout(timeout);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            const photos = (data.photos || 0).toLocaleString();
-            const videos = (data.videos || 0).toLocaleString();
-            return res.json({ badge: `${photos} photos • ${videos} videos` });
+            return res.json({ badge: `${count} apps` });
         }
 
         if (serviceType === 'qbittorrent') {
-            // Supports "username:password" or just "password" (defaults to "admin")
-            let username = 'admin';
-            let password = apiKey;
-            const colonIdx = apiKey.indexOf(':');
-            if (colonIdx > 0) {
-                username = apiKey.slice(0, colonIdx);
-                password = apiKey.slice(colonIdx + 1);
-            }
-
-            const loginRes = await fetch(`${baseUrl}/api/v2/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Referer': baseUrl
-                },
-                body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
-                signal: controller.signal
-            });
-
-            if (!loginRes.ok) {
-                clearTimeout(timeout);
-                throw new Error(`Auth HTTP ${loginRes.status}`);
-            }
-
-            const setCookie = loginRes.headers.get('set-cookie') || '';
-            const sidMatch = setCookie.match(/SID=([^;]+)/);
             const headers = { 'Referer': baseUrl };
-            if (sidMatch) {
-                headers['Cookie'] = `SID=${sidMatch[1]}`;
+            let transferRes = await fetch(`${baseUrl}/api/v2/transfer/info`, { headers });
+            let torrentsRes = await fetch(`${baseUrl}/api/v2/torrents/info`, { headers });
+
+            if (transferRes.status === 403 || torrentsRes.status === 403) {
+                const sidCookie = await getQbitSessionCookie(baseUrl, apiKey || '');
+                if (sidCookie) {
+                    headers['Cookie'] = sidCookie;
+                    transferRes = await fetch(`${baseUrl}/api/v2/transfer/info`, { headers });
+                    torrentsRes = await fetch(`${baseUrl}/api/v2/torrents/info`, { headers });
+                }
             }
 
-            const transferRes = await fetch(`${baseUrl}/api/v2/transfer/info`, {
-                headers,
-                signal: controller.signal
-            });
-            clearTimeout(timeout);
-            if (!transferRes.ok) throw new Error(`Transfer HTTP ${transferRes.status}`);
-            const info = await transferRes.json();
-            const dl = formatBytesPerSec(info.dl_info_speed || 0);
-            const ul = formatBytesPerSec(info.up_info_speed || 0);
-            return res.json({ badge: `↓ ${dl} ↑ ${ul}` });
+            if (!transferRes.ok) {
+                return res.json({ badge: 'Connected' });
+            }
+
+            const transferData = await transferRes.json();
+            let queueCount = 0;
+            if (torrentsRes.ok) {
+                const torrents = await torrentsRes.json();
+                if (Array.isArray(torrents)) {
+                    queueCount = torrents.filter(t =>
+                        ['downloading', 'stalledDL', 'queuedDL', 'metaDL', 'checkingDL'].includes(t.state)
+                    ).length;
+                }
+            }
+
+            const dlSpeed = formatSpeed(transferData.dl_info_speed || 0);
+            const badge = queueCount > 0 ? `${queueCount} q • ${dlSpeed}` : `0 q • ${dlSpeed}`;
+            return res.json({ badge });
         }
 
-        clearTimeout(timeout);
         return res.json({ badge: 'Connected' });
     } catch (err) {
-        clearTimeout(timeout);
-        res.status(500).json({ badge: 'API Offline', error: err.message });
+        res.status(500).json({ badge: 'API Offline' });
     }
 });
 
+// Bandwidth & latency probe for the HomeLink Speed Test Tile
+app.get('/api/speedtest', async (req, res) => {
+    const pingStart = Date.now();
+    try {
+        await fetch('https://1.1.1.1/cdn-cgi/trace', { signal: AbortSignal.timeout(4000) });
+    } catch {}
+    const pingMs = Math.max(1, Date.now() - pingStart);
+
+    // Download benchmark using a public test payload (~25MB)
+    const dlUrl = 'https://speed.cloudflare.com/__down?bytes=25000000';
+    let downloadMbps = 0;
+    try {
+        const dlStart = performance.now();
+        const dlRes = await fetch(dlUrl, { signal: AbortSignal.timeout(15000) });
+        if (!dlRes.ok) throw new Error(`Download HTTP ${dlRes.status}`);
+        const buf = await dlRes.arrayBuffer();
+        const elapsedSec = Math.max(0.05, (performance.now() - dlStart) / 1000);
+        const bits = buf.byteLength * 8;
+        downloadMbps = Number(((bits / elapsedSec) / 1e6).toFixed(1));
+    } catch (err) {
+        return res.status(502).json({ error: `Speed test download failed: ${err.message}` });
+    }
+
+    // Upload benchmark (~5MB payload)
+    let uploadMbps = 0;
+    try {
+        const payload = Buffer.alloc(5 * 1024 * 1024, 'x');
+        const ulStart = performance.now();
+        const ulRes = await fetch('https://speed.cloudflare.com/__up', {
+            method: 'POST',
+            body: payload,
+            signal: AbortSignal.timeout(15000)
+        });
+        if (!ulRes.ok) throw new Error(`Upload HTTP ${ulRes.status}`);
+        await ulRes.arrayBuffer();
+        const elapsedSec = Math.max(0.05, (performance.now() - ulStart) / 1000);
+        const bits = payload.byteLength * 8;
+        uploadMbps = Number(((bits / elapsedSec) / 1e6).toFixed(1));
+    } catch {
+        uploadMbps = 0;
+    }
+
+    res.json({
+        timestamp: new Date().toISOString(),
+        pingMs,
+        downloadMbps,
+        uploadMbps
+    });
+});
+
 app.listen(PORT, () => {
-    console.log(`[HomeLink v2.8] Server running on port ${PORT}`);
+    console.log(`[HomeLink] Server running on port ${PORT}`);
 });

@@ -172,7 +172,7 @@
           </div>
           <div>
             <h1 class="font-bold text-lg leading-tight tracking-tight flex items-center gap-2">
-              HomeLink <span class="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30">v2.8</span>
+              HomeLink <span class="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30">v2.9</span>
             </h1>
             <p id="live-date" class="text-xs opacity-70 font-medium">Loading date...</p>
           </div>
@@ -368,27 +368,25 @@
 
         <div>
           <label class="block text-xs font-semibold opacity-90 mb-1">URL / Address *</label>
-          <input type="url" id="app-url" required placeholder="http://192.168.1.100:2283" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+          <input type="url" id="app-url" required placeholder="http://192.168.1.251:8880" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold opacity-90 mb-1">API Service Type</label>
-            <select id="app-service-type" onchange="updateApiKeyHelperText()" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-              <option value="sonarr">Sonarr (Queue)</option>
-              <option value="radarr">Radarr (Queue)</option>
-              <option value="prowlarr">Prowlarr (Synced Apps)</option>
-              <option value="qbittorrent">qBittorrent (Transfer Speed)</option>
+            <select id="app-service-type" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+              <option value="sonarr">Sonarr / Radarr (Queue)</option>
+              <option value="prowlarr">Prowlarr (Queue/Index)</option>
+              <option value="qbittorrent">qBittorrent (Queue & Speed)</option>
               <option value="immich">Immich (Photos & Videos Count)</option>
               <option value="generic">Generic API</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold opacity-90 mb-1">Optional API Key / Auth</label>
-            <input type="password" id="app-api-key" placeholder="API key..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <label class="block text-xs font-semibold opacity-90 mb-1">Optional API Key / user:pass</label>
+            <input type="password" id="app-api-key" placeholder="API key or admin:pass..." class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
           </div>
         </div>
-        <p id="api-key-helper-text" class="text-[10px] text-slate-400 -mt-2">Paste your Sonarr API key from Settings → General → Security.</p>
 
         <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-white/5">
           <div>
@@ -495,7 +493,6 @@
           <label class="block text-xs font-semibold opacity-90 mb-1">Category Assignment</label>
           <select id="sysmon-category-input" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
             <option value="">(Default / System standalone)</option>
-            <!-- Populated via JS -->
           </select>
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -544,12 +541,6 @@
               <div class="text-[10px] text-slate-400">Updates live as you select, type, or upload</div>
             </div>
           </div>
-          <div class="grid grid-cols-4 gap-1.5 mb-2">
-            <button type="button" onclick="setSysMonIconType('favicon')" id="sysmon-btn-icon-favicon" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-800 text-slate-300">Favicon</button>
-            <button type="button" onclick="setSysMonIconType('fa')" id="sysmon-btn-icon-fa" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-orange-500 bg-orange-500/20 text-orange-300">Icon Search</button>
-            <button type="button" onclick="setSysMonIconType('url')" id="sysmon-btn-icon-url" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-800 text-slate-300">Image URL</button>
-            <button type="button" onclick="setSysMonIconType('upload')" id="sysmon-btn-icon-upload" class="px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-800 text-slate-300">Upload</button>
-          </div>
           <div id="sysmon-icon-input-fa" class="space-y-2">
             <div class="flex gap-2">
               <input type="text" id="sysmon-icon-fa" oninput="markSysMonIconModified(); updateSysMonModalIconPreview();" placeholder="fa-solid fa-server" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
@@ -563,6 +554,144 @@
           <button type="submit" class="px-3 py-1.5 bg-orange-600 text-xs rounded-xl text-white font-semibold">Save Server Stats</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Speed Test Edit Modal -->
+  <div id="speedtest-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-panel w-full max-w-lg rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+        <h3 class="text-base font-bold text-white">Edit Speed Test Tile ⚡</h3>
+        <button onclick="closeSpeedTestEditModal()" class="opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="saveSpeedTestConfig(event)" class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Tile Title</label>
+            <input type="text" id="speedtest-name-input" placeholder="Speed Test" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Category Assignment</label>
+            <select id="speedtest-category-input" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+              <option value="">(Default / Standalone)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Auto-Run Schedule</label>
+            <select id="speedtest-mode-input" onchange="toggleSpeedTestHoursField()" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+              <option value="manual">Manual Only</option>
+              <option value="interval">Every X Hours</option>
+            </select>
+          </div>
+          <div id="speedtest-hours-wrap">
+            <label class="block text-xs font-semibold opacity-90 mb-1">Interval (Hours)</label>
+            <input type="number" id="speedtest-hours-input" min="1" max="168" value="6" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Glow Theme</label>
+            <select id="speedtest-color-input" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+              <option value="orange">Orange 🧡</option>
+              <option value="blue">Blue</option>
+              <option value="emerald">Emerald</option>
+              <option value="amber">Amber</option>
+              <option value="purple">Purple</option>
+              <option value="rose">Rose</option>
+              <option value="cyan">Cyan</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Tile BG Color</label>
+            <div class="flex items-center gap-1.5">
+              <input type="color" id="speedtest-custom-bg-input" value="#1e293b" class="w-9 h-9 rounded-lg border border-white/10 cursor-pointer bg-slate-900 p-0.5">
+              <button type="button" onclick="document.getElementById('speedtest-custom-bg-input').value='#1e293b'" class="text-[10px] text-slate-400 hover:text-white px-2 py-1.5 bg-slate-800 rounded-lg border border-white/10">Default</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold opacity-90 mb-1">Font Color</label>
+            <div class="flex items-center gap-1.5">
+              <input type="color" id="speedtest-font-color-input" value="#f1f5f9" class="w-9 h-9 rounded-lg border border-white/10 cursor-pointer bg-slate-900 p-0.5">
+              <button type="button" onclick="document.getElementById('speedtest-font-color-input').value='#f1f5f9'" class="text-[10px] text-slate-400 hover:text-white px-2 py-1.5 bg-slate-800 rounded-lg border border-white/10">Default</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold opacity-90 mb-1">Icon Source</label>
+          <div class="flex items-center gap-3 bg-slate-900/90 p-3 rounded-xl border border-orange-500/30 mb-3 shadow-inner">
+            <div id="speedtest-icon-preview-box" class="w-11 h-11 rounded-xl bg-orange-500/10 border border-orange-500/40 flex items-center justify-center text-2xl text-orange-400 overflow-hidden flex-shrink-0 shadow">
+              <i class="fa-solid fa-gauge-high"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-white">Active Icon Preview</div>
+              <div class="text-[10px] text-slate-400">Supports FontAwesome classes or cached/local images</div>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <input type="text" id="speedtest-icon-input" oninput="updateSpeedTestModalIconPreview()" placeholder="fa-solid fa-gauge-high" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
+            <button type="button" onclick="openIconPickerModal('speedtest')" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap shadow-md">Browse 2,500+</button>
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeSpeedTestEditModal()" class="px-3 py-1.5 bg-slate-800 text-xs rounded-xl text-slate-300">Cancel</button>
+          <button type="submit" class="px-3 py-1.5 bg-orange-600 text-xs rounded-xl text-white font-semibold">Save Speed Test Tile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Speed Test Runner & Last 5 History Modal -->
+  <div id="speedtest-history-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md hidden">
+    <div class="glass-panel w-full max-w-xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400">
+            <i class="fa-solid fa-gauge-high"></i>
+          </div>
+          <div>
+            <h3 id="speedtest-modal-title" class="text-base font-bold text-white">Network Speed Test</h3>
+            <p id="speedtest-schedule-subtitle" class="text-[10px] text-slate-400">Schedule: Manual Only</p>
+          </div>
+        </div>
+        <button onclick="closeSpeedTestHistoryModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Latest Metrics Summary -->
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-slate-900/75 border border-white/10 rounded-xl p-3 text-center">
+          <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Download</div>
+          <div id="st-latest-dl" class="text-lg font-bold font-mono text-emerald-400 mt-0.5">-- <span class="text-xs">Mbps</span></div>
+        </div>
+        <div class="bg-slate-900/75 border border-white/10 rounded-xl p-3 text-center">
+          <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Upload</div>
+          <div id="st-latest-ul" class="text-lg font-bold font-mono text-cyan-400 mt-0.5">-- <span class="text-xs">Mbps</span></div>
+        </div>
+        <div class="bg-slate-900/75 border border-white/10 rounded-xl p-3 text-center">
+          <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Latency</div>
+          <div id="st-latest-ping" class="text-lg font-bold font-mono text-amber-400 mt-0.5">-- <span class="text-xs">ms</span></div>
+        </div>
+      </div>
+
+      <button id="btn-run-speedtest-now" onclick="runSpeedTest(true)" class="w-full py-2.5 mb-5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold shadow-lg shadow-orange-600/30 transition-all flex items-center justify-center gap-2">
+        <i id="st-run-icon" class="fa-solid fa-bolt"></i>
+        <span id="st-run-label">Run Speed Test Now</span>
+      </button>
+
+      <div>
+        <div class="text-xs font-bold text-slate-300 mb-2 flex items-center justify-between">
+          <span>Recent Tests (Last 5)</span>
+          <span class="text-[10px] text-slate-400 font-normal">Newest first</span>
+        </div>
+        <div id="speedtest-history-list" class="space-y-2">
+          <!-- Populated via JS -->
+        </div>
+      </div>
     </div>
   </div>
 
@@ -797,6 +926,16 @@
             </div>
             <input type="checkbox" id="setting-show-sysmon" onchange="toggleSystemMonitorTile(this.checked)" class="w-4 h-4 rounded accent-orange-500 cursor-pointer">
           </div>
+
+          <div class="flex items-center justify-between bg-slate-900/50 p-3.5 rounded-xl border border-white/5">
+            <div>
+              <div class="text-xs font-semibold text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-gauge-high text-orange-400"></i> Speed Test Tile
+              </div>
+              <div class="text-[10px] opacity-60">Show on-demand & scheduled network speed test tile with 5-run history</div>
+            </div>
+            <input type="checkbox" id="setting-show-speedtest" onchange="toggleSpeedTestTile(this.checked)" class="w-4 h-4 rounded accent-orange-500 cursor-pointer">
+          </div>
           
           <div class="flex items-center justify-between bg-slate-900/50 p-3.5 rounded-xl border border-white/5">
             <div>
@@ -926,147 +1065,79 @@
     </div>
   </div>
 
-  <!-- Wiki & Guide Modal with Comprehensive Tabs -->
+  <!-- Wiki & Guide Modal with Cool Tabs -->
   <div id="wiki-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-panel w-full max-w-4xl rounded-2xl border border-white/10 p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
       <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
         <h3 class="text-lg font-bold flex items-center gap-2">
-          <i class="fa-solid fa-book-open text-orange-400 text-xl"></i> HomeLink Wiki & System Guide <span class="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-mono">v2.8</span>
+          <i class="fa-solid fa-book-open text-orange-400 text-xl"></i> HomeLink Wiki & System Guide
         </h3>
         <button onclick="closeWikiModal()" class="opacity-70 hover:opacity-100 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <!-- Wiki Tabs Header -->
       <div class="flex items-center gap-2 border-b border-white/10 pb-3 mb-4 overflow-x-auto">
-        <button onclick="switchWikiTab('arch')" id="wiki-tab-arch" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow transition-all whitespace-nowrap"><i class="fa-solid fa-server mr-1"></i> Architecture & Telemetry</button>
-        <button onclick="switchWikiTab('api')" id="wiki-tab-api" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap"><i class="fa-solid fa-plug mr-1"></i> API Integrations</button>
-        <button onclick="switchWikiTab('studio')" id="wiki-tab-studio" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Studio & Customization</button>
-        <button onclick="switchWikiTab('profiles')" id="wiki-tab-profiles" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap"><i class="fa-solid fa-users mr-1"></i> Profiles & Security</button>
-        <button onclick="switchWikiTab('backup')" id="wiki-tab-backup" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap"><i class="fa-solid fa-file-import mr-1"></i> Backup & Imports</button>
+        <button onclick="switchWikiTab('arch')" id="wiki-tab-arch" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-orange-600 text-white shadow transition-all whitespace-nowrap">Architecture</button>
+        <button onclick="switchWikiTab('api')" id="wiki-tab-api" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">API Integrations</button>
+        <button onclick="switchWikiTab('profiles')" id="wiki-tab-profiles" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">Profiles & Security</button>
+        <button onclick="switchWikiTab('backup')" id="wiki-tab-backup" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">Backup & Imports</button>
       </div>
 
       <!-- Wiki Tab Content Panels -->
-      <div class="overflow-y-auto space-y-4 text-xs text-slate-300 pr-2 max-h-[60vh]">
+      <div class="overflow-y-auto space-y-4 text-xs text-slate-300 pr-2 max-h-[55vh]">
         
-        <!-- Tab 1: Architecture & Telemetry -->
+        <!-- Tab 1: Architecture -->
         <div id="wiki-panel-arch" class="space-y-3">
-          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-shield-halved text-orange-400"></i> Local-First Architecture & Zero-Telemetry Guarantee</h4>
-          <p>HomeLink v2.8 is engineered for strict data privacy, zero external tracking, and 100% offline resilience. Your dashboard remains fully functional even during complete WAN/internet outages.</p>
-          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-2">
-            <div class="font-bold text-white">Telemetry & Network Transparency:</div>
-            <ul class="list-disc pl-4 space-y-1.5 opacity-85">
-              <li><b>Zero Analytics or Phoning Home:</b> HomeLink sends zero usage metrics, crash logs, or telemetry to any third-party servers.</li>
-              <li><b>Local Asset & Icon Caching (<code class="text-orange-300 font-mono">data/cached_icons/</code>):</b> When you select any of the 2,500+ homelab icons in the Unified Icon Picker, the Node.js backend automatically downloads and stores the PNG locally on your server so tiles render instantaneously offline.</li>
-              <li><b>Persistent JSON Storage (<code class="text-orange-300 font-mono">data/config.json</code>):</b> All profiles, tiles, categories, and theme settings reside in a single human-readable file mapped to your Docker volume.</li>
-              <li><b>Optional Outbound Calls:</b> Outbound network requests occur <i>only</i> when you manually refresh the GitHub icon manifest, look up Open-Meteo weather for your ZIP/city, or execute a web search from the top search bar.</li>
-            </ul>
-          </div>
-          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-1.5">
-            <div class="font-bold text-white">Core System Features:</div>
-            <ul class="list-disc pl-4 space-y-1 opacity-85">
-              <li><b>Background Service Health Pings:</b> Concurrent, non-blocking reachability checks with live green/red status dots and an aggregate online counter.</li>
-              <li><b>Host System Monitor Tile:</b> Real-time CPU utilization, RAM usage, hostname, OS release, and uptime metrics polled directly from <code class="text-orange-300 font-mono">/api/system-stats</code>.</li>
-              <li><b>Smart Multi-Engine Search Bar:</b> Instantly filter local tiles in real time or dispatch queries to Google, YouTube, DuckDuckGo, GitHub, or Reddit.</li>
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-server text-orange-400"></i> Local-First Homelab Architecture</h4>
+          <p>HomeLink v2.9 is engineered for zero external telemetry and offline autonomy. All dashboard configurations, custom icons, cached logos, and background wallpapers are stored directly in your local <code class="text-orange-300 font-mono">data/</code> directory.</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">Key Features:</div>
+            <ul class="list-disc pl-4 space-y-1 opacity-80">
+              <li>Server-side asset & 2,500+ icon caching with local fallback.</li>
+              <li>Real-time background health polling for homelab services.</li>
+              <li>Live System Monitor tile & Speed Test tile with 5-run history.</li>
             </ul>
           </div>
         </div>
 
         <!-- Tab 2: API Integrations -->
         <div id="wiki-panel-api" class="space-y-3 hidden">
-          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-plug text-cyan-400"></i> Live Service API Badges & Telemetry Setup</h4>
-          <p>HomeLink proxies API calls server-side (<code class="text-orange-300 font-mono">/api/proxy-stats</code>) to bypass browser CORS restrictions and keep your API keys out of public client requests. Live metrics appear as an interactive badge directly on each service tile.</p>
-          
-          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-1.5">
-            <div class="font-bold text-white">How to Enable an API Badge:</div>
-            <ol class="list-decimal pl-4 space-y-1 opacity-85">
-              <li>Click the <b>Locked</b> button in the top-right header to unlock Editing Mode.</li>
-              <li>Click the amber <b>Edit (Pencil)</b> icon on any tile (or click <b>+ Add Link</b>).</li>
-              <li>Select the matching <b>API Service Type</b> from the dropdown and enter your API Key or credentials.</li>
-              <li>Click <b>Save Tile</b>—the live status badge will populate automatically on the next poll cycle.</li>
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-plug text-cyan-400"></i> Service API Badges & Status</h4>
+          <p>Connect your service tiles (Sonarr, Radarr, Prowlarr, qBittorrent, Immich) to display live queue statistics and transfer speeds directly on both mobile and desktop tiles.</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">Configuration Steps:</div>
+            <ol class="list-decimal pl-4 space-y-1 opacity-80">
+              <li>Click <b>Unlock Editing Mode</b> in the top right.</li>
+              <li>Click the edit pencil on any service tile.</li>
+              <li>Select your API Service Type (for qBittorrent, enter <code class="text-orange-300 font-mono">username:password</code> if auth is enabled, or leave blank if subnet auth bypass is active).</li>
             </ol>
           </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1">
-              <div class="font-bold text-cyan-300 flex items-center justify-between">
-                <span>Sonarr & Radarr</span>
-                <span class="text-[10px] font-mono bg-cyan-500/10 px-2 py-0.5 rounded text-cyan-300">X in queue</span>
-              </div>
-              <p class="opacity-80">Queries <code class="text-orange-300 font-mono">/api/v3/queue</code>. Copy your 32-character API Key from <b>Settings → General → Security</b> inside Sonarr or Radarr.</p>
-            </div>
-
-            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1">
-              <div class="font-bold text-purple-300 flex items-center justify-between">
-                <span>Prowlarr</span>
-                <span class="text-[10px] font-mono bg-purple-500/10 px-2 py-0.5 rounded text-purple-300">X apps synced</span>
-              </div>
-              <p class="opacity-80">Queries <code class="text-orange-300 font-mono">/api/v1/applications</code>. Copy your API Key from <b>Settings → General → Security</b> in Prowlarr.</p>
-            </div>
-
-            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1">
-              <div class="font-bold text-emerald-300 flex items-center justify-between">
-                <span>Immich</span>
-                <span class="text-[10px] font-mono bg-emerald-500/10 px-2 py-0.5 rounded text-emerald-300">Photos & Videos</span>
-              </div>
-              <p class="opacity-80">Queries <code class="text-orange-300 font-mono">/api/server/statistics</code> via <code class="text-orange-300 font-mono">x-api-key</code>. Generate a key in Immich under <b>Account Settings → API Keys</b> (requires <code class="text-orange-300 font-mono">server.statistics</code> or admin permission).</p>
-            </div>
-
-            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1">
-              <div class="font-bold text-amber-300 flex items-center justify-between">
-                <span>qBittorrent</span>
-                <span class="text-[10px] font-mono bg-amber-500/10 px-2 py-0.5 rounded text-amber-300">↓ DL ↑ UL</span>
-              </div>
-              <p class="opacity-80">Authenticates via WebUI API (<code class="text-orange-300 font-mono">/api/v2/transfer/info</code>). Enter credentials as <code class="text-orange-300 font-mono">username:password</code> (e.g., <code class="text-orange-300 font-mono">admin:secretpass</code>) or just your password if your username is <code class="text-orange-300 font-mono">admin</code>.</p>
-            </div>
-          </div>
         </div>
 
-        <!-- Tab 3: Studio & Customization -->
-        <div id="wiki-panel-studio" class="space-y-3 hidden">
-          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-orange-400"></i> Interactive Background Studio & Visual Controls</h4>
-          <p>Tailor every profile's layout, wallpaper alignment, tile geometry, and color palette with live visual feedback.</p>
-          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-2">
-            <div class="font-bold text-white">Interactive Background Studio:</div>
-            <ul class="list-disc pl-4 space-y-1.5 opacity-85">
-              <li><b>Live Pan & Resize:</b> Upload any wallpaper in <b>Settings → Custom Background Wallpaper</b>, then click <b>Live Pan & Resize</b> to drag the image freely across your viewport or pull the corner/edge handles (with locked aspect ratio) to frame it cleanly.</li>
-              <li><b>Wallpaper Gallery & Dimmer:</b> Switch instantly between uploaded wallpapers in your gallery, toggle <b>True-Color Mode</b> for 100% vibrancy, or dial in the Wallpaper Dimmer slider for crisp text contrast.</li>
-            </ul>
-          </div>
-          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-2">
-            <div class="font-bold text-white">Layout, Tiles & Drag-and-Drop Organization:</div>
-            <ul class="list-disc pl-4 space-y-1.5 opacity-85">
-              <li><b>Universal Tile Shapes & Opacity:</b> Choose <i>Auto</i> (compact square icons on phones, full detail rectangles on desktop), <i>Force Compact Square</i>, or <i>Force Rectangle</i>, and adjust card glass transparency from 0% to 100%.</li>
-              <li><b>Group View & Drag Reordering:</b> Toggle <b>Group View</b> in the category bar to organize tiles into distinct category cards. Unlock Editing Mode to drag-and-drop tiles or reorder category tabs directly.</li>
-              <li><b>Local Scoped Assets Manager:</b> Browse, inspect in a full-screen lightbox, or delete uploaded icons and wallpapers directly from your server's <code class="text-orange-300 font-mono">data/</code> folder.</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Tab 4: Profiles & Security -->
+        <!-- Tab 3: Profiles & Security -->
         <div id="wiki-panel-profiles" class="space-y-3 hidden">
-          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-users text-amber-400"></i> Multi-User Profiles, Locks & Direct URLs</h4>
-          <p>HomeLink supports isolated user profiles with individual tile layouts, themes, wallpapers, and scoped asset management.</p>
-          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-1.5">
-            <div class="font-bold text-white">Security & Access Controls:</div>
-            <ul class="list-disc pl-4 space-y-1.5 opacity-85">
-              <li><b>Edit Lock & Password Protection:</b> Set an optional PIN or password per profile in Settings. Protected profiles require authentication both when switching into the profile and when unlocking Editing Mode or Settings.</li>
-              <li><b>Direct Profile Bookmarks:</b> Open the <b>Profiles</b> menu in the header and click <b>Direct Link</b> next to any user to copy a direct URL (<code class="text-orange-300 font-mono">?profile=user_...</code>) for bookmarking on family tablets, phones, or kiosks.</li>
-              <li><b>Default Startup Profile:</b> Admins can designate which profile loads automatically when visiting the root HomeLink URL without query parameters.</li>
-              <li><b>Asset Scoping:</b> Non-admin profiles are scoped to their own uploaded wallpapers and unassigned icons, while the Admin profile has full visibility across all server assets.</li>
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-users text-amber-400"></i> Multi-User Profiles & Direct URLs</h4>
+          <p>HomeLink supports isolated user profiles with individual tile layouts, themes, and scoped asset management.</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">Security Highlights:</div>
+            <ul class="list-disc pl-4 space-y-1 opacity-80">
+              <li>Set optional PIN/passwords per profile in Settings.</li>
+              <li>Generate direct profile switching links to bookmark on different devices.</li>
+              <li>Non-admin profiles are strictly scoped to their own uploaded icons and wallpapers.</li>
             </ul>
           </div>
         </div>
 
-        <!-- Tab 5: Backup & Imports -->
+        <!-- Tab 4: Backup & Imports -->
         <div id="wiki-panel-backup" class="space-y-3 hidden">
-          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-file-import text-purple-400"></i> Backup, Restore & Dashboard Importers</h4>
-          <p>Migrate your existing homelab dashboards in seconds or maintain versioned JSON snapshots of your entire multi-profile setup.</p>
-          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-1.5">
-            <div class="font-bold text-white">Supported Formats (Settings → Backup, Migration & Imports):</div>
-            <ul class="list-disc pl-4 space-y-1.5 opacity-85">
-              <li><b>HomeLink Backup (<code class="text-orange-300 font-mono">.json</code>):</b> Exports all profiles, categories, custom colors, API keys, and layout settings into a portable JSON file for instant restoration or server migration.</li>
-              <li><b>Heimdall Importer (<code class="text-orange-300 font-mono">.json</code>):</b> Upload a Heimdall JSON export to automatically import service titles, URLs, tags as categories, and matching dashboard icons.</li>
-              <li><b>Homepage Importer (<code class="text-orange-300 font-mono">services.yaml</code> / <code class="text-orange-300 font-mono">.json</code>):</b> Upload your Homepage YAML or JSON service configuration to automatically create categories and populate matching service tiles.</li>
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-file-import text-purple-400"></i> Migrating from Heimdall & Homepage</h4>
+          <p>Easily import your existing homelab dashboards without manual re-entry.</p>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
+            <div class="font-bold text-white">Supported Formats:</div>
+            <ul class="list-disc pl-4 space-y-1 opacity-80">
+              <li><b>Heimdall:</b> Upload your Heimdall JSON backup export.</li>
+              <li><b>Homepage:</b> Upload your <code class="text-orange-300 font-mono">services.yaml</code> or JSON configuration.</li>
+              <li><b>HomeLink Backup:</b> Full JSON export/import for complete server migration.</li>
             </ul>
           </div>
         </div>
@@ -1108,6 +1179,20 @@
 
     const defaultCategories = ['Media', 'Storage & NAS', 'Smart Home', 'Networking', 'Web'];
 
+    function createDefaultSpeedTestConfig() {
+      return {
+        name: 'Speed Test',
+        category: '',
+        icon: 'fa-solid fa-gauge-high',
+        color: 'cyan',
+        customBg: '',
+        fontColor: '',
+        scheduleMode: 'manual',
+        intervalHours: 6,
+        history: []
+      };
+    }
+
     let profiles = [
       {
         id: 'admin',
@@ -1131,6 +1216,8 @@
         bgPosY: 50,
         showSystemMonitor: false,
         sysMonConfig: { name: '', osOverride: '', category: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 },
+        showSpeedTest: false,
+        speedTestConfig: createDefaultSpeedTestConfig(),
         apps: [...defaultAdminApps],
         categories: [...defaultCategories]
       }
@@ -1147,6 +1234,7 @@
     let appPingStatuses = {};
     let appLiveStats = {};
     let hostSysStats = null;
+    let isSpeedTestRunning = false;
     
     let currentIconMode = 'fa';
     let uploadedIconBase64 = '';
@@ -1161,6 +1249,7 @@
     let uploadedProfileAvatarBase64 = '';
     let pingTimer = null;
     let sysMonPollTimer = null;
+    let speedTestScheduleTimer = null;
 
     let studioActive = false;
     let studioInteractionType = null;
@@ -1171,9 +1260,9 @@
 
     let draggedCategoryName = null;
 
-    // Built-in FontAwesome + fallback icons, dynamically merged with 2,500+ dashboard-icons manifest
     const builtinFontAwesomeIcons = [
       { type: 'fa', value: 'fa-solid fa-server', name: 'server hosting' },
+      { type: 'fa', value: 'fa-solid fa-gauge-high', name: 'speed test gauge bandwidth' },
       { type: 'fa', value: 'fa-solid fa-house-signal', name: 'home smart signal' },
       { type: 'fa', value: 'fa-solid fa-database', name: 'database storage' },
       { type: 'fa', value: 'fa-solid fa-network-wired', name: 'network router switch' },
@@ -1234,6 +1323,7 @@
       runLivePings();
       setupPingInterval();
       setupSysMonPolling();
+      setupSpeedTestSchedule();
       initInteractiveStudioListeners();
       loadFullIconManifest(false);
     });
@@ -1294,6 +1384,9 @@
             if (p.showSystemMonitor === undefined) p.showSystemMonitor = false;
             if (!p.sysMonConfig) p.sysMonConfig = { name: '', osOverride: '', category: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 };
             if (p.sysMonConfig.category === undefined) p.sysMonConfig.category = '';
+            if (p.showSpeedTest === undefined) p.showSpeedTest = false;
+            if (!p.speedTestConfig) p.speedTestConfig = createDefaultSpeedTestConfig();
+            if (!Array.isArray(p.speedTestConfig.history)) p.speedTestConfig.history = [];
           });
           if (data.defaultStartupProfileId) defaultStartupProfileId = data.defaultStartupProfileId;
           if (banner) banner.classList.add('hidden');
@@ -1306,7 +1399,7 @@
 
     async function saveState() {
       const payload = {
-        version: '2.8',
+        version: '2.9',
         timestamp: new Date().toISOString(),
         currentProfileId,
         defaultStartupProfileId,
@@ -1364,6 +1457,7 @@
       document.getElementById('bg-zoom-label').innerText = `${p.bgZoomVal || 100}%`;
       document.getElementById('setting-bg-truecolor').checked = !!p.bgTrueColor;
       document.getElementById('setting-show-sysmon').checked = !!p.showSystemMonitor;
+      document.getElementById('setting-show-speedtest').checked = !!p.showSpeedTest;
       document.getElementById('setting-group-categories').checked = !!p.groupByCategory;
 
       updateGroupCategoryUIState();
@@ -1396,6 +1490,7 @@
         fetchHostSystemStats();
         setupSysMonPolling();
       }
+      setupSpeedTestSchedule();
     }
 
     function saveTileShapePreference(val) {
@@ -1744,17 +1839,24 @@
       }, (p.sysMonConfig?.refreshInterval || 3) * 1000);
     }
 
+    function setupSpeedTestSchedule() {
+      if (speedTestScheduleTimer) clearInterval(speedTestScheduleTimer);
+      const p = getCurrentProfile();
+      const cfg = p.speedTestConfig || createDefaultSpeedTestConfig();
+      if (!p.showSpeedTest || cfg.scheduleMode !== 'interval') return;
+      const hours = Math.max(1, parseInt(cfg.intervalHours) || 6);
+      speedTestScheduleTimer = setInterval(() => {
+        if (getCurrentProfile().showSpeedTest && getCurrentProfile().speedTestConfig?.scheduleMode === 'interval') {
+          runSpeedTest(false);
+        }
+      }, hours * 3600 * 1000);
+    }
+
     async function runLivePings() {
       const profile = getCurrentProfile();
       if (profile.showSystemMonitor) fetchHostSystemStats();
 
       const appsToPing = profile.apps.filter(a => a.pingEnabled !== false);
-      const appsWithApi = profile.apps.filter(a => a.apiKey && a.apiKey.trim() !== '');
-
-      appsWithApi.forEach(app => {
-        fetchServiceStats(app);
-      });
-
       if (appsToPing.length === 0) {
         const countEl = document.getElementById('services-online-count');
         const dotEl = document.getElementById('overall-status-dot');
@@ -1766,6 +1868,9 @@
       let onlineCount = 0;
 
       const pingPromises = appsToPing.map(async (app) => {
+        if (app.apiKey && app.apiKey.trim() !== '' || app.serviceType === 'qbittorrent') {
+          fetchServiceStats(app);
+        }
         try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 2000);
@@ -1789,14 +1894,12 @@
 
     async function fetchServiceStats(app) {
       try {
-        if (app.apiKey && app.apiKey.trim() !== '') {
-          const url = '/api/proxy-stats?targetUrl=' + encodeURIComponent(app.url) + '&apiKey=' + encodeURIComponent(app.apiKey) + '&serviceType=' + encodeURIComponent(app.serviceType || 'sonarr');
-          const res = await fetch(url);
-          const data = await res.json();
-          if (data && data.badge) {
-            appLiveStats[app.id] = data.badge;
-            renderApps();
-          }
+        const url = '/api/proxy-stats?targetUrl=' + encodeURIComponent(app.url) + '&apiKey=' + encodeURIComponent(app.apiKey || '') + '&serviceType=' + encodeURIComponent(app.serviceType || 'generic');
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.badge) {
+          appLiveStats[app.id] = data.badge;
+          renderApps();
         }
       } catch(e) {}
     }
@@ -1816,6 +1919,174 @@
       saveState();
       if (checked) { fetchHostSystemStats(); setupSysMonPolling(); } else { renderApps(); }
       showToast(checked ? 'System Monitor tile enabled' : 'System Monitor tile hidden', 'emerald');
+    }
+
+    function toggleSpeedTestTile(checked) {
+      const p = getCurrentProfile();
+      if (!p.speedTestConfig) p.speedTestConfig = createDefaultSpeedTestConfig();
+      p.showSpeedTest = checked;
+      saveState();
+      setupSpeedTestSchedule();
+      renderApps();
+      showToast(checked ? 'Speed Test tile enabled' : 'Speed Test tile hidden', 'emerald');
+    }
+
+    function toggleSpeedTestHoursField() {
+      const mode = document.getElementById('speedtest-mode-input').value;
+      const wrap = document.getElementById('speedtest-hours-wrap');
+      if (wrap) wrap.classList.toggle('hidden', mode !== 'interval');
+    }
+
+    function updateSpeedTestModalIconPreview() {
+      const previewBox = document.getElementById('speedtest-icon-preview-box');
+      if (!previewBox) return;
+      const iconVal = document.getElementById('speedtest-icon-input').value.trim() || 'fa-solid fa-gauge-high';
+      const isImg = iconVal.startsWith('http://') || iconVal.startsWith('https://') || iconVal.startsWith('data:image/') || iconVal.startsWith('/data/');
+      if (isImg) previewBox.innerHTML = `<img src="${iconVal}" class="w-full h-full object-contain p-1 rounded-xl" />`;
+      else previewBox.innerHTML = `<i class="${iconVal}"></i>`;
+    }
+
+    function openSpeedTestEditModal() {
+      const p = getCurrentProfile();
+      const cfg = p.speedTestConfig || createDefaultSpeedTestConfig();
+      document.getElementById('speedtest-name-input').value = cfg.name || 'Speed Test';
+      document.getElementById('speedtest-mode-input').value = cfg.scheduleMode || 'manual';
+      document.getElementById('speedtest-hours-input').value = cfg.intervalHours || 6;
+      document.getElementById('speedtest-color-input').value = cfg.color || 'cyan';
+      document.getElementById('speedtest-custom-bg-input').value = cfg.customBg || '#1e293b';
+      document.getElementById('speedtest-font-color-input').value = cfg.fontColor || '#f1f5f9';
+      document.getElementById('speedtest-icon-input').value = cfg.icon || 'fa-solid fa-gauge-high';
+
+      const catSelect = document.getElementById('speedtest-category-input');
+      catSelect.innerHTML = `<option value="">(Default / Standalone)</option>` + p.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+      catSelect.value = cfg.category || '';
+
+      toggleSpeedTestHoursField();
+      updateSpeedTestModalIconPreview();
+      document.getElementById('speedtest-edit-modal').classList.remove('hidden');
+    }
+
+    function closeSpeedTestEditModal() {
+      document.getElementById('speedtest-edit-modal').classList.add('hidden');
+    }
+
+    function saveSpeedTestConfig(e) {
+      e.preventDefault();
+      const p = getCurrentProfile();
+      if (!p.speedTestConfig) p.speedTestConfig = createDefaultSpeedTestConfig();
+      const cfg = p.speedTestConfig;
+      cfg.name = document.getElementById('speedtest-name-input').value.trim() || 'Speed Test';
+      cfg.category = document.getElementById('speedtest-category-input').value;
+      cfg.scheduleMode = document.getElementById('speedtest-mode-input').value;
+      cfg.intervalHours = Math.max(1, parseInt(document.getElementById('speedtest-hours-input').value) || 6);
+      cfg.color = document.getElementById('speedtest-color-input').value;
+      cfg.customBg = document.getElementById('speedtest-custom-bg-input').value === '#1e293b' ? '' : document.getElementById('speedtest-custom-bg-input').value;
+      cfg.fontColor = document.getElementById('speedtest-font-color-input').value === '#f1f5f9' ? '' : document.getElementById('speedtest-font-color-input').value;
+      cfg.icon = document.getElementById('speedtest-icon-input').value.trim() || 'fa-solid fa-gauge-high';
+
+      saveState();
+      setupSpeedTestSchedule();
+      renderApps();
+      closeSpeedTestEditModal();
+      showToast('Speed Test tile updated', 'emerald');
+    }
+
+    function openSpeedTestHistoryModal() {
+      renderSpeedTestHistoryModal();
+      document.getElementById('speedtest-history-modal').classList.remove('hidden');
+    }
+
+    function closeSpeedTestHistoryModal() {
+      document.getElementById('speedtest-history-modal').classList.add('hidden');
+    }
+
+    function renderSpeedTestHistoryModal() {
+      const p = getCurrentProfile();
+      const cfg = p.speedTestConfig || createDefaultSpeedTestConfig();
+      const history = Array.isArray(cfg.history) ? cfg.history : [];
+      const latest = history[0] || null;
+
+      document.getElementById('speedtest-modal-title').innerText = cfg.name || 'Network Speed Test';
+      document.getElementById('speedtest-schedule-subtitle').innerText =
+        cfg.scheduleMode === 'interval' ? `Schedule: Every ${cfg.intervalHours || 6}h` : 'Schedule: Manual Only';
+
+      document.getElementById('st-latest-dl').innerHTML = latest ? `${latest.downloadMbps} <span class="text-xs">Mbps</span>` : `-- <span class="text-xs">Mbps</span>`;
+      document.getElementById('st-latest-ul').innerHTML = latest ? `${latest.uploadMbps} <span class="text-xs">Mbps</span>` : `-- <span class="text-xs">Mbps</span>`;
+      document.getElementById('st-latest-ping').innerHTML = latest ? `${latest.pingMs} <span class="text-xs">ms</span>` : `-- <span class="text-xs">ms</span>`;
+
+      const listEl = document.getElementById('speedtest-history-list');
+      if (history.length === 0) {
+        listEl.innerHTML = `<div class="text-center py-6 text-xs text-slate-400 bg-slate-900/50 rounded-xl border border-white/5">No speed tests recorded yet. Click "Run Speed Test Now" above.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = history.slice(0, 5).map((entry, idx) => {
+        const dt = new Date(entry.timestamp);
+        const formattedDate = isNaN(dt.getTime()) ? entry.timestamp : dt.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return `
+          <div class="flex items-center justify-between bg-slate-900/75 border border-white/5 rounded-xl px-3.5 py-2.5 text-xs">
+            <div class="flex items-center gap-2.5">
+              <span class="w-5 h-5 rounded-full ${idx === 0 ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-slate-800 text-slate-400'} text-[10px] font-bold flex items-center justify-center font-mono">${idx + 1}</span>
+              <span class="text-slate-300 font-medium">${formattedDate}</span>
+            </div>
+            <div class="flex items-center gap-3 font-mono text-[11px]">
+              <span class="text-emerald-400" title="Download">↓ ${entry.downloadMbps} Mbps</span>
+              <span class="text-cyan-400" title="Upload">↑ ${entry.uploadMbps} Mbps</span>
+              <span class="text-amber-400" title="Ping">${entry.pingMs} ms</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function runSpeedTest(showNotifications = true) {
+      if (isSpeedTestRunning) return;
+      isSpeedTestRunning = true;
+
+      const runBtn = document.getElementById('btn-run-speedtest-now');
+      const runIcon = document.getElementById('st-run-icon');
+      const runLabel = document.getElementById('st-run-label');
+      if (runBtn) runBtn.disabled = true;
+      if (runIcon) runIcon.className = 'fa-solid fa-spinner fa-spin';
+      if (runLabel) runLabel.innerText = 'Testing Bandwidth...';
+      renderApps();
+
+      try {
+        const res = await fetch('/api/speedtest');
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Speed test failed');
+
+        const p = getCurrentProfile();
+        if (!p.speedTestConfig) p.speedTestConfig = createDefaultSpeedTestConfig();
+        if (!Array.isArray(p.speedTestConfig.history)) p.speedTestConfig.history = [];
+
+        p.speedTestConfig.history.unshift({
+          timestamp: data.timestamp || new Date().toISOString(),
+          downloadMbps: data.downloadMbps ?? 0,
+          uploadMbps: data.uploadMbps ?? 0,
+          pingMs: data.pingMs ?? 0
+        });
+        p.speedTestConfig.history = p.speedTestConfig.history.slice(0, 5);
+
+        await saveState();
+        renderApps();
+        if (!document.getElementById('speedtest-history-modal').classList.contains('hidden')) {
+          renderSpeedTestHistoryModal();
+        }
+        if (showNotifications) {
+          showToast(`Speed test complete: ↓ ${data.downloadMbps} Mbps`, 'emerald');
+        }
+      } catch (err) {
+        if (showNotifications) {
+          showToast(err.message || 'Speed test failed', 'rose');
+        }
+      } finally {
+        isSpeedTestRunning = false;
+        if (runBtn) runBtn.disabled = false;
+        if (runIcon) runIcon.className = 'fa-solid fa-bolt';
+        if (runLabel) runLabel.innerText = 'Run Speed Test Now';
+        renderApps();
+      }
     }
 
     function setSysMonIconType(mode) {
@@ -1956,7 +2227,11 @@
       const sysCat = profile.sysMonConfig?.category || '';
       const showSysTile = !!profile.showSystemMonitor && (!searchQuery && (activeCategory === 'All' || (sysCat ? sysCat === activeCategory : true)));
 
-      if (filtered.length === 0 && !showSysTile) {
+      const stCfg = profile.speedTestConfig || createDefaultSpeedTestConfig();
+      const stCat = stCfg.category || '';
+      const showSpeedTile = !!profile.showSpeedTest && (!searchQuery && (activeCategory === 'All' || (stCat ? stCat === activeCategory : true)));
+
+      if (filtered.length === 0 && !showSysTile && !showSpeedTile) {
         container.innerHTML = '';
         emptyState.classList.remove('hidden');
         emptyState.classList.add('flex');
@@ -1978,7 +2253,6 @@
         tileShapeClass = 'p-3.5';
         gridColsClass = 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
       } else {
-        // Auto: Compact square on mobile (<640px), standard rectangle on desktop
         tileShapeClass = 'aspect-square sm:aspect-auto p-2.5 sm:p-3.5';
         gridColsClass = 'grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
       }
@@ -1993,15 +2267,10 @@
           statusDotHtml = `<span class="w-2 h-2 rounded-full ${dotClass}"></span>`;
         }
 
-        const badgeText = app.apiKey && app.apiKey.trim() !== '' ? (appLiveStats[app.id] || 'Fetching...') : '';
-        const isBadgeOffline = badgeText === 'API Offline';
-        const badgeHtml = badgeText ? `
-          <div class="mt-1.5 ${isForcedSquare ? 'hidden' : isAutoSquare ? 'hidden sm:block' : 'block'}">
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border ${isBadgeOffline ? 'bg-rose-500/10 text-rose-300 border-rose-500/20' : `${theme.bg} ${theme.text} ${theme.border}`}">
-              ${badgeText}
-            </span>
-          </div>
-        ` : '';
+        const liveBadge = appLiveStats[app.id];
+        const badgeHtml = liveBadge
+          ? `<span class="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-slate-950/70 border border-white/10 text-orange-300 truncate max-w-full inline-block">${liveBadge}</span>`
+          : '';
 
         const customBgStyle = app.customBg ? `background-color: ${app.customBg};` : '';
         const customFontStyle = app.fontColor ? `color: ${app.fontColor};` : '';
@@ -2025,10 +2294,10 @@
                   ${statusDotHtml}
                 </div>
               </div>
-              <div class="w-full overflow-hidden">
+              <div class="w-full overflow-hidden space-y-0.5">
                 <h4 class="font-bold text-xs sm:text-sm group-hover:text-orange-400 transition-colors truncate">${app.name}</h4>
-                <p class="${isForcedSquare ? 'hidden' : isAutoSquare ? 'hidden sm:block' : 'block'} text-[10px] opacity-60 font-medium truncate mt-0.5">${app.url}</p>
                 ${badgeHtml}
+                <p class="${isForcedSquare ? 'hidden' : isAutoSquare ? 'hidden sm:block' : 'block'} text-[10px] opacity-60 font-medium truncate">${app.url}</p>
               </div>
             </a>
           </div>
@@ -2045,9 +2314,11 @@
         const customOs = profile.sysMonConfig?.osOverride || (s ? s.osVersion : 'Loading OS...');
         const sysIcon = profile.sysMonConfig?.icon || 'fa-solid fa-server';
         const sysTheme = colorClasses[profile.sysMonConfig?.color || 'orange'] || colorClasses.orange;
+        const sysBgStyle = profile.sysMonConfig?.customBg ? `background-color: ${profile.sysMonConfig.customBg};` : '';
+        const sysFontStyle = profile.sysMonConfig?.fontColor ? `color: ${profile.sysMonConfig.fontColor};` : '';
 
         return `
-          <div class="glass-card rounded-2xl flex flex-col justify-between relative ${sysTheme.hoverGlow} ${tileShapeClass}">
+          <div style="${sysBgStyle} ${sysFontStyle}" class="glass-card rounded-2xl flex flex-col justify-between relative ${sysTheme.hoverGlow} ${tileShapeClass}">
             ${isEditMode ? `<div class="absolute top-1.5 right-1.5 flex items-center gap-1 z-20 bg-slate-950/85 p-1 rounded-xl border border-white/10"><button onclick="openSysMonModal()" class="w-5 h-5 rounded-lg bg-amber-500/20 text-amber-400 text-[9px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button></div>` : ''}
             <div class="h-full flex flex-col justify-between">
               <div class="flex items-start justify-between gap-1.5 mb-1.5">
@@ -2057,7 +2328,7 @@
                   </div>
                   <div class="overflow-hidden">
                     <h4 class="font-bold text-xs truncate">${customName}</h4>
-                    <p class="text-[9px] text-slate-400 truncate hidden sm:block">${customOs}</p>
+                    <p class="text-[9px] opacity-60 truncate hidden sm:block">${customOs}</p>
                   </div>
                 </div>
                 <span class="w-2 h-2 rounded-full ${s ? 'bg-emerald-500 status-pulse' : 'bg-slate-500'} mt-1 flex-shrink-0"></span>
@@ -2065,13 +2336,13 @@
               <div class="space-y-1.5">
                 <div>
                   <div class="flex justify-between text-[9px] font-semibold mb-0.5">
-                    <span class="text-slate-300">CPU</span><span class="text-white font-mono">${s ? cpuPct + '%' : '--%'}</span>
+                    <span class="opacity-80">CPU</span><span class="font-mono">${s ? cpuPct + '%' : '--%'}</span>
                   </div>
                   <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden"><div class="${cpuColor} h-full" style="width: ${cpuPct}%"></div></div>
                 </div>
                 <div>
                   <div class="flex justify-between text-[9px] font-semibold mb-0.5">
-                    <span class="text-slate-300">RAM</span><span class="text-white font-mono">${s ? ramPct + '%' : '--%'}</span>
+                    <span class="opacity-80">RAM</span><span class="font-mono">${s ? ramPct + '%' : '--%'}</span>
                   </div>
                   <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden"><div class="${ramColor} h-full" style="width: ${ramPct}%"></div></div>
                 </div>
@@ -2081,19 +2352,58 @@
         `;
       };
 
+      const renderSpeedTestTileHtml = () => {
+        const latest = Array.isArray(stCfg.history) && stCfg.history.length > 0 ? stCfg.history[0] : null;
+        const stTheme = colorClasses[stCfg.color || 'cyan'] || colorClasses.cyan;
+        const stBgStyle = stCfg.customBg ? `background-color: ${stCfg.customBg};` : '';
+        const stFontStyle = stCfg.fontColor ? `color: ${stCfg.fontColor};` : '';
+        const isImg = stCfg.icon && (stCfg.icon.startsWith('http://') || stCfg.icon.startsWith('https://') || stCfg.icon.startsWith('data:image/') || stCfg.icon.startsWith('/data/'));
+
+        const metricText = isSpeedTestRunning
+          ? 'Testing...'
+          : latest
+            ? `↓ ${latest.downloadMbps} ↑ ${latest.uploadMbps} Mbps`
+            : 'Click to run';
+
+        return `
+          <div style="${stBgStyle} ${stFontStyle}" class="glass-card rounded-2xl flex flex-col justify-between relative group ${stTheme.hoverGlow} ${tileShapeClass}">
+            ${isEditMode ? `
+              <div class="absolute top-1.5 right-1.5 flex items-center gap-1 z-20 bg-slate-950/85 p-1 rounded-xl border border-white/10">
+                <button onclick="openSpeedTestEditModal()" class="w-5 h-5 rounded-lg bg-amber-500/20 text-amber-400 text-[9px] flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+              </div>
+            ` : ''}
+            <button type="button" onclick="openSpeedTestHistoryModal()" class="flex-1 flex flex-col justify-between text-left w-full overflow-hidden cursor-pointer">
+              <div class="w-full flex items-start justify-between gap-2 mb-1.5">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${stTheme.bg} ${stTheme.border} border flex items-center justify-center text-lg sm:text-xl ${stTheme.text} overflow-hidden shadow-inner flex-shrink-0">
+                  ${isImg ? `<img src="${stCfg.icon}" class="w-full h-full object-contain p-1 rounded-xl" />` : `<i class="${stCfg.icon || 'fa-solid fa-gauge-high'} ${isSpeedTestRunning ? 'fa-bounce' : ''}"></i>`}
+                </div>
+                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900/70 border border-white/10 text-slate-300 ${isEditMode ? 'opacity-20' : ''}">
+                  ${stCfg.scheduleMode === 'interval' ? `${stCfg.intervalHours || 6}h` : 'Manual'}
+                </span>
+              </div>
+              <div class="w-full overflow-hidden space-y-0.5">
+                <h4 class="font-bold text-xs sm:text-sm group-hover:text-orange-400 transition-colors truncate">${stCfg.name || 'Speed Test'}</h4>
+                <p class="text-[10px] font-mono opacity-80 truncate">${metricText}</p>
+              </div>
+            </button>
+          </div>
+        `;
+      };
+
       const gapVal = profile.tileSpacingVal || '2';
       const gapClass = gapVal === '1' ? 'gap-2' : gapVal === '2' ? 'gap-3' : 'gap-5';
 
       if (profile.groupByCategory && activeCategory === 'All' && !searchQuery) {
         let sectionsHtml = '';
-        if (showSysTile && !sysCat) {
+        if ((showSysTile && !sysCat) || (showSpeedTile && !stCat)) {
           sectionsHtml += `
             <div class="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
               <div class="flex items-center gap-2 pb-2 border-b border-white/10 text-xs font-bold text-orange-400 uppercase tracking-wider">
-                <i class="fa-solid fa-server"></i> System Monitor
+                <i class="fa-solid fa-server"></i> System & Network Tools
               </div>
               <div class="grid ${gridColsClass} ${gapClass}">
-                ${renderSysTileHtml()}
+                ${showSysTile && !sysCat ? renderSysTileHtml() : ''}
+                ${showSpeedTile && !stCat ? renderSpeedTestTileHtml() : ''}
               </div>
             </div>
           `;
@@ -2102,7 +2412,9 @@
         profile.categories.forEach(cat => {
           const catApps = filtered.filter(a => a.category === cat);
           const isSysCatMatch = showSysTile && sysCat === cat;
-          if (catApps.length > 0 || isSysCatMatch || isEditMode) {
+          const isStCatMatch = showSpeedTile && stCat === cat;
+          const extraCount = (isSysCatMatch ? 1 : 0) + (isStCatMatch ? 1 : 0);
+          if (catApps.length > 0 || extraCount > 0 || isEditMode) {
             const dragAttrs = isEditMode ? `draggable="true" ondragstart="onCategoryDragStart(event, '${cat}')" ondragover="event.preventDefault()" ondrop="onCategoryDrop(event, '${cat}')"` : '';
             const dragCursor = isEditMode ? 'cursor-grab active:cursor-grabbing hover:border-orange-500/50' : '';
             sectionsHtml += `
@@ -2111,12 +2423,13 @@
                   <div class="flex items-center gap-2">
                     ${isEditMode ? '<i class="fa-solid fa-grip-vertical text-orange-400"></i>' : ''}
                     <span>${cat}</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">${catApps.length + (isSysCatMatch ? 1 : 0)}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">${catApps.length + extraCount}</span>
                   </div>
                   <button onclick="setCategory('${cat}')" class="text-[10px] text-orange-400 hover:underline">View Only</button>
                 </div>
                 <div class="grid ${gridColsClass} ${gapClass}">
                   ${isSysCatMatch ? renderSysTileHtml() : ''}
+                  ${isStCatMatch ? renderSpeedTestTileHtml() : ''}
                   ${catApps.map(app => renderTileHtml(app)).join('')}
                 </div>
               </div>
@@ -2125,10 +2438,17 @@
         });
         container.innerHTML = sectionsHtml;
       } else {
+        const showUnassignedSys = showSysTile && !sysCat;
+        const showAssignedSys = showSysTile && sysCat && (activeCategory === sysCat || activeCategory === 'All');
+        const showUnassignedSt = showSpeedTile && !stCat;
+        const showAssignedSt = showSpeedTile && stCat && (activeCategory === stCat || activeCategory === 'All');
+
         container.innerHTML = `
           <div id="apps-grid" class="grid ${gridColsClass} ${gapClass}">
-            ${showSysTile && !sysCat ? renderSysTileHtml() : ''} 
-            ${showSysTile && sysCat && (activeCategory === sysCat || activeCategory === 'All') ? renderSysTileHtml() : ''}
+            ${showUnassignedSys ? renderSysTileHtml() : ''} 
+            ${showAssignedSys ? renderSysTileHtml() : ''}
+            ${showUnassignedSt ? renderSpeedTestTileHtml() : ''}
+            ${showAssignedSt ? renderSpeedTestTileHtml() : ''}
             ${filtered.map(app => renderTileHtml(app)).join('')}
           </div>
         `;
@@ -2270,38 +2590,12 @@
     }
     function markIconModified() { iconWasModified = true; }
 
-    function updateApiKeyHelperText() {
-      const serviceType = document.getElementById('app-service-type').value;
-      const helperEl = document.getElementById('api-key-helper-text');
-      const keyInput = document.getElementById('app-api-key');
-      if (!helperEl || !keyInput) return;
-
-      const helpers = {
-        sonarr: { text: 'Paste your Sonarr API key from Settings → General → Security.', placeholder: '32-char Sonarr API key...' },
-        radarr: { text: 'Paste your Radarr API key from Settings → General → Security.', placeholder: '32-char Radarr API key...' },
-        prowlarr: { text: 'Paste your Prowlarr API key from Settings → General → Security.', placeholder: '32-char Prowlarr API key...' },
-        qbittorrent: { text: 'Enter username:password (e.g. admin:yourpassword) or password alone if username is admin.', placeholder: 'admin:password' },
-        immich: { text: 'Paste your Immich API key from Account Settings → API Keys.', placeholder: 'Immich API key...' },
-        generic: { text: 'Optional bearer/query key for basic reachability badge.', placeholder: 'API key...' }
-      };
-
-      const cfg = helpers[serviceType] || helpers.generic;
-      helperEl.innerText = cfg.text;
-      keyInput.placeholder = cfg.placeholder;
-    }
-
     function updateModalIconPreview() {
       const previewBox = document.getElementById('modal-icon-preview-box');
       if (!previewBox) return;
       let iconVal = document.getElementById('app-icon-fa').value.trim() || 'fa-solid fa-globe';
       if (currentIconMode === 'url') iconVal = document.getElementById('app-icon-url-input').value.trim();
       if (currentIconMode === 'upload') iconVal = uploadedIconBase64;
-      if (currentIconMode === 'favicon') {
-        const rawUrl = document.getElementById('app-url').value.trim();
-        try {
-          if (rawUrl) iconVal = `${new URL(rawUrl).origin}/favicon.ico`;
-        } catch(e) {}
-      }
 
       const isImg = iconVal.startsWith('http://') || iconVal.startsWith('https://') || iconVal.startsWith('data:image/') || iconVal.startsWith('/data/');
       if (isImg) previewBox.innerHTML = `<img src="${iconVal}" class="w-full h-full object-contain p-1 rounded-xl" />`;
@@ -2320,7 +2614,6 @@
       const container = document.getElementById('icon-grid-container');
       const q = query.toLowerCase().trim();
       const filtered = fullIconLibrary.filter(item => item.name.includes(q) || item.value.toLowerCase().includes(q));
-      // Limit initial render to 160 icons for instant UI response; typing narrows down all 2,500+
       const displaySet = filtered.slice(0, 160);
       container.innerHTML = displaySet.map(item => `
         <button type="button" onclick="selectUnifiedIcon('${item.value}', '${item.slug || ''}')" class="p-2.5 bg-slate-900 hover:bg-orange-600/20 border border-white/10 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-colors">
@@ -2334,7 +2627,6 @@
     async function selectUnifiedIcon(val, slug = '') {
       let finalIconPath = val;
 
-      // Auto-cache remote dashboard-icons locally to /data/cached_icons/
       if (val.startsWith('http://') || val.startsWith('https://')) {
         showToast('Caching icon offline...', 'blue');
         try {
@@ -2357,6 +2649,9 @@
         document.getElementById('sysmon-icon-fa').value = finalIconPath;
         sysMonIconWasModified = true;
         updateSysMonModalIconPreview();
+      } else if (iconPickerTarget === 'speedtest') {
+        document.getElementById('speedtest-icon-input').value = finalIconPath;
+        updateSpeedTestModalIconPreview();
       } else {
         setIconType('fa');
         document.getElementById('app-icon-fa').value = finalIconPath;
@@ -2390,9 +2685,6 @@
     function openAppModal(id = null) {
       document.getElementById('app-form').reset();
       document.getElementById('app-id').value = '';
-      document.getElementById('modal-title').innerHTML = id
-        ? '<i class="fa-solid fa-pen-to-square text-orange-400"></i> Edit Service Tile'
-        : '<i class="fa-solid fa-square-plus text-orange-400"></i> Add New Tile';
       uploadedIconBase64 = '';
       iconWasModified = false;
       setIconType('fa');
@@ -2416,7 +2708,6 @@
           document.getElementById('app-icon-url-input').value = app.icon;
         }
       }
-      updateApiKeyHelperText();
       updateModalIconPreview();
       document.getElementById('app-modal').classList.remove('hidden');
     }
@@ -2441,26 +2732,17 @@
         if (currentIconMode === 'fa') icon = document.getElementById('app-icon-fa').value || 'fa-solid fa-globe';
         else if (currentIconMode === 'url') icon = document.getElementById('app-icon-url-input').value.trim();
         else if (currentIconMode === 'upload') icon = uploadedIconBase64;
-        else if (currentIconMode === 'favicon') {
-          try {
-            icon = `${new URL(url).origin}/favicon.ico`;
-          } catch(err) {
-            icon = 'fa-solid fa-globe';
-          }
-        }
       }
 
       if (id) {
         const idx = profile.apps.findIndex(a => a.id === id);
         if (idx !== -1) profile.apps[idx] = { ...profile.apps[idx], name, category, url, icon, color, apiKey, serviceType, customBg, fontColor, pingEnabled };
-        if (apiKey) fetchServiceStats(profile.apps[idx]);
       } else {
-        const newApp = { id: Date.now().toString(), name, category, url, icon, color, apiKey, serviceType, customBg, fontColor, pingEnabled };
-        profile.apps.unshift(newApp);
-        if (apiKey) fetchServiceStats(newApp);
+        profile.apps.unshift({ id: Date.now().toString(), name, category, url, icon, color, apiKey, serviceType, customBg, fontColor, pingEnabled });
       }
       saveState();
       renderApps();
+      runLivePings();
       closeAppModal();
       showToast('Tile saved', 'emerald');
     }
@@ -2527,18 +2809,13 @@
       document.getElementById('admin-pass-input').value = p.password || '';
       document.getElementById('admin-avatar-input').value = p.avatar || '';
       uploadedAdminAvatarBase64 = p.avatar || '';
-      updateAdminAvatarPreview();
       document.getElementById('admin-edit-modal').classList.remove('hidden');
     }
     function closeAdminEditModal() { document.getElementById('admin-edit-modal').classList.add('hidden'); }
 
     function updateAdminAvatarPreview() {
       const nameVal = document.getElementById('admin-name-input').value.trim() || 'Admin';
-      const avatarVal = document.getElementById('admin-avatar-input').value.trim();
-      const previewEl = document.getElementById('admin-edit-avatar-preview');
       document.getElementById('admin-edit-name-preview').innerText = `${nameVal} 👑`;
-      if (avatarVal) previewEl.innerHTML = `<img src="${avatarVal}" class="w-full h-full object-cover">`;
-      else previewEl.innerText = nameVal.charAt(0).toUpperCase();
     }
 
     function handleAdminAvatarUpload(e) {
@@ -2575,19 +2852,9 @@
       document.getElementById('profile-name-input').value = '';
       document.getElementById('profile-pass-input').value = '';
       document.getElementById('profile-avatar-input').value = '';
-      updateProfileAvatarPreview();
       document.getElementById('profile-edit-modal').classList.remove('hidden');
     }
     function closeProfileEditModal() { document.getElementById('profile-edit-modal').classList.add('hidden'); }
-
-    function updateProfileAvatarPreview() {
-      const nameVal = document.getElementById('profile-name-input').value.trim() || 'New User';
-      const avatarVal = document.getElementById('profile-avatar-input').value.trim();
-      const previewEl = document.getElementById('profile-edit-avatar-preview');
-      document.getElementById('profile-edit-name-preview').innerText = nameVal;
-      if (avatarVal) previewEl.innerHTML = `<img src="${avatarVal}" class="w-full h-full object-cover">`;
-      else previewEl.innerHTML = `<i class="fa-solid fa-user text-sm"></i>`;
-    }
 
     function handleProfileAvatarUpload(e) {
       const file = e.target.files[0];
@@ -2595,7 +2862,6 @@
       const reader = new FileReader();
       reader.onload = function(evt) {
         document.getElementById('profile-avatar-input').value = evt.target.result;
-        updateProfileAvatarPreview();
         showToast('Profile avatar loaded', 'emerald');
       };
       reader.readAsDataURL(file);
@@ -2631,6 +2897,8 @@
         bgPosY: 50,
         showSystemMonitor: false,
         sysMonConfig: { name: '', osOverride: '', category: '', icon: 'fa-solid fa-server', color: 'orange', customBg: '', fontColor: '', refreshInterval: 3 },
+        showSpeedTest: false,
+        speedTestConfig: createDefaultSpeedTestConfig(),
         apps: [...defaultAdminApps],
         categories: [...defaultCategories]
       });
@@ -2638,23 +2906,6 @@
       closeProfileEditModal();
       openProfilesModal();
       showToast('Profile created successfully', 'emerald');
-    }
-
-    function saveCurrentProfilePassword() {
-      const p = getCurrentProfile();
-      const newPass = document.getElementById('setting-profile-new-pass').value;
-      p.password = newPass || '';
-      saveState();
-      applyProfilePreferences();
-      showToast(p.password ? 'Profile password updated' : 'Profile password removed', 'emerald');
-    }
-
-    function saveDefaultStartupProfile() {
-      const sel = document.getElementById('setting-default-profile-select');
-      if (!sel) return;
-      defaultStartupProfileId = sel.value;
-      saveState();
-      showToast('Default startup profile saved', 'emerald');
     }
 
     function confirmDeleteProfile(id) {
@@ -2679,42 +2930,8 @@
       renderCurrentProfileHeader();
       renderCategories();
       renderApps();
-      runLivePings();
       closeProfilesModal();
       showToast('Switched profile', 'blue');
-    }
-
-    function importConfig(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        try {
-          const data = JSON.parse(evt.target.result);
-          if (data && Array.isArray(data.profiles)) {
-            profiles = data.profiles;
-            if (data.currentProfileId && profiles.some(p => p.id === data.currentProfileId)) {
-              currentProfileId = data.currentProfileId;
-            }
-            if (data.defaultStartupProfileId) {
-              defaultStartupProfileId = data.defaultStartupProfileId;
-            }
-            saveState();
-            applyProfilePreferences();
-            renderCurrentProfileHeader();
-            renderCategories();
-            renderApps();
-            runLivePings();
-            closeSettingsModal();
-            showToast('HomeLink configuration restored!', 'emerald');
-          } else {
-            showToast('Invalid HomeLink backup format', 'rose');
-          }
-        } catch(err) {
-          showToast('Failed to parse backup JSON', 'rose');
-        }
-      };
-      reader.readAsText(file);
     }
 
     function importHeimdallConfig(e) {
@@ -2866,7 +3083,7 @@
           renderCategories();
           renderApps();
           closeSettingsModal();
-          showToast(`Successfully imported ${importedCount} items from Homepage!`, 'emerald');
+          showToast(`Successfully imported items from Homepage!`, 'emerald');
         } catch(err) {
           showToast('Failed to parse Homepage config file', 'rose');
         }
@@ -2875,7 +3092,7 @@
     }
 
     function switchWikiTab(tabKey) {
-      ['arch', 'api', 'studio', 'profiles', 'backup'].forEach(k => {
+      ['arch', 'api', 'profiles', 'backup'].forEach(k => {
         const btn = document.getElementById(`wiki-tab-${k}`);
         const panel = document.getElementById(`wiki-panel-${k}`);
         if (k === tabKey) {
@@ -3048,11 +3265,11 @@
     function resetToDefaults() { openConfirmModal('Reset?', 'Reset configuration?', () => { localStorage.clear(); location.reload(); }); }
 
     function exportConfig() {
-      const payload = { version: '2.8', timestamp: new Date().toISOString(), currentProfileId, defaultStartupProfileId, profiles };
+      const payload = { version: '2.9', timestamp: new Date().toISOString(), currentProfileId, defaultStartupProfileId, profiles };
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `homelink-v2.8-backup-${new Date().toISOString().slice(0, 10)}.json`);
+      downloadAnchor.setAttribute("download", `homelink-backup-${new Date().toISOString().slice(0, 10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
