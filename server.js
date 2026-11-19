@@ -246,7 +246,7 @@ function formatSpeed(bytesPerSec) {
 }
 
 async function getQbitSessionCookie(baseUrl, secret) {
-    if (!secret) return '';
+    if (!secret) return { cookie: '', reason: 'no_secret' };
     let username = 'admin';
     let password = secret;
     if (secret.includes(':')) {
@@ -258,17 +258,19 @@ async function getQbitSessionCookie(baseUrl, secret) {
         const res = await fetch(`${baseUrl}/api/v2/auth/login`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Referer': baseUrl,
-                'Origin': baseUrl
+                'Content-Type': 'application/x-www-form-urlencoded'
             },
             body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
         });
+        const bodyText = (await res.text()).trim();
+        if (!res.ok || bodyText !== 'Ok.') {
+            return { cookie: '', reason: bodyText === 'Fails.' ? 'bad_login' : `http_${res.status}` };
+        }
         const setCookie = res.headers.get('set-cookie') || '';
         const sidMatch = setCookie.match(/SID=[^;]+/i);
-        return sidMatch ? sidMatch[0] : '';
+        return { cookie: sidMatch ? sidMatch[0] : '', reason: 'ok' };
     } catch {
-        return '';
+        return { cookie: '', reason: 'error' };
     }
 }
 
@@ -318,21 +320,23 @@ app.get('/api/proxy-stats', async (req, res) => {
         }
 
         if (isQbit) {
-            const headers = { 'Referer': baseUrl, 'Origin': baseUrl };
+            const headers = {};
             let transferRes = await fetch(`${baseUrl}/api/v2/transfer/info`, { headers });
             let torrentsRes = await fetch(`${baseUrl}/api/v2/torrents/info`, { headers });
 
             if (!transferRes.ok || !torrentsRes.ok) {
-                const sidCookie = await getQbitSessionCookie(baseUrl, apiKey || '');
-                if (sidCookie) {
-                    headers['Cookie'] = sidCookie;
+                const login = await getQbitSessionCookie(baseUrl, apiKey || '');
+                if (login.cookie) {
+                    headers['Cookie'] = login.cookie;
                     transferRes = await fetch(`${baseUrl}/api/v2/transfer/info`, { headers });
                     torrentsRes = await fetch(`${baseUrl}/api/v2/torrents/info`, { headers });
+                } else if (login.reason === 'bad_login') {
+                    return res.json({ badge: 'Bad Login' });
                 }
             }
 
             if (!transferRes.ok) {
-                return res.json({ badge: 'Auth Needed' });
+                return res.json({ badge: transferRes.status === 403 ? 'CSRF / 403' : 'Auth Needed' });
             }
 
             const transferData = await transferRes.json();
