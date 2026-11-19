@@ -246,21 +246,26 @@ function formatSpeed(bytesPerSec) {
 }
 
 async function getQbitSessionCookie(baseUrl, secret) {
-    if (!secret || !secret.includes(':')) return '';
-    const idx = secret.indexOf(':');
-    const username = secret.slice(0, idx);
-    const password = secret.slice(idx + 1);
+    if (!secret) return '';
+    let username = 'admin';
+    let password = secret;
+    if (secret.includes(':')) {
+        const idx = secret.indexOf(':');
+        username = secret.slice(0, idx);
+        password = secret.slice(idx + 1);
+    }
     try {
         const res = await fetch(`${baseUrl}/api/v2/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'Referer': baseUrl
+                'Referer': baseUrl,
+                'Origin': baseUrl
             },
             body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
         });
         const setCookie = res.headers.get('set-cookie') || '';
-        const sidMatch = setCookie.match(/SID=[^;]+/);
+        const sidMatch = setCookie.match(/SID=[^;]+/i);
         return sidMatch ? sidMatch[0] : '';
     } catch {
         return '';
@@ -268,31 +273,56 @@ async function getQbitSessionCookie(baseUrl, secret) {
 }
 
 app.get('/api/proxy-stats', async (req, res) => {
-    const { targetUrl, apiKey, serviceType } = req.query;
+    const { targetUrl, apiKey, serviceType, appName } = req.query;
     if (!targetUrl) return res.status(400).json({ error: 'Missing targetUrl' });
     const baseUrl = targetUrl.replace(/\/$/, '');
+    const lowerType = (serviceType || '').toLowerCase();
+    const lowerName = (appName || '').toLowerCase();
+
+    const isQbit = lowerType === 'qbittorrent' ||
+        (lowerType === 'generic' && (lowerName.includes('qbit') || baseUrl.includes('qbit') || baseUrl.endsWith(':8880') || baseUrl.endsWith(':8080')));
 
     try {
-        if (serviceType === 'sonarr' || serviceType === 'radarr') {
+        if (lowerType === 'sonarr' || lowerType === 'radarr') {
             const response = await fetch(`${baseUrl}/api/v3/queue?apikey=${encodeURIComponent(apiKey || '')}`);
             const data = await response.json();
             const count = Array.isArray(data) ? data.length : (data.totalRecords || 0);
             return res.json({ badge: `${count} in queue` });
         }
 
-        if (serviceType === 'prowlarr') {
+        if (lowerType === 'prowlarr') {
             const response = await fetch(`${baseUrl}/api/v1/applications?apikey=${encodeURIComponent(apiKey || '')}`);
             const data = await response.json();
             const count = Array.isArray(data) ? data.length : 0;
             return res.json({ badge: `${count} apps` });
         }
 
-        if (serviceType === 'qbittorrent') {
-            const headers = { 'Referer': baseUrl };
+        if (lowerType === 'immich') {
+            const headers = { 'Accept': 'application/json' };
+            if (apiKey) headers['x-api-key'] = apiKey;
+
+            let statsRes = await fetch(`${baseUrl}/api/server/statistics`, { headers });
+            if (statsRes.status === 404) {
+                statsRes = await fetch(`${baseUrl}/api/server-statistics`, { headers });
+            }
+
+            if (!statsRes.ok) {
+                return res.json({ badge: statsRes.status === 401 || statsRes.status === 403 ? 'Auth Needed' : 'API Error' });
+            }
+
+            const stats = await statsRes.json();
+            const photos = Number(stats.photos || 0);
+            const videos = Number(stats.videos || 0);
+            const fmtCount = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`;
+            return res.json({ badge: `${fmtCount(photos)} photos • ${fmtCount(videos)} vids` });
+        }
+
+        if (isQbit) {
+            const headers = { 'Referer': baseUrl, 'Origin': baseUrl };
             let transferRes = await fetch(`${baseUrl}/api/v2/transfer/info`, { headers });
             let torrentsRes = await fetch(`${baseUrl}/api/v2/torrents/info`, { headers });
 
-            if (transferRes.status === 403 || torrentsRes.status === 403) {
+            if (!transferRes.ok || !torrentsRes.ok) {
                 const sidCookie = await getQbitSessionCookie(baseUrl, apiKey || '');
                 if (sidCookie) {
                     headers['Cookie'] = sidCookie;
@@ -302,7 +332,7 @@ app.get('/api/proxy-stats', async (req, res) => {
             }
 
             if (!transferRes.ok) {
-                return res.json({ badge: 'Connected' });
+                return res.json({ badge: 'Auth Needed' });
             }
 
             const transferData = await transferRes.json();
@@ -317,8 +347,7 @@ app.get('/api/proxy-stats', async (req, res) => {
             }
 
             const dlSpeed = formatSpeed(transferData.dl_info_speed || 0);
-            const badge = queueCount > 0 ? `${queueCount} q • ${dlSpeed}` : `0 q • ${dlSpeed}`;
-            return res.json({ badge });
+            return res.json({ badge: `${queueCount} q • ${dlSpeed}` });
         }
 
         return res.json({ badge: 'Connected' });
@@ -327,7 +356,7 @@ app.get('/api/proxy-stats', async (req, res) => {
     }
 });
 
-// Bandwidth & latency probe for the HomeLink Speed Test Tile
+// Docker / Server-side Bandwidth & Latency probe
 app.get('/api/speedtest', async (req, res) => {
     const pingStart = Date.now();
     try {
@@ -335,7 +364,6 @@ app.get('/api/speedtest', async (req, res) => {
     } catch {}
     const pingMs = Math.max(1, Date.now() - pingStart);
 
-    // Download benchmark using a public test payload (~25MB)
     const dlUrl = 'https://speed.cloudflare.com/__down?bytes=25000000';
     let downloadMbps = 0;
     try {
@@ -350,7 +378,6 @@ app.get('/api/speedtest', async (req, res) => {
         return res.status(502).json({ error: `Speed test download failed: ${err.message}` });
     }
 
-    // Upload benchmark (~5MB payload)
     let uploadMbps = 0;
     try {
         const payload = Buffer.alloc(5 * 1024 * 1024, 'x');
@@ -375,6 +402,18 @@ app.get('/api/speedtest', async (req, res) => {
         downloadMbps,
         uploadMbps
     });
+});
+
+// Local LAN fallback endpoints for Client Browser Speed Test
+app.get('/api/client-speedtest/down', (req, res) => {
+    const bytes = Math.min(25 * 1024 * 1024, Math.max(1024, parseInt(req.query.bytes) || (10 * 1024 * 1024)));
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(Buffer.alloc(bytes, 'a'));
+});
+
+app.post('/api/client-speedtest/up', express.raw({ type: '*/*', limit: '25mb' }), (req, res) => {
+    res.json({ received: req.body ? req.body.length : 0 });
 });
 
 app.listen(PORT, () => {
